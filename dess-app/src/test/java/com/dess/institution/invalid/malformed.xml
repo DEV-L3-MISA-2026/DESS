@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="A" label="A"/>
+</institution>
+    </unitTypes>

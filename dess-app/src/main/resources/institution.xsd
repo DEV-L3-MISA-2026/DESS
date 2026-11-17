@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Schéma XSD du fichier de configuration du module institution (niveau 2 de validation).
+    Il contrôle uniquement la STRUCTURE (éléments, attributs, formats, récursion des unités).
+    Les règles métier (types existants, codes uniques, relations parent-enfant autorisées,
+    valeurs conformes au type d'attribut...) sont vérifiées en Java.
+    Les codes de type ne sont jamais énumérés ici : ils sont libres.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
+
+    <!-- Code de type ou d'unité (cohérent avec InstitutionValidator.CODE_PATTERN) -->
+    <xs:simpleType name="Code">
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z0-9][A-Za-z0-9_.\-]*"/>
+            <xs:maxLength value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Clé d'attribut (cohérent avec AttributeValidator.KEY_PATTERN) -->
+    <xs:simpleType name="Key">
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z][A-Za-z0-9_]*"/>
+            <xs:maxLength value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Identifiant stable : aucun espace, par exemple un UUID -->
+    <xs:simpleType name="Identifier">
+        <xs:restriction base="xs:token">
+            <xs:pattern value="\S+"/>
+            <xs:maxLength value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="NonEmptyText">
+        <xs:restriction base="xs:token">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Types de DONNÉES des attributs (et non types d'unités) -->
+    <xs:simpleType name="AttributeDataType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="TEXT"/>
+            <xs:enumeration value="NUMBER"/>
+            <xs:enumeration value="DECIMAL"/>
+            <xs:enumeration value="BOOLEAN"/>
+            <xs:enumeration value="DATE"/>
+            <xs:enumeration value="EMAIL"/>
+            <xs:enumeration value="URL"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Définition d'attribut -->
+    <xs:complexType name="AttributeDefinitionElement">
+        <xs:attribute name="key" type="Key" use="required"/>
+        <xs:attribute name="label" type="NonEmptyText" use="required"/>
+        <xs:attribute name="type" type="AttributeDataType" use="required"/>
+        <xs:attribute name="required" type="xs:boolean" default="false"/>
+        <xs:attribute name="description" type="xs:string"/>
+        <xs:attribute name="default" type="xs:string"/>
+    </xs:complexType>
+
+    <!-- Définition de type d'unité -->
+    <xs:complexType name="UnitTypeElement">
+        <xs:sequence>
+            <xs:element name="attributes" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="AttributeDefinitionElement"
+                                    minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="code" type="Code" use="required"/>
+        <xs:attribute name="label" type="NonEmptyText" use="required"/>
+        <xs:attribute name="description" type="xs:string"/>
+        <xs:attribute name="active" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <!-- Valeur d'attribut -->
+    <xs:complexType name="ValueElement">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="key" type="Key" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- Unité organisationnelle (récursive : les enfants sont des unités imbriquées) -->
+    <xs:complexType name="UnitElement">
+        <xs:sequence>
+            <xs:element name="values" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="value" type="ValueElement" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+                <!-- une clé de valeur ne peut apparaître qu'une fois par unité -->
+                <xs:unique name="uniqueValueKey">
+                    <xs:selector xpath="value"/>
+                    <xs:field xpath="@key"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="children" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="unit" type="UnitElement" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="id" type="Identifier" use="required"/>
+        <xs:attribute name="code" type="Code" use="required"/>
+        <xs:attribute name="name" type="NonEmptyText" use="required"/>
+        <xs:attribute name="type" type="Code" use="required"/>
+        <xs:attribute name="description" type="xs:string"/>
+        <xs:attribute name="active" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <!-- Racine -->
+    <xs:element name="institution">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="unitTypes">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="type" type="UnitTypeElement" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="allowedParentChildPairs" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="allow" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="parent" type="Code" use="required"/>
+                                    <xs:attribute name="child" type="Code" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="units" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="unit" type="UnitElement" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="id" type="Identifier" use="required"/>
+            <xs:attribute name="code" type="Code" use="required"/>
+            <xs:attribute name="name" type="NonEmptyText" use="required"/>
+            <xs:attribute name="description" type="xs:string"/>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

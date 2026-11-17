@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bien formé mais non conforme au XSD : attribut "code" absent de la racine, type d'attribut inconnu -->
+<institution id="i1" name="Test">
+    <unitTypes>
+        <type code="A" label="A">
+            <attributes>
+                <attribute key="n" label="N" type="BANANA" required="false"/>
+            </attributes>
+        </type>
+    </unitTypes>
+</institution>

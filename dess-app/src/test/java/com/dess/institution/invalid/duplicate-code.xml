@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Deux unités différentes partagent le même code métier -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="A" label="A"/>
+    </unitTypes>
+    <units>
+        <unit id="u1" code="SAME" name="Unité 1" type="A"/>
+        <unit id="u2" code="SAME" name="Unité 2" type="A"/>
+    </units>
+</institution>

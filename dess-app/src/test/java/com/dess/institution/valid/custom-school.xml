@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Exemple C : établissement personnalisé (conservatoire de musique).
+    Types et relations inventés pour l'occasion, avec deux racines et une unité inactive :
+    la même classe Java charge ce fichier sans aucune modification.
+-->
+<institution id="institution-003" code="CONSERVATOIRE_Z" name="Conservatoire Z"
+             description="Structure sans rapport avec un cursus scolaire classique">
+
+    <unitTypes>
+        <type code="CONSERVATOIRE" label="Conservatoire"/>
+
+        <type code="POLE" label="Pôle artistique">
+            <attributes>
+                <attribute key="directeur" label="Directeur artistique" type="TEXT" required="true"/>
+                <attribute key="budgetAnnuel" label="Budget annuel" type="DECIMAL" required="false"/>
+            </attributes>
+        </type>
+
+        <type code="CLASSE_INSTRUMENT" label="Classe d'instrument">
+            <attributes>
+                <attribute key="instrument" label="Instrument" type="TEXT" required="true"/>
+                <attribute key="ouvertAuxEnfants" label="Ouvert aux enfants" type="BOOLEAN" required="false"
+                           default="true"/>
+                <attribute key="effectifMax" label="Effectif maximum" type="NUMBER" required="false"/>
+            </attributes>
+        </type>
+
+        <type code="ATELIER" label="Atelier d'ensemble" description="Pratique collective">
+            <attributes>
+                <attribute key="ouverture" label="Date d'ouverture" type="DATE" required="false"/>
+            </attributes>
+        </type>
+
+        <type code="ANNEXE" label="Annexe de quartier"/>
+    </unitTypes>
+
+    <allowedParentChildPairs>
+        <allow parent="CONSERVATOIRE" child="POLE"/>
+        <allow parent="POLE" child="CLASSE_INSTRUMENT"/>
+        <allow parent="CLASSE_INSTRUMENT" child="ATELIER"/>
+        <allow parent="ANNEXE" child="ATELIER"/>
+    </allowedParentChildPairs>
+
+    <units>
+        <unit id="cons-z" code="CONS_Z" name="Conservatoire Z" type="CONSERVATOIRE">
+            <children>
+                <unit id="pole-cordes" code="POLE_CORDES" name="Pôle des cordes" type="POLE">
+                    <values>
+                        <value key="directeur">Ravelo Tiana</value>
+                        <value key="budgetAnnuel">12500000.50</value>
+                    </values>
+                    <children>
+                        <unit id="classe-violon" code="CL_VIOLON" name="Classe de violon" type="CLASSE_INSTRUMENT">
+                            <values>
+                                <value key="instrument">Violon</value>
+                                <value key="effectifMax">24</value>
+                            </values>
+                            <children>
+                                <unit id="atelier-quatuor" code="AT_QUATUOR" name="Atelier quatuor" type="ATELIER">
+                                    <values>
+                                        <value key="ouverture">2022-09-01</value>
+                                    </values>
+                                </unit>
+                            </children>
+                        </unit>
+                    </children>
+                </unit>
+                <unit id="pole-vents" code="POLE_VENTS" name="Pôle des vents" type="POLE" active="false">
+                    <values>
+                        <value key="directeur">Rabary Nina</value>
+                    </values>
+                </unit>
+            </children>
+        </unit>
+
+        <unit id="annexe-nord" code="ANNEXE_NORD" name="Annexe Nord" type="ANNEXE">
+            <children>
+                <unit id="atelier-percussions" code="AT_PERCU" name="Atelier percussions" type="ATELIER"/>
+            </children>
+        </unit>
+    </units>
+</institution>

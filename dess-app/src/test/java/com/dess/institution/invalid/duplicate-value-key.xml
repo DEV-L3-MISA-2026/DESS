@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Deux valeurs pour la même clé : refusé par la contrainte xs:unique du XSD -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="A" label="A">
+            <attributes>
+                <attribute key="chef" label="Chef" type="TEXT" required="false"/>
+            </attributes>
+        </type>
+    </unitTypes>
+    <units>
+        <unit id="u1" code="U1" name="Unité 1" type="A">
+            <values>
+                <value key="chef">Un</value>
+                <value key="chef">Deux</value>
+            </values>
+        </unit>
+    </units>
+</institution>

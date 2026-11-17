@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemple B : lycée général. Établissement > Enseignement > Série > Langue > Niveau -->
+<institution id="institution-002" code="LYCEE_Y" name="Lycée Y">
+
+    <unitTypes>
+        <type code="ETABLISSEMENT" label="Établissement">
+            <attributes>
+                <attribute key="proviseur" label="Proviseur" type="TEXT" required="true"/>
+                <attribute key="siteWeb" label="Site web" type="URL" required="false"/>
+            </attributes>
+        </type>
+
+        <type code="ENSEIGNEMENT" label="Enseignement">
+            <attributes>
+                <attribute key="censeur" label="Censeur" type="TEXT" required="false"/>
+            </attributes>
+        </type>
+
+        <type code="SERIE" label="Série">
+            <attributes>
+                <attribute key="coefficientMax" label="Coefficient maximum" type="DECIMAL" required="false"/>
+                <attribute key="selective" label="Admission sélective" type="BOOLEAN" required="true" default="false"/>
+            </attributes>
+        </type>
+
+        <type code="LANGUE" label="Langue vivante"/>
+        <type code="NIVEAU" label="Niveau"/>
+    </unitTypes>
+
+    <allowedParentChildPairs>
+        <allow parent="ETABLISSEMENT" child="ENSEIGNEMENT"/>
+        <allow parent="ENSEIGNEMENT" child="SERIE"/>
+        <allow parent="SERIE" child="LANGUE"/>
+        <allow parent="LANGUE" child="NIVEAU"/>
+    </allowedParentChildPairs>
+
+    <units>
+        <unit id="lycee-y" code="LYCEE_Y_ETAB" name="Lycée Y" type="ETABLISSEMENT">
+            <values>
+                <value key="proviseur">Rasoanaivo Hery</value>
+                <value key="siteWeb">https://lycee-y.example.mg</value>
+            </values>
+            <children>
+                <unit id="enseignement-general" code="ENS_GENERAL" name="Enseignement général" type="ENSEIGNEMENT">
+                    <values>
+                        <value key="censeur">Razafy Lala</value>
+                    </values>
+                    <children>
+                        <unit id="serie-c" code="SERIE_C" name="Série C" type="SERIE">
+                            <values>
+                                <value key="coefficientMax">4.5</value>
+                                <value key="selective">true</value>
+                            </values>
+                            <children>
+                                <unit id="serie-c-anglais" code="SERIE_C_ANG" name="Anglais" type="LANGUE">
+                                    <children>
+                                        <unit id="serie-c-anglais-terminale" code="C_ANG_TLE" name="Terminale"
+                                              type="NIVEAU"/>
+                                    </children>
+                                </unit>
+                            </children>
+                        </unit>
+                        <unit id="serie-d" code="SERIE_D" name="Série D" type="SERIE">
+                            <values>
+                                <value key="selective">false</value>
+                            </values>
+                            <children>
+                                <unit id="serie-d-francais" code="SERIE_D_FR" name="Français" type="LANGUE"/>
+                            </children>
+                        </unit>
+                    </children>
+                </unit>
+            </children>
+        </unit>
+    </units>
+</institution>

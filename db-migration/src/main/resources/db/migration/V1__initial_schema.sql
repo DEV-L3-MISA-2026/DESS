@@ -1,0 +1,2 @@
+-- Initial schema placeholder. Add the first domain tables here.
+-- Flyway applies this file once and records it in flyway_schema_history.

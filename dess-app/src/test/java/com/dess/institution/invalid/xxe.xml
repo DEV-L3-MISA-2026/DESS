@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE institution [
+    <!ENTITY secret SYSTEM "file:///etc/passwd">
+]>
+<institution id="i1" code="TEST" name="&secret;">
+    <unitTypes/>
+</institution>

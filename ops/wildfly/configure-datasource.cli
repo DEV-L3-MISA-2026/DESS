@@ -1,8 +1,0 @@
-# Template: registers the PostgreSQL datasource used by the persistence unit (java:jboss/datasources/DessDS).
-# Prerequisite: the PostgreSQL JDBC driver is installed as the WildFly module "org.postgresql".
-# Run:  $WILDFLY_HOME/bin/jboss-cli.sh --file=ops/wildfly/configure-datasource.cli
-# The DESS_DB_* environment variables are resolved when the server starts.
-embed-server --std-out=echo
-/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql, driver-module-name=org.postgresql, driver-class-name=org.postgresql.Driver)
-data-source add --name=DessDS --jndi-name=java:jboss/datasources/DessDS --driver-name=postgresql --connection-url=jdbc:postgresql://${env.DESS_DB_HOST:localhost}:${env.DESS_DB_PORT:5432}/${env.DESS_DB_NAME:dess} --user-name=${env.DESS_DB_USER:dess} --password=${env.DESS_DB_PASSWORD}
-stop-embedded-server

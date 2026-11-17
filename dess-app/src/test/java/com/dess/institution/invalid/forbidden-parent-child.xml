@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Conforme au XSD, mais B sous B n'est pas une relation autorisée (seul A -> B l'est) -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="A" label="A"/>
+        <type code="B" label="B"/>
+    </unitTypes>
+    <allowedParentChildPairs>
+        <allow parent="A" child="B"/>
+    </allowedParentChildPairs>
+    <units>
+        <unit id="u1" code="U1" name="Unité 1" type="B">
+            <children>
+                <unit id="u2" code="U2" name="Unité 2" type="B"/>
+            </children>
+        </unit>
+    </units>
+</institution>
