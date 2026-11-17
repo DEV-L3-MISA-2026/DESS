@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<institutionConfig version="1">
+  <institution code="LYCEE-EXEMPLE" name="Lycée Exemple" timeZone="Indian/Antananarivo"/>
+
+  <unitTypes>
+    <type code="SCHOOL"/>
+    <type code="LEVEL"/>
+  </unitTypes>
+
+  <allowedParentChildPairs>
+    <allow parent="SCHOOL" child="LEVEL"/>
+  </allowedParentChildPairs>
+
+  <structure>
+    <unit code="LYCEE" name="Lycée Exemple" type="SCHOOL">
+      <unit code="SECONDE" name="Seconde" type="LEVEL"/>
+      <unit code="PREMIERE" name="Première" type="LEVEL"/>
+      <unit code="TERMINALE" name="Terminale" type="LEVEL"/>
+    </unit>
+  </structure>
+</institutionConfig>

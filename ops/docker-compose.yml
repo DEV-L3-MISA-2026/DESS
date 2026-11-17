@@ -1,0 +1,26 @@
+name: dess
+
+services:
+  db:
+    image: postgres:17
+    container_name: dess-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DESS_DB_NAME:-dess}
+      POSTGRES_USER: ${DESS_DB_USER:-dess}
+      POSTGRES_PASSWORD: ${DESS_DB_PASSWORD:?set DESS_DB_PASSWORD in .env}
+    ports:
+      - "${DESS_DB_PORT:-5432}:5432"
+    volumes:
+      - dess-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DESS_DB_USER:-dess} -d ${DESS_DB_NAME:-dess}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # WildFly is run natively by default (see docs/local-setup.md).
+  # Add a wildfly service here only if the team decides to containerise the server.
+
+volumes:
+  dess-db-data:

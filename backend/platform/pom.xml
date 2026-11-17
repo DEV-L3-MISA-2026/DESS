@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>mg.dess</groupId>
+    <artifactId>dess-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>dess-platform</artifactId>
+  <packaging>war</packaging>
+  <name>DESS :: platform</name>
+  <description>Deployable WAR: REST application, error mapping, OpenAPI, configuration, persistence unit.</description>
+
+  <dependencies>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-shared</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-institution</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-people</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-scheduling</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-academic</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-assessment</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>mg.dess</groupId><artifactId>dess-security</artifactId><version>${project.version}</version></dependency>
+
+    <!-- Tests: real PostgreSQL through Testcontainers, schema through Flyway, rules through ArchUnit. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <version>${flyway.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>${archunit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- The WAR is dess.war, served under the /dess context path. -->
+    <finalName>dess</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+          <!-- Version-less jar names: persistence.xml references ../lib/dess-<module>.jar -->
+          <outputFileNameMapping>@{artifactId}@.@{extension}@</outputFileNameMapping>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

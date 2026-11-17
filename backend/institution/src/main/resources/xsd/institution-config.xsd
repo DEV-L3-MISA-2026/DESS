@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shape of an institution configuration (layer 2 of the XML validation).
+  The XSD checks structure only. The Java semantic validator checks that the parent-child
+  type pair is allowed, codes are unique, references exist, and an inactive parent holds no
+  active child. XML contains data, never executable business logic.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
+
+  <xs:simpleType name="Code">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z0-9][A-Z0-9_-]{0,49}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Label">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="200"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="institutionConfig">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="institution" type="InstitutionInfo"/>
+        <xs:element name="unitTypes" type="UnitTypeList"/>
+        <xs:element name="allowedParentChildPairs" type="PairList"/>
+        <xs:element name="structure" type="Structure"/>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:positiveInteger" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="InstitutionInfo">
+    <xs:attribute name="code" type="Code" use="required"/>
+    <xs:attribute name="name" type="Label" use="required"/>
+    <xs:attribute name="timeZone" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="UnitTypeList">
+    <xs:sequence>
+      <xs:element name="type" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:attribute name="code" type="Code" use="required"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PairList">
+    <xs:sequence>
+      <xs:element name="allow" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:attribute name="parent" type="Code" use="required"/>
+          <xs:attribute name="child" type="Code" use="required"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Structure">
+    <xs:sequence>
+      <xs:element name="unit" type="Unit" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Recursive: a unit contains child units. -->
+  <xs:complexType name="Unit">
+    <xs:sequence>
+      <xs:element name="unit" type="Unit" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="code" type="Code" use="required"/>
+    <xs:attribute name="name" type="Label" use="required"/>
+    <xs:attribute name="type" type="Code" use="required"/>
+    <xs:attribute name="active" type="xs:boolean" default="true"/>
+  </xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>mg.dess</groupId>
+  <artifactId>dess-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>DESS</name>
+  <description>Configurable academic management application (modular monolith, DDD bounded contexts).</description>
+
+  <!-- Build order is resolved by Maven from the dependencies between modules. -->
+  <modules>
+    <module>backend/shared</module>
+    <module>backend/institution</module>
+    <module>backend/people</module>
+    <module>backend/scheduling</module>
+    <module>backend/academic</module>
+    <module>backend/assessment</module>
+    <module>backend/security</module>
+    <module>backend/platform</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- Starting points: bump to the latest patch versions on Day 1. -->
+    <jakarta.ee.version>11.0.0</jakarta.ee.version>
+    <junit.version>5.11.4</junit.version>
+    <testcontainers.version>1.20.4</testcontainers.version>
+    <archunit.version>1.3.0</archunit.version>
+    <postgresql.version>42.7.4</postgresql.version>
+    <flyway.version>11.1.0</flyway.version>
+  </properties>
+
+  <!-- Inherited by every module. The application server supplies the Jakarta EE APIs. -->
+  <dependencies>
+    <dependency>
+      <groupId>jakarta.platform</groupId>
+      <artifactId>jakarta.jakartaee-api</artifactId>
+      <version>${jakarta.ee.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.4.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
