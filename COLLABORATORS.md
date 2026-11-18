@@ -39,22 +39,24 @@ Current repository collaborators:
 | `Mokabe000` | admin |
 | `Adnan-f` | read |
 
-Sergio is the only person who merges into `main`. Other admins can review and merge into
-`dev`, but not into `main`.
+Only Sergio merges pull requests into `main` and `dev`. Other collaborators can push to their
+feature branches and may push small changes directly to `dev`.
 
-> GitHub branch protection is not available for this private repository on the free plan.
-> Until the plan changes, the `main` rule is a team rule: do not merge to `main` unless you
-> are Sergio.
+> `main` is protected on GitHub: only Sergio can push or merge, one review is required, the CI
+> `build` check must pass, and force pushes and deletions are blocked. `dev` blocks force
+> pushes and deletions but allows direct pushes. The "only Sergio merges pull requests" rule
+> for `dev` is a team rule.
 
 ## Branches
 
 | Branch | Purpose |
 | --- | --- |
-| `main` | Release branch. It must always build. Only Sergio merges. |
-| `dev` | Integration branch. Day-to-day work lands here. |
+| `main` | Release branch. It must always build. Only Sergio can push or merge. |
+| `dev` | Integration branch. Direct pushes are allowed. Only Sergio merges pull requests. |
 | `feature/<area>-<topic>` | Short branch for one fix or feature. Open a pull request to `dev`. |
 
-Do not push directly to `main`. Run the tests before pushing to `dev`.
+Do not push directly to `main`. Only Sergio merges pull requests into `main` and `dev`. Run the
+tests before pushing to `dev`.
 
 ## How we work
 

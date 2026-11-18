@@ -260,22 +260,25 @@ No JPA entities are declared yet. Flyway is the only component that changes the 
 
 | Branch | Purpose |
 | --- | --- |
-| `main` | Release branch. It must always build. Only Sergio merges. |
-| `dev` | Integration branch. Day-to-day work lands here. |
+| `main` | Release branch. It must always build. Only Sergio can push or merge (enforced by GitHub). |
+| `dev` | Integration branch. Direct pushes are allowed. Only Sergio merges pull requests. |
 | `feature/<area>-<topic>` | Short branch for one fix or feature. Open a pull request to `dev`. |
 
 Rules:
 
 - Do not push directly to `main`.
+- Only Sergio merges pull requests into `main` and `dev`.
 - Run `mvn -B -ntp test` before you push.
 - Keep `main` and `dev` buildable.
 - One review per merge.
 - Put migrations in the same change as the feature that needs them.
 - Keep secrets out of Git.
 
-GitHub branch protection is not available for this private repository on the free plan. Until
-the plan changes, the `main` rule is a team rule. See [COLLABORATORS.md](COLLABORATORS.md) for
-the full workflow.
+GitHub protection is enabled on `main`: only Sergio can push or merge, a pull request and one
+review are required, the CI `build` check must pass, and force pushes and deletions are blocked.
+`dev` blocks force pushes and deletions but allows direct pushes. Only Sergio merges pull
+requests into `dev`; that part is a team rule. See [COLLABORATORS.md](COLLABORATORS.md) for the
+full workflow.
 
 ## Documentation and comment style
 

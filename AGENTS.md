@@ -23,7 +23,8 @@ Do not assume they exist.
 ## Hard rules
 
 1. Never push to `main`. Only Sergio merges into `main`.
-2. Work on `dev` or a `feature/*` branch. Open a pull request to `dev`.
+2. Work on `dev` or a `feature/*` branch. Open a pull request to `dev`. Small changes may be
+   pushed directly to `dev`, but only Sergio merges pull requests into `dev`.
 3. Do not change repository settings, collaborators, visibility or branch protection unless
    Sergio asks you to.
 4. Do not commit `.env`, `config/institution.xml`, tokens or other secrets.
