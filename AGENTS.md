@@ -22,9 +22,9 @@ Do not assume they exist.
 
 ## Hard rules
 
-1. Never push to `main` or `dev`. Only Sergio pushes or merges into them.
-2. Work on a `feature/*` branch and open a pull request to `dev`. Only Sergio reviews and
-   merges pull requests.
+1. Never push to `main`. Only Sergio merges into `main`.
+2. Work on `dev` or a `feature/*` branch. Open a pull request to `dev`. Small changes may be
+   pushed directly to `dev`, but only Sergio merges pull requests into `dev`.
 3. Do not change repository settings, collaborators, visibility or branch protection unless
    Sergio asks you to.
 4. Do not commit `.env`, `config/institution.xml`, tokens or other secrets.
@@ -119,8 +119,7 @@ You need Java 21, Maven 3.9+, WildFly 42 and PostgreSQL 17.
 8. Commit with a clear message.
 9. Push the branch and open a pull request to `dev`.
 
-All changes, including documentation, go through a feature branch and a pull request. Only
-Sergio merges.
+Small documentation changes may go directly to `dev`. Code changes should use a branch.
 
 ## Testing
 

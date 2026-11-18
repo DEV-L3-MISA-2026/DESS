@@ -261,22 +261,24 @@ No JPA entities are declared yet. Flyway is the only component that changes the 
 | Branch | Purpose |
 | --- | --- |
 | `main` | Release branch. It must always build. Only Sergio can push or merge (enforced by GitHub). |
-| `dev` | Integration branch. Only Sergio can push or merge (enforced by GitHub). |
+| `dev` | Integration branch. Direct pushes are allowed. Only Sergio merges pull requests. |
 | `feature/<area>-<topic>` | Short branch for one fix or feature. Open a pull request to `dev`. |
 
 Rules:
 
-- Only Sergio pushes or merges into `main` and `dev`.
-- Everyone else works on a `feature/*` branch and opens a pull request.
-- Every pull request needs Sergio's review. `.github/CODEOWNERS` requests it automatically.
-- Run `mvn -B -ntp test` before you open a pull request.
+- Do not push directly to `main`.
+- Only Sergio merges pull requests into `main` and `dev`.
+- Run `mvn -B -ntp test` before you push.
 - Keep `main` and `dev` buildable.
+- One review per merge.
 - Put migrations in the same change as the feature that needs them.
 - Keep secrets out of Git.
 
-GitHub protection is enabled on `main` and `dev`: only Sergio can push or merge, every pull
-request needs his review, the CI `build` check must pass, and force pushes and deletions are
-blocked. See [COLLABORATORS.md](COLLABORATORS.md) for the full workflow.
+GitHub protection is enabled on `main`: only Sergio can push or merge, a pull request and one
+review are required, the CI `build` check must pass, and force pushes and deletions are blocked.
+`dev` blocks force pushes and deletions but allows direct pushes. Only Sergio merges pull
+requests into `dev`; that part is a team rule. See [COLLABORATORS.md](COLLABORATORS.md) for the
+full workflow.
 
 ## Documentation and comment style
 

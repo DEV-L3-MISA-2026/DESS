@@ -27,41 +27,42 @@ Current repository collaborators:
 
 | GitHub handle | Role |
 | --- | --- |
-| `sergiorandria` | admin (lead developer) |
-| `RonhyRaktosMG` | write |
-| `vahatraSylvio23` | write |
-| `Heriandrisoa` | write |
-| `IavoAmbinintsoa` | write |
-| `NiainaGilbert` | write |
-| `Tsifeherana` | write |
-| `Fabien-Halaby` | write |
-| `herimanantsoa51` | write |
-| `Mokabe000` | write |
+| `sergiorandria` | admin |
+| `RonhyRaktosMG` | admin |
+| `vahatraSylvio23` | admin |
+| `Heriandrisoa` | admin |
+| `IavoAmbinintsoa` | admin |
+| `NiainaGilbert` | admin |
+| `Tsifeherana` | admin |
+| `Fabien-Halaby` | admin |
+| `herimanantsoa51` | admin |
+| `Mokabe000` | admin |
 | `Adnan-f` | read |
 
-Only Sergio can push or merge into `main` and `dev`. Everyone else works on a `feature/*`
-branch and opens a pull request to `dev`. Every pull request needs Sergio's review; the
-`.github/CODEOWNERS` file requests it automatically.
+Only Sergio merges pull requests into `main` and `dev`. Other collaborators can push to their
+feature branches and may push small changes directly to `dev`.
 
-> `main` and `dev` are protected on GitHub: only Sergio can push or merge, every pull request
-> needs his review, the CI `build` check must pass, and force pushes and deletions are blocked.
+> `main` is protected on GitHub: only Sergio can push or merge, one review is required, the CI
+> `build` check must pass, and force pushes and deletions are blocked. `dev` blocks force
+> pushes and deletions but allows direct pushes. The "only Sergio merges pull requests" rule
+> for `dev` is a team rule.
 
 ## Branches
 
 | Branch | Purpose |
 | --- | --- |
 | `main` | Release branch. It must always build. Only Sergio can push or merge. |
-| `dev` | Integration branch. Only Sergio can push or merge. |
+| `dev` | Integration branch. Direct pushes are allowed. Only Sergio merges pull requests. |
 | `feature/<area>-<topic>` | Short branch for one fix or feature. Open a pull request to `dev`. |
 
-Only Sergio pushes or merges into `main` and `dev`. Run the tests before you open a pull
-request.
+Do not push directly to `main`. Only Sergio merges pull requests into `main` and `dev`. Run the
+tests before pushing to `dev`.
 
 ## How we work
 
 - Keep branches short. Merge at least once a day.
-- Sergio reviews and merges every pull request. Module owners can comment on changes in their
-  area, but Sergio gives the required approval.
+- One review per merge. The module owner reviews routine work. Sergio reviews cross-module
+  contracts and architecture changes.
 - Keep `main` and `dev` buildable.
 - Commit database migrations with the feature that needs them.
 - Use PostgreSQL with Testcontainers for booking and recursive-query tests. Do not rely only
