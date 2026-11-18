@@ -9,23 +9,34 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class CourseRepository {
+public class CourseRepository 
+{
 
     @PersistenceContext
     EntityManager em;
 
-    public CourseRepository() { }
+    public CourseRepository() 
+    {
+        
+    }
 
-    /** Pour les tests hors conteneur. */
-    public CourseRepository(EntityManager em) { this.em = em; }
+    public CourseRepository(EntityManager em) 
+    { 
+        this.em = em; 
+    }
 
-    public void save(Course course) { em.persist(course); }
+    public void save(Course course) 
+    { 
+        em.persist(course); 
+    }
 
-    public Optional<Course> findById(UUID id) {
+    public Optional<Course> findById(UUID id) 
+    {
         return Optional.ofNullable(em.find(Course.class, id));
     }
 
-    public Optional<Course> findByCode(String code) {
+    public Optional<Course> findByCode(String code) 
+    {
         return em.createQuery("select c from Course c where c.code = :code", Course.class)
                 .setParameter("code", code)
                 .getResultStream().findFirst();
