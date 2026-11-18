@@ -1,8 +1,9 @@
 # Security module — package structure
 
-Status: **scaffold only**. The packages below exist, but no production classes have been
-written yet. Each directory is tracked by a `package-info.java` file that records its planned
-responsibility.
+Status: **scaffold only**. The packages below exist together with the three domain records and
+the three application service interfaces. They declare data and method signatures only; no
+behavior is implemented and no infrastructure or web adapters exist yet. Each directory also
+contains a `package-info.java` file that records its planned responsibility.
 
 ## Layout
 
@@ -25,6 +26,20 @@ com.dess.security/
     ├── filter/
     └── config/
 ```
+
+## Scaffolded types
+
+| Type | Kind | Purpose |
+| --- | --- | --- |
+| `UserAccount` | record | Account identity, login name, encoded password, activation state and roles. |
+| `Role` | record | Named group of permissions. |
+| `Permission` | record | Unit of authorization identified by a code. |
+| `AuthenticationService` | interface | Verifies credentials and returns the authenticated account. |
+| `AuthorizationService` | interface | Answers permission and role questions for an account. |
+| `UserManagementService` | interface | Creates, updates, deactivates and deletes accounts and role assignments. |
+
+The records currently expose their components without validation, normalization or defensive
+copying, and the interfaces have no implementations. Both are intentional for this scaffold.
 
 ## Responsibilities
 
