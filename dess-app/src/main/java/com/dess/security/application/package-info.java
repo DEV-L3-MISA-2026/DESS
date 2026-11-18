@@ -1,9 +1,7 @@
 /**
- * @brief Security use cases.
+ * Security use cases: login, access checks and user management.
  *
- * <p>{@code AuthenticationService} verifies credentials, {@code AuthorizationService} answers
- * permission questions, and {@code UserManagementService} administers accounts and role
- * assignments. The services orchestrate the domain model and call infrastructure through
- * ports; they do not depend on servlets, JPA or concrete storage.</p>
+ * <p>The services use the domain and call infrastructure through small interfaces. They do not
+ * use servlets or JPA directly.</p>
  */
 package com.dess.security.application;

@@ -1,7 +1,7 @@
 /**
- * @brief Security web configuration.
+ * Wires the security web layer for WildFly.
  *
- * <p>Wires filters, controllers and view resources for the local WildFly deployment. Keeps
- * environment-specific settings out of the application and domain layers.</p>
+ * <p>Settings that depend on the environment stay here, not in the domain or application
+ * layers.</p>
  */
 package com.dess.security.web.config;
