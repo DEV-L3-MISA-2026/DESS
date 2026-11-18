@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Exemple C : établissement personnalisé (conservatoire de musique).
-    Types et relations inventés pour l'occasion, avec deux racines et une unité inactive :
-    la même classe Java charge ce fichier sans aucune modification.
+    Example C: custom institution (music conservatory).
+    Types and relations invented for the occasion, with two roots and one inactive unit:
+    the same Java class loads this file without any modification.
 -->
-<institution id="institution-003" code="CONSERVATOIRE_Z" name="Conservatoire Z"
-             description="Structure sans rapport avec un cursus scolaire classique">
+<institution id="institution-003" code="CONSERVATOIRE_Z" name="Conservatory Z"
+             description="Structure unrelated to a classic school curriculum">
 
     <unitTypes>
-        <type code="CONSERVATOIRE" label="Conservatoire"/>
+        <type code="CONSERVATOIRE" label="Conservatory"/>
 
-        <type code="POLE" label="Pôle artistique">
+        <type code="POLE" label="Artistic department">
             <attributes>
-                <attribute key="directeur" label="Directeur artistique" type="TEXT" required="true"/>
-                <attribute key="budgetAnnuel" label="Budget annuel" type="DECIMAL" required="false"/>
+                <attribute key="directeur" label="Artistic director" type="TEXT" required="true"/>
+                <attribute key="budgetAnnuel" label="Annual budget" type="DECIMAL" required="false"/>
             </attributes>
         </type>
 
-        <type code="CLASSE_INSTRUMENT" label="Classe d'instrument">
+        <type code="CLASSE_INSTRUMENT" label="Instrument class">
             <attributes>
                 <attribute key="instrument" label="Instrument" type="TEXT" required="true"/>
-                <attribute key="ouvertAuxEnfants" label="Ouvert aux enfants" type="BOOLEAN" required="false"
+                <attribute key="ouvertAuxEnfants" label="Open to children" type="BOOLEAN" required="false"
                            default="true"/>
-                <attribute key="effectifMax" label="Effectif maximum" type="NUMBER" required="false"/>
+                <attribute key="effectifMax" label="Maximum enrollment" type="NUMBER" required="false"/>
             </attributes>
         </type>
 
-        <type code="ATELIER" label="Atelier d'ensemble" description="Pratique collective">
+        <type code="ATELIER" label="Ensemble workshop" description="Group practice">
             <attributes>
-                <attribute key="ouverture" label="Date d'ouverture" type="DATE" required="false"/>
+                <attribute key="ouverture" label="Opening date" type="DATE" required="false"/>
             </attributes>
         </type>
 
-        <type code="ANNEXE" label="Annexe de quartier"/>
+        <type code="ANNEXE" label="Neighbourhood annex"/>
     </unitTypes>
 
     <allowedParentChildPairs>
@@ -43,21 +43,21 @@
     </allowedParentChildPairs>
 
     <units>
-        <unit id="cons-z" code="CONS_Z" name="Conservatoire Z" type="CONSERVATOIRE">
+        <unit id="cons-z" code="CONS_Z" name="Conservatory Z" type="CONSERVATOIRE">
             <children>
-                <unit id="pole-cordes" code="POLE_CORDES" name="Pôle des cordes" type="POLE">
+                <unit id="pole-cordes" code="POLE_CORDES" name="Strings department" type="POLE">
                     <values>
                         <value key="directeur">Ravelo Tiana</value>
                         <value key="budgetAnnuel">12500000.50</value>
                     </values>
                     <children>
-                        <unit id="classe-violon" code="CL_VIOLON" name="Classe de violon" type="CLASSE_INSTRUMENT">
+                        <unit id="classe-violon" code="CL_VIOLON" name="Violin class" type="CLASSE_INSTRUMENT">
                             <values>
-                                <value key="instrument">Violon</value>
+                                <value key="instrument">Violin</value>
                                 <value key="effectifMax">24</value>
                             </values>
                             <children>
-                                <unit id="atelier-quatuor" code="AT_QUATUOR" name="Atelier quatuor" type="ATELIER">
+                                <unit id="atelier-quatuor" code="AT_QUATUOR" name="Quartet workshop" type="ATELIER">
                                     <values>
                                         <value key="ouverture">2022-09-01</value>
                                     </values>
@@ -66,7 +66,7 @@
                         </unit>
                     </children>
                 </unit>
-                <unit id="pole-vents" code="POLE_VENTS" name="Pôle des vents" type="POLE" active="false">
+                <unit id="pole-vents" code="POLE_VENTS" name="Wind department" type="POLE" active="false">
                     <values>
                         <value key="directeur">Rabary Nina</value>
                     </values>
@@ -74,9 +74,9 @@
             </children>
         </unit>
 
-        <unit id="annexe-nord" code="ANNEXE_NORD" name="Annexe Nord" type="ANNEXE">
+        <unit id="annexe-nord" code="ANNEXE_NORD" name="North annex" type="ANNEXE">
             <children>
-                <unit id="atelier-percussions" code="AT_PERCU" name="Atelier percussions" type="ATELIER"/>
+                <unit id="atelier-percussions" code="AT_PERCU" name="Percussion workshop" type="ATELIER"/>
             </children>
         </unit>
     </units>

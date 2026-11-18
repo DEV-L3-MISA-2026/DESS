@@ -7,55 +7,125 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Gestion des types d'unités définis dynamiquement et des relations parent-enfant autorisées.
- * Les définitions d'attributs d'un type se gèrent via {@link AttributeService}.
+ * @brief Manages user-defined unit types and the parent-child relations allowed between them.
+ *
+ * <p>Attribute definitions of a unit type are managed through {@link AttributeService}.</p>
  */
-public interface UnitTypeService {
-
+public interface UnitTypeService
+{
     /**
-     * Crée un type. Le code doit être unique ; le type peut déjà porter des définitions d'attributs.
+     * Creates a unit type. The code must be unique; the type may already declare attribute definitions.
      *
-     * @throws com.dess.institution.exception.ValidationException si le code existe déjà ou est invalide
+     * @param type type to create
+     * @return the created type
+     * @throws com.dess.institution.exception.ValidationException if the code already exists or is invalid
      */
     UnitTypeDefinition create(UnitTypeDefinition type);
 
-    /** Modifie le libellé et la description. Le code d'un type est immuable. */
+    /**
+     * Updates the label and description of a unit type. The code is immutable.
+     *
+     * @param code        code of the type to update
+     * @param label       new label
+     * @param description new optional description
+     * @return the updated type
+     * @throws com.dess.institution.exception.NotFoundException if the type does not exist
+     * @throws com.dess.institution.exception.ValidationException if the resulting configuration is invalid
+     */
     UnitTypeDefinition update(String code, String label, String description);
 
+    /**
+     * Finds a unit type by code.
+     *
+     * @param code type code
+     * @return the type, or an empty optional when it does not exist
+     */
     Optional<UnitTypeDefinition> getByCode(String code);
 
+    /**
+     * Returns all unit types.
+     *
+     * @return an immutable list of types
+     */
     List<UnitTypeDefinition> getAll();
 
-    /** Un type inactif n'accepte plus de nouvelles unités ; les unités existantes sont conservées. */
+    /**
+     * Deactivates a unit type. Inactive types no longer accept new units; existing units are kept.
+     *
+     * @param code type code
+     * @return the deactivated type
+     * @throws com.dess.institution.exception.NotFoundException if the type does not exist
+     */
     UnitTypeDefinition deactivate(String code);
 
+    /**
+     * Activates a unit type.
+     *
+     * @param code type code
+     * @return the activated type
+     * @throws com.dess.institution.exception.NotFoundException if the type does not exist
+     */
     UnitTypeDefinition activate(String code);
 
     /**
-     * Supprime un type.
+     * Deletes a unit type.
      *
-     * @throws com.dess.institution.exception.ValidationException si des unités l'utilisent encore ou si
-     *                                                            des relations autorisées le référencent
+     * @param code type code
+     * @throws com.dess.institution.exception.NotFoundException if the type does not exist
+     * @throws com.dess.institution.exception.ValidationException if units still use the type or allowed
+     *                                                           parent-child relations still reference it
      */
     void delete(String code);
 
-    // ---- relations parent-enfant autorisées ----
-
+    /**
+     * Returns all allowed parent-child type relations.
+     *
+     * @return an immutable list of allowed pairs
+     */
     List<AllowedParentChildPair> getAllowedPairs();
 
-    /** Autorise les unités de type {@code childType} sous des unités de type {@code parentType}. */
+    /**
+     * Allows units of {@code childType} to be created under units of {@code parentType}.
+     *
+     * @param parentType parent type code
+     * @param childType  child type code
+     * @return the added relation
+     * @throws com.dess.institution.exception.ValidationException if the relation is invalid or duplicated
+     */
     AllowedParentChildPair addAllowedPair(String parentType, String childType);
 
     /**
-     * Retire une relation autorisée.
+     * Removes an allowed parent-child type relation.
      *
-     * @throws com.dess.institution.exception.ValidationException si des unités existantes l'utilisent
+     * @param parentType parent type code
+     * @param childType  child type code
+     * @throws com.dess.institution.exception.NotFoundException if the relation does not exist
+     * @throws com.dess.institution.exception.ValidationException if existing units rely on the relation
      */
     void removeAllowedPair(String parentType, String childType);
 
+    /**
+     * Tests whether a parent-child relation between two unit types is allowed.
+     *
+     * @param parentType parent type code
+     * @param childType  child type code
+     * @return {@code true} when the relation is allowed
+     */
     boolean isAllowed(String parentType, String childType);
 
+    /**
+     * Returns the child type codes accepted under a parent type.
+     *
+     * @param parentType parent type code
+     * @return an immutable list of child type codes
+     */
     List<String> getAllowedChildTypes(String parentType);
 
+    /**
+     * Returns the parent type codes that accept a child type.
+     *
+     * @param childType child type code
+     * @return an immutable list of parent type codes
+     */
     List<String> getAllowedParentTypes(String childType);
 }

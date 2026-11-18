@@ -12,58 +12,105 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/** Règles de validation des définitions d'attributs et des valeurs des unités. */
-public final class AttributeValidator {
-
-    /** Clé d'attribut : commence par une lettre, puis lettres, chiffres ou {@code _}. */
+/**
+ * @brief Validation rules for custom attribute definitions and unit attribute values.
+ *
+ * @see InstitutionValidator
+ */
+public final class AttributeValidator
+{
+    /**
+     * Attribute key pattern: a letter followed by letters, digits or underscores.
+     */
     public static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*");
 
-    private AttributeValidator() {
+    private AttributeValidator()
+    {
     }
 
-    /** Valide les définitions d'un type : clés bien formées et uniques, libellés, valeurs par défaut. */
-    public static void validateDefinitions(UnitTypeDefinition type, List<String> errors) {
+    /**
+     * Validates the attribute definitions of a unit type.
+     *
+     * <p>The checks cover well-formed and unique keys, required labels and default values compatible
+     * with their declared type.</p>
+     *
+     * @param type   unit type whose definitions are validated
+     * @param errors list receiving the detected violations
+     */
+    public static void validateDefinitions(UnitTypeDefinition type, List<String> errors)
+    {
         Set<String> keys = new HashSet<>();
-        for (AttributeDefinition def : type.attributes()) {
-            String where = "Type « " + type.code() + " », attribut « " + def.key() + " » : ";
-            if (!KEY_PATTERN.matcher(def.key()).matches()) {
-                errors.add(where + "clé invalide (lettre puis lettres, chiffres ou _)");
-            } else if (!keys.add(def.key())) {
-                errors.add(where + "clé dupliquée dans le type");
+
+        for (AttributeDefinition definition : type.attributes())
+        {
+            String location = "Type '" + type.code() + "', attribute '" + definition.key() + "': ";
+
+            if (!KEY_PATTERN.matcher(definition.key()).matches())
+            {
+                errors.add(location + "invalid key (letter followed by letters, digits or _)");
             }
-            if (Texts.isBlank(def.label())) {
-                errors.add(where + "libellé obligatoire");
+            else if (!keys.add(definition.key()))
+            {
+                errors.add(location + "duplicate key in type");
             }
-            if (def.hasDefault()) {
-                AttributeValueConverter.check(def.type(), def.defaultValue())
-                        .ifPresent(msg -> errors.add(where + "valeur par défaut invalide : " + msg));
+
+            if (Texts.isBlank(definition.label()))
+            {
+                errors.add(location + "label required");
+            }
+
+            if (definition.hasDefault())
+            {
+                definition.type()
+                          .check(definition.defaultValue())
+                          .ifPresent(message -> errors.add(location + "invalid default value: " + message));
             }
         }
     }
 
     /**
-     * Valide les valeurs d'une unité par rapport aux définitions de son type : clés connues,
-     * valeurs conformes au type de donnée, attributs obligatoires présents et non vides.
+     * Validates the attribute values of a unit against the definitions of its type.
      *
-     * @param unitLabel libellé de l'unité pour les messages (ex. « Mention Droit (MENTION_DROIT) »)
+     * <p>Unknown keys, values incompatible with their data type, and missing or blank required
+     * attributes are reported.</p>
+     *
+     * @param unitLabel label used in error messages, for example "Law (FAC_LAW)"
+     * @param type      unit type providing the attribute definitions
+     * @param values    values to validate, keyed by attribute key
+     * @param errors    list receiving the detected violations
      */
     public static void validateValues(String unitLabel, UnitTypeDefinition type,
-                                      Map<String, AttributeValue> values, List<String> errors) {
-        for (AttributeValue value : values.values()) {
-            Optional<AttributeDefinition> def = type.findAttribute(value.key());
-            if (def.isEmpty()) {
-                errors.add("Unité " + unitLabel + " : l'attribut « " + value.key()
-                        + " » n'est pas défini pour le type « " + type.code() + " »");
+                                      Map<String, AttributeValue> values, List<String> errors)
+    {
+        for (AttributeValue value : values.values())
+        {
+            Optional<AttributeDefinition> definition = type.findAttribute(value.key());
+
+            if (definition.isEmpty())
+            {
+                errors.add("Unit " + unitLabel + ": attribute '" + value.key()
+                           + "' is not defined for type '" + type.code() + "'");
                 continue;
             }
-            AttributeValueConverter.check(def.get().type(), value.value())
-                    .ifPresent(msg -> errors.add("Unité " + unitLabel + ", attribut « " + value.key() + " » : " + msg));
+
+            definition.get()
+                      .type()
+                      .check(value.value())
+                      .ifPresent(message -> errors.add(
+                          "Unit " + unitLabel + ", attribute '" + value.key() + "': " + message
+                      ));
         }
-        for (AttributeDefinition def : type.attributes()) {
-            if (def.required()) {
-                AttributeValue value = values.get(def.key());
-                if (value == null || value.value().isBlank()) {
-                    errors.add("Unité " + unitLabel + " : l'attribut obligatoire « " + def.key() + " » est manquant");
+
+        for (AttributeDefinition definition : type.attributes())
+        {
+            if (definition.required())
+            {
+                AttributeValue value = values.get(definition.key());
+
+                if (value == null || value.value().isBlank())
+                {
+                    errors.add("Unit " + unitLabel + ": required attribute '" + definition.key()
+                               + "' is missing");
                 }
             }
         }

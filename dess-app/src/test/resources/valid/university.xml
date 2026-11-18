@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Exemple A : université. Université > Faculté > Mention > Parcours > Niveau -->
-<institution id="institution-001" code="UNIVERSITE_X" name="Université X"
-             description="Exemple d'université à cinq niveaux hiérarchiques">
+<!-- Example A: university. University > Faculty > Department > Program > Level -->
+<institution id="institution-001" code="UNIVERSITE_X" name="University X"
+             description="Example of a university with five hierarchical levels">
 
     <unitTypes>
-        <type code="UNIVERSITE" label="Université"/>
+        <type code="UNIVERSITE" label="University"/>
 
-        <type code="FACULTE" label="Faculté">
+        <type code="FACULTE" label="Faculty">
             <attributes>
-                <attribute key="doyen" label="Doyen" type="TEXT" required="true"/>
-                <attribute key="email" label="Adresse e-mail" type="EMAIL" required="false"/>
-                <attribute key="telephone" label="Téléphone" type="TEXT" required="false"/>
+                <attribute key="doyen" label="Dean" type="TEXT" required="true"/>
+                <attribute key="email" label="E-mail address" type="EMAIL" required="false"/>
+                <attribute key="telephone" label="Phone" type="TEXT" required="false"/>
             </attributes>
         </type>
 
-        <type code="MENTION" label="Mention">
+        <type code="MENTION" label="Department">
             <attributes>
-                <attribute key="chefMention" label="Chef de mention" type="TEXT" required="true"/>
-                <attribute key="email" label="Adresse e-mail" type="EMAIL" required="false"/>
-                <attribute key="dateCreation" label="Date de création" type="DATE" required="false"/>
-                <attribute key="effectifMaximum" label="Effectif maximum" type="NUMBER" required="false"/>
+                <attribute key="chefMention" label="Department head" type="TEXT" required="true"/>
+                <attribute key="email" label="E-mail address" type="EMAIL" required="false"/>
+                <attribute key="dateCreation" label="Creation date" type="DATE" required="false"/>
+                <attribute key="effectifMaximum" label="Maximum enrollment" type="NUMBER" required="false"/>
             </attributes>
         </type>
 
-        <type code="PARCOURS" label="Parcours">
+        <type code="PARCOURS" label="Program">
             <attributes>
-                <attribute key="responsable" label="Responsable du parcours" type="TEXT" required="false"/>
+                <attribute key="responsable" label="Program coordinator" type="TEXT" required="false"/>
             </attributes>
         </type>
 
-        <type code="NIVEAU" label="Niveau"/>
+        <type code="NIVEAU" label="Level"/>
     </unitTypes>
 
     <allowedParentChildPairs>
@@ -40,27 +40,27 @@
     </allowedParentChildPairs>
 
     <units>
-        <unit id="univ-x" code="UNIV_X" name="Université X" type="UNIVERSITE" active="true">
+        <unit id="univ-x" code="UNIV_X" name="University X" type="UNIVERSITE" active="true">
             <children>
 
-                <unit id="faculte-droit" code="DROIT" name="Faculté de Droit" type="FACULTE" active="true">
+                <unit id="faculte-droit" code="DROIT" name="Faculty of Law" type="FACULTE" active="true">
                     <values>
                         <value key="doyen">Rakoto Jean</value>
                         <value key="email">droit@universite.mg</value>
                     </values>
                     <children>
-                        <unit id="mention-droit" code="MENTION_DROIT" name="Mention Droit" type="MENTION" active="true">
+                        <unit id="mention-droit" code="MENTION_DROIT" name="Law Department" type="MENTION" active="true">
                             <values>
                                 <value key="chefMention">Rabe Marie</value>
                                 <value key="dateCreation">2020-01-15</value>
                             </values>
                             <children>
-                                <unit id="parcours-droit-prive" code="DROIT_PRIVE" name="Droit privé"
+                                <unit id="parcours-droit-prive" code="DROIT_PRIVE" name="Private Law"
                                       type="PARCOURS" active="true">
                                     <children>
-                                        <unit id="droit-prive-l1" code="DROIT_PRIVE_L1" name="Licence 1"
+                                        <unit id="droit-prive-l1" code="DROIT_PRIVE_L1" name="Bachelor 1"
                                               type="NIVEAU" active="true"/>
-                                        <unit id="droit-prive-l2" code="DROIT_PRIVE_L2" name="Licence 2"
+                                        <unit id="droit-prive-l2" code="DROIT_PRIVE_L2" name="Bachelor 2"
                                               type="NIVEAU" active="true"/>
                                     </children>
                                 </unit>
@@ -69,13 +69,13 @@
                     </children>
                 </unit>
 
-                <unit id="faculte-sciences" code="SCIENCES" name="Faculté des Sciences" type="FACULTE" active="true">
+                <unit id="faculte-sciences" code="SCIENCES" name="Faculty of Sciences" type="FACULTE" active="true">
                     <values>
                         <value key="doyen">Randria Paul</value>
                         <value key="telephone">+261 20 00 000 00</value>
                     </values>
                     <children>
-                        <unit id="mention-informatique" code="MENTION_INFO" name="Mention Informatique"
+                        <unit id="mention-informatique" code="MENTION_INFO" name="Computer Science Department"
                               type="MENTION" active="true">
                             <values>
                                 <value key="chefMention">Rakoto Jean</value>
@@ -84,13 +84,13 @@
                                 <value key="effectifMaximum">500</value>
                             </values>
                             <children>
-                                <unit id="parcours-dev" code="PARCOURS_DEV" name="Développement"
+                                <unit id="parcours-dev" code="PARCOURS_DEV" name="Software Development"
                                       type="PARCOURS" active="true">
                                     <values>
                                         <value key="responsable">Andry Rasoa</value>
                                     </values>
                                     <children>
-                                        <unit id="dev-l3" code="DEV_L3" name="Licence 3" type="NIVEAU" active="true"/>
+                                        <unit id="dev-l3" code="DEV_L3" name="Bachelor 3" type="NIVEAU" active="true"/>
                                         <unit id="dev-m1" code="DEV_M1" name="Master 1" type="NIVEAU" active="true"/>
                                     </children>
                                 </unit>

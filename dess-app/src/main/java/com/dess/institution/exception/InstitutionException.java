@@ -1,15 +1,30 @@
 package com.dess.institution.exception;
 
-/** Racine de toutes les exceptions (non contrôlées) du module institution. */
-public class InstitutionException extends RuntimeException {
-
+/**
+ * @brief Root of every unchecked exception thrown by the institution module.
+ */
+public class InstitutionException extends RuntimeException
+{
     private static final long serialVersionUID = 1L;
 
-    public InstitutionException(String message) {
+    /**
+     * Creates an exception with a detail message.
+     *
+     * @param message human-readable description of the failure
+     */
+    public InstitutionException(String message)
+    {
         super(message);
     }
 
-    public InstitutionException(String message, Throwable cause) {
+    /**
+     * Creates an exception with a detail message and a cause.
+     *
+     * @param message human-readable description of the failure
+     * @param cause   underlying failure
+     */
+    public InstitutionException(String message, Throwable cause)
+    {
         super(message, cause);
     }
 }

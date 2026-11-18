@@ -7,41 +7,86 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-/** Utilitaires de test : accès aux ressources XML et copies jetables (les vrais fichiers ne sont jamais modifiés). */
-public final class TestSupport {
-
-    private TestSupport() {
+/**
+ * @brief Test utilities for XML resources and disposable copies.
+ *
+ * <p>The original resource files are never modified; tests always work on copies placed in a
+ * temporary directory.</p>
+ */
+public final class TestSupport
+{
+    private TestSupport()
+    {
     }
 
-    public static Path resource(String relativePath) {
-        try {
+    /**
+     * Resolves a classpath resource to a file system path.
+     *
+     * @param relativePath resource path relative to the classpath root
+     * @return the resolved path
+     * @throws IllegalArgumentException if the resource does not exist
+     */
+    public static Path resource(String relativePath)
+    {
+        try
+        {
             var url = TestSupport.class.getResource("/" + relativePath);
-            if (url == null) {
-                throw new IllegalArgumentException("Ressource de test introuvable : " + relativePath);
+
+            if (url == null)
+            {
+                throw new IllegalArgumentException("Test resource not found: " + relativePath);
             }
+
             return Path.of(url.toURI());
-        } catch (URISyntaxException e) {
+        }
+        catch (URISyntaxException e)
+        {
             throw new IllegalStateException(e);
         }
     }
 
-    /** Copie une ressource (ex. {@code valid/university.xml}) dans {@code dir/institution.xml}. */
-    public static Path copyTo(Path dir, String resourcePath) {
-        try (InputStream in = Files.newInputStream(resource(resourcePath))) {
+    /**
+     * Copies a resource, for example {@code valid/university.xml}, to {@code dir/institution.xml}.
+     *
+     * @param dir          target directory
+     * @param resourcePath resource path relative to the classpath root
+     * @return the path of the copied file
+     */
+    public static Path copyTo(Path dir, String resourcePath)
+    {
+        try (InputStream in = Files.newInputStream(resource(resourcePath)))
+        {
             Path target = dir.resolve("institution.xml");
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+
             return target;
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             throw new IllegalStateException(e);
         }
     }
 
-    /** Ouvre le module sur une copie temporaire de la ressource donnée. */
-    public static InstitutionModule openCopy(Path dir, String resourcePath) {
+    /**
+     * Opens the module on a temporary copy of the supplied resource.
+     *
+     * @param dir          directory receiving the copy
+     * @param resourcePath resource path relative to the classpath root
+     * @return the opened module
+     */
+    public static InstitutionModule openCopy(Path dir, String resourcePath)
+    {
         return InstitutionModule.open(copyTo(dir, resourcePath));
     }
 
-    public static InstitutionModule openUniversity(Path dir) {
+    /**
+     * Opens the module on a temporary copy of the university example.
+     *
+     * @param dir directory receiving the copy
+     * @return the opened module
+     */
+    public static InstitutionModule openUniversity(Path dir)
+    {
         return openCopy(dir, "valid/university.xml");
     }
 }

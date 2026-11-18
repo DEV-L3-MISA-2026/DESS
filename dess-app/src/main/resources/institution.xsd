@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Schéma XSD du fichier de configuration du module institution (niveau 2 de validation).
-    Il contrôle uniquement la STRUCTURE (éléments, attributs, formats, récursion des unités).
-    Les règles métier (types existants, codes uniques, relations parent-enfant autorisées,
-    valeurs conformes au type d'attribut...) sont vérifiées en Java.
-    Les codes de type ne sont jamais énumérés ici : ils sont libres.
+    XSD schema for the institution module configuration file (validation level 2).
+    It only checks the STRUCTURE (elements, attributes, formats, unit recursion).
+    Business rules (existing types, unique codes, allowed parent-child relations,
+    values matching the attribute type, etc.) are checked in Java.
+    Type codes are never enumerated here: they are free-form.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
 
-    <!-- Code de type ou d'unité (cohérent avec InstitutionValidator.CODE_PATTERN) -->
+    <!-- Type or unit code (consistent with InstitutionValidator.CODE_PATTERN) -->
     <xs:simpleType name="Code">
         <xs:restriction base="xs:token">
             <xs:pattern value="[A-Za-z0-9][A-Za-z0-9_.\-]*"/>
@@ -16,7 +16,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <!-- Clé d'attribut (cohérent avec AttributeValidator.KEY_PATTERN) -->
+    <!-- Attribute key (consistent with AttributeValidator.KEY_PATTERN) -->
     <xs:simpleType name="Key">
         <xs:restriction base="xs:token">
             <xs:pattern value="[A-Za-z][A-Za-z0-9_]*"/>
@@ -24,7 +24,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <!-- Identifiant stable : aucun espace, par exemple un UUID -->
+    <!-- Stable identifier: no whitespace, for example a UUID -->
     <xs:simpleType name="Identifier">
         <xs:restriction base="xs:token">
             <xs:pattern value="\S+"/>
@@ -38,7 +38,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <!-- Types de DONNÉES des attributs (et non types d'unités) -->
+    <!-- Attribute DATA types (not unit types) -->
     <xs:simpleType name="AttributeDataType">
         <xs:restriction base="xs:token">
             <xs:enumeration value="TEXT"/>
@@ -51,7 +51,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <!-- Définition d'attribut -->
+    <!-- Attribute definition -->
     <xs:complexType name="AttributeDefinitionElement">
         <xs:attribute name="key" type="Key" use="required"/>
         <xs:attribute name="label" type="NonEmptyText" use="required"/>
@@ -61,7 +61,7 @@
         <xs:attribute name="default" type="xs:string"/>
     </xs:complexType>
 
-    <!-- Définition de type d'unité -->
+    <!-- Unit type definition -->
     <xs:complexType name="UnitTypeElement">
         <xs:sequence>
             <xs:element name="attributes" minOccurs="0">
@@ -79,7 +79,7 @@
         <xs:attribute name="active" type="xs:boolean" default="true"/>
     </xs:complexType>
 
-    <!-- Valeur d'attribut -->
+    <!-- Attribute value -->
     <xs:complexType name="ValueElement">
         <xs:simpleContent>
             <xs:extension base="xs:string">
@@ -88,7 +88,7 @@
         </xs:simpleContent>
     </xs:complexType>
 
-    <!-- Unité organisationnelle (récursive : les enfants sont des unités imbriquées) -->
+    <!-- Organizational unit (recursive: children are nested units) -->
     <xs:complexType name="UnitElement">
         <xs:sequence>
             <xs:element name="values" minOccurs="0">
@@ -97,7 +97,7 @@
                         <xs:element name="value" type="ValueElement" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
-                <!-- une clé de valeur ne peut apparaître qu'une fois par unité -->
+                <!-- a value key may appear only once per unit -->
                 <xs:unique name="uniqueValueKey">
                     <xs:selector xpath="value"/>
                     <xs:field xpath="@key"/>
@@ -119,7 +119,7 @@
         <xs:attribute name="active" type="xs:boolean" default="true"/>
     </xs:complexType>
 
-    <!-- Racine -->
+    <!-- Root -->
     <xs:element name="institution">
         <xs:complexType>
             <xs:sequence>

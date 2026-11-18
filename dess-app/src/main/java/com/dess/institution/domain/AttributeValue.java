@@ -1,16 +1,24 @@
 package com.dess.institution.domain;
 
 /**
- * Valeur réelle d'un attribut pour une unité précise. La valeur est conservée sous forme sérialisée
- * (texte) ; sa conversion et sa validation sont centralisées dans
- * {@code com.dess.institution.validation.AttributeValueConverter}.
+ * @brief Serialized value of one attribute for a concrete organizational unit.
  *
- * @param key   clé de la {@link AttributeDefinition} correspondante
- * @param value valeur sérialisée
+ * <p>The value is kept as text. Conversion and validation are provided by the attribute's
+ * {@link AttributeType}.</p>
+ *
+ * @param key   key of the corresponding {@link AttributeDefinition}
+ * @param value serialized value
  */
-public record AttributeValue(String key, String value) {
-
-    public AttributeValue {
+public record AttributeValue(String key, String value)
+{
+    /**
+     * Normalizes {@code null} fields to empty strings.
+     *
+     * @param key   attribute key
+     * @param value serialized value
+     */
+    public AttributeValue
+    {
         key = Texts.orEmpty(key);
         value = Texts.orEmpty(value);
     }
