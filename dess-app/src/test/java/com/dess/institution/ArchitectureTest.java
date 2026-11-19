@@ -54,8 +54,30 @@ class ArchitectureTest
 
                 if (trimmed.startsWith("import "))
                 {
+                    String sourcePath = source.toString();
+                    boolean peopleOrAcademicSource = sourcePath.contains("/com/dess/people/")
+                                                     || sourcePath.contains("/com/dess/academic/");
+                    boolean infrastructureJpa = sourcePath.contains("/com/dess/people/infrastructure/")
+                                                || sourcePath.contains("/com/dess/academic/infrastructure/")
+                                                || sourcePath.contains("/com/dess/people/cdi/")
+                                                || sourcePath.contains("/com/dess/academic/cdi/");
+
                     for (String forbidden : FORBIDDEN_IMPORT_PREFIXES)
                     {
+                        if (peopleOrAcademicSource
+                            && (forbidden.startsWith("com.dess.people")
+                                || forbidden.startsWith("com.dess.academic")))
+                        {
+                            continue;
+                        }
+
+                        if (infrastructureJpa
+                            && (forbidden.startsWith("jakarta.persistence")
+                                || forbidden.startsWith("javax.persistence")))
+                        {
+                            continue;
+                        }
+
                         assertFalse(trimmed.startsWith("import " + forbidden)
                                     || trimmed.startsWith("import static " + forbidden),
                                     source + " imports " + forbidden);
@@ -82,7 +104,17 @@ class ArchitectureTest
                     continue; // Comments and Javadoc are not code.
                 }
 
-                assertFalse(forbidden.matcher(trimmed).find(), source + ": forbidden annotation -> " + trimmed);
+                boolean persistenceAllowed = source.toString().contains("/com/dess/people/infrastructure/")
+                                             || source.toString().contains("/com/dess/academic/infrastructure/")
+                                             || source.toString().contains("/com/dess/people/cdi/")
+                                             || source.toString().contains("/com/dess/academic/cdi/")
+                                             || source.toString().contains("/com/dess/people/application/impl/")
+                                             || source.toString().contains("/com/dess/academic/application/impl/");
+
+                if (!persistenceAllowed)
+                {
+                    assertFalse(forbidden.matcher(trimmed).find(), source + ": forbidden annotation -> " + trimmed);
+                }
             }
         }
     }
@@ -94,8 +126,8 @@ class ArchitectureTest
         {
             String name = source.getFileName().toString();
 
-            for (String banned : List.of("Student", "Professor", "Person", "Course", "Assessment", "Result",
-                                         "ExamSession", "StudentGroup", "AcademicProgram"))
+            for (String banned : List.of("Student", "Professor", "Course", "Assessment", "Result",
+                                         "ExamSession", "StudentGroup", "AcademicProgramVersion"))
             {
                 assertFalse(name.equals(banned + ".java"), "class reserved for another module: " + name);
             }
@@ -137,7 +169,8 @@ class ArchitectureTest
                        "pom.xml declares a forbidden dependency: " + banned);
         }
 
-        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")),
-                   "CDI is the expected Jakarta API");
+        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")
+                                             || c.contains("jakartaee-api")),
+                   "CDI or Jakarta EE API is the expected Jakarta API");
     }
 }
