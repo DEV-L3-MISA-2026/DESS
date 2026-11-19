@@ -24,3 +24,5 @@ frontend/dist/
 
 # agent context
 AGENTS.md
+
+.run/

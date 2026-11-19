@@ -1,7 +1,5 @@
 package com.dess.institution;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +11,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * @brief Architecture guard rails.
@@ -55,18 +54,22 @@ class ArchitectureTest
                 if (trimmed.startsWith("import "))
                 {
                     String sourcePath = source.toString();
-                    boolean peopleOrAcademicSource = sourcePath.contains("/com/dess/people/")
-                                                     || sourcePath.contains("/com/dess/academic/");
+                    boolean ownModuleSource = sourcePath.contains("/com/dess/people/")
+                                              || sourcePath.contains("/com/dess/academic/")
+                                              || sourcePath.contains("/com/dess/scheduling/");
                     boolean infrastructureJpa = sourcePath.contains("/com/dess/people/infrastructure/")
                                                 || sourcePath.contains("/com/dess/academic/infrastructure/")
+                                                || sourcePath.contains("/com/dess/scheduling/infrastructure/")
                                                 || sourcePath.contains("/com/dess/people/cdi/")
-                                                || sourcePath.contains("/com/dess/academic/cdi/");
+                                                || sourcePath.contains("/com/dess/academic/cdi/")
+                                                || sourcePath.contains("/com/dess/scheduling/cdi/");
 
                     for (String forbidden : FORBIDDEN_IMPORT_PREFIXES)
                     {
-                        if (peopleOrAcademicSource
+                        if (ownModuleSource
                             && (forbidden.startsWith("com.dess.people")
-                                || forbidden.startsWith("com.dess.academic")))
+                                || forbidden.startsWith("com.dess.academic")
+                                || forbidden.startsWith("com.dess.scheduling")))
                         {
                             continue;
                         }
@@ -106,10 +109,13 @@ class ArchitectureTest
 
                 boolean persistenceAllowed = source.toString().contains("/com/dess/people/infrastructure/")
                                              || source.toString().contains("/com/dess/academic/infrastructure/")
+                                             || source.toString().contains("/com/dess/scheduling/infrastructure/")
                                              || source.toString().contains("/com/dess/people/cdi/")
                                              || source.toString().contains("/com/dess/academic/cdi/")
+                                             || source.toString().contains("/com/dess/scheduling/cdi/")
                                              || source.toString().contains("/com/dess/people/application/impl/")
-                                             || source.toString().contains("/com/dess/academic/application/impl/");
+                                             || source.toString().contains("/com/dess/academic/application/impl/")
+                                             || source.toString().contains("/com/dess/scheduling/application/impl/");
 
                 if (!persistenceAllowed)
                 {
