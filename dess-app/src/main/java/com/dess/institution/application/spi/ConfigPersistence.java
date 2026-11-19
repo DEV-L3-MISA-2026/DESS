@@ -5,16 +5,30 @@ import com.dess.institution.domain.InstitutionConfig;
 import java.util.Optional;
 
 /**
- * Port de persistance de la configuration. L'implémentation fournie est basée sur un fichier XML
- * ({@code InstitutionConfigRepository}) ; les services ne connaissent que cette interface.
- * <p>
- * Contrat de {@link #save} : soit la nouvelle configuration est entièrement persistée, soit
- * l'état précédent reste intact et une exception est levée.
+ * @brief Persistence port for the institution configuration.
+ *
+ * <p>The module ships an XML-backed implementation,
+ * {@link com.dess.institution.infrastructure.xml.InstitutionConfigRepository}; services depend only
+ * on this interface.</p>
+ *
+ * <p>Contract for {@link #save(InstitutionConfig)}: either the new configuration is fully persisted,
+ * or the previous state remains intact and an exception is thrown.</p>
  */
-public interface ConfigPersistence {
-
-    /** @return la configuration persistée, ou vide si aucune n'existe encore */
+public interface ConfigPersistence
+{
+    /**
+     * Loads the persisted configuration.
+     *
+     * @return the stored configuration, or an empty optional when none exists yet
+     * @throws com.dess.institution.exception.ConfigurationLoadException if the stored data cannot be read
+     */
     Optional<InstitutionConfig> load();
 
+    /**
+     * Persists a configuration atomically.
+     *
+     * @param config configuration to store
+     * @throws com.dess.institution.exception.ConfigurationSaveException if the configuration cannot be persisted
+     */
     void save(InstitutionConfig config);
 }

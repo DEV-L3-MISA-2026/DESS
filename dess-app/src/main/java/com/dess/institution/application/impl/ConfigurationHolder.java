@@ -6,87 +6,134 @@ import com.dess.institution.exception.NotInitializedException;
 import com.dess.institution.exception.ValidationException;
 import com.dess.institution.validation.InstitutionValidator;
 
+import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 /**
- * Détient l'unique état en mémoire de la configuration et garantit sa synchronisation avec le fichier.
- * <p>
- * Toute écriture suit le même protocole, sous verrou : calcul d'un nouvel état à partir de l'état
- * courant (jamais modifié en place) → validation complète → persistance → publication en mémoire.
- * Si une étape échoue, ni le fichier ni la mémoire ne changent. Les lectures ne prennent pas le
- * verrou : elles voient toujours un instantané immuable et cohérent.
- * <p>
- * Limite : le verrou protège une seule JVM. Plusieurs instances partageant le même fichier ne sont
- * pas supportées.
+ * @brief Holds the single in-memory configuration and keeps it synchronized with persistence.
+ *
+ * <p>Every write follows the same protocol under mutual exclusion: compute a new state from the
+ * current state (which is never modified in place), validate the complete result, persist it, then
+ * publish it in memory. If any step fails, neither the file nor the in-memory state changes.
+ * Reads do not acquire the monitor because the published snapshot is immutable and volatile.</p>
+ *
+ * <p>Limitation: the monitor protects a single JVM. Multiple instances sharing the same file are
+ * not supported.</p>
  */
-public final class ConfigurationHolder {
-
-    /** Résultat d'une opération d'écriture : nouvel état et valeur à retourner à l'appelant. */
-    public record Change<R>(InstitutionConfig config, R result) {
+public final class ConfigurationHolder
+{
+    /**
+     * Result of a write operation: the new configuration and the value returned to the caller.
+     *
+     * @param config new configuration to validate and persist
+     * @param result value returned to the caller
+     * @param <R>    result type
+     */
+    public record Change<R>(InstitutionConfig config, R result)
+    {
     }
 
     private final ConfigPersistence persistence;
-    private final ReentrantLock lock = new ReentrantLock();
     private volatile InstitutionConfig current;
 
-    public ConfigurationHolder(ConfigPersistence persistence) {
-        this.persistence = persistence;
+    /**
+     * Creates a holder backed by the supplied persistence.
+     *
+     * @param persistence persistence port
+     * @throws NullPointerException if {@code persistence} is {@code null}
+     */
+    public ConfigurationHolder(ConfigPersistence persistence)
+    {
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
     }
 
-    /** (Re)charge depuis la persistance et valide. Lève une exception sans toucher à l'état si invalide. */
-    public void load() {
-        lock.lock();
-        try {
-            Optional<InstitutionConfig> loaded = persistence.load();
-            loaded.ifPresent(InstitutionValidator::validateOrThrow);
-            current = loaded.orElse(null);
-        } finally {
-            lock.unlock();
-        }
+    /**
+     * Reloads and validates the configuration from persistence.
+     *
+     * <p>The in-memory state is replaced only after the loaded configuration has been validated. An
+     * absent configuration resets the holder to the not-initialized state.</p>
+     *
+     * @throws com.dess.institution.exception.ConfigurationLoadException if the stored configuration cannot be read
+     * @throws ValidationException if the loaded configuration is invalid
+     */
+    public synchronized void load()
+    {
+        Optional<InstitutionConfig> loaded = persistence.load();
+        loaded.ifPresent(InstitutionValidator::validateOrThrow);
+        current = loaded.orElse(null);
     }
 
-    public boolean isInitialized() {
+    /**
+     * Indicates whether a configuration is currently loaded.
+     *
+     * @return {@code true} when a configuration is available
+     */
+    public boolean isInitialized()
+    {
         return current != null;
     }
 
-    /** @throws NotInitializedException si aucune configuration n'est chargée */
-    public InstitutionConfig current() {
+    /**
+     * Returns the current immutable configuration snapshot.
+     *
+     * @return the current configuration
+     * @throws NotInitializedException if no configuration is loaded
+     */
+    public InstitutionConfig current()
+    {
         InstitutionConfig snapshot = current;
-        if (snapshot == null) {
+
+        if (snapshot == null)
+        {
             throw new NotInitializedException();
         }
+
         return snapshot;
     }
 
-    /** Installe la toute première configuration (explicitement demandée par l'utilisateur). */
-    public void initialize(InstitutionConfig initial) {
-        lock.lock();
-        try {
-            if (current != null) {
-                throw new ValidationException("L'établissement est déjà initialisé");
-            }
-            InstitutionValidator.validateOrThrow(initial);
-            persistence.save(initial);
-            current = initial;
-        } finally {
-            lock.unlock();
+    /**
+     * Installs the first configuration, as explicitly requested by the user.
+     *
+     * @param initial configuration to install
+     * @throws NullPointerException if {@code initial} is {@code null}
+     * @throws ValidationException if the institution is already initialized or the configuration is invalid
+     */
+    public synchronized void initialize(InstitutionConfig initial)
+    {
+        Objects.requireNonNull(initial, "initial");
+
+        if (current != null)
+        {
+            throw new ValidationException("The institution is already initialized");
         }
+
+        InstitutionValidator.validateOrThrow(initial);
+        persistence.save(initial);
+        current = initial;
     }
 
-    /** Applique une modification de façon atomique et sérialisée. */
-    public <R> R update(Function<InstitutionConfig, Change<R>> operation) {
-        lock.lock();
-        try {
-            InstitutionConfig base = current();
-            Change<R> change = operation.apply(base);
-            InstitutionValidator.validateOrThrow(change.config());
-            persistence.save(change.config());
-            current = change.config();
-            return change.result();
-        } finally {
-            lock.unlock();
-        }
+    /**
+     * Applies a modification atomically and serially.
+     *
+     * @param operation function that computes the new configuration and the value to return
+     * @param <R>       result type
+     * @return the value produced by {@code operation}
+     * @throws NullPointerException if {@code operation} is {@code null} or returns {@code null}
+     * @throws NotInitializedException if no configuration is loaded
+     * @throws ValidationException if the resulting configuration is invalid
+     */
+    public synchronized <R> R update(Function<InstitutionConfig, Change<R>> operation)
+    {
+        Objects.requireNonNull(operation, "operation");
+
+        InstitutionConfig base = current();
+        Change<R> change = Objects.requireNonNull(operation.apply(base), "change");
+
+        InstitutionValidator.validateOrThrow(change.config());
+        persistence.save(change.config());
+        current = change.config();
+
+        return change.result();
     }
 }

@@ -4,26 +4,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Levée lorsqu'une opération violerait une règle métier (relation parent-enfant interdite, code
- * dupliqué, valeur invalide, attribut obligatoire manquant...). La configuration reste inchangée.
+ * @brief An operation would violate a business rule.
+ *
+ * <p>Examples include a forbidden parent-child relation, a duplicated code, an invalid value or a
+ * missing required attribute. When this exception is thrown, the configuration remains
+ * unchanged.</p>
  */
-public class ValidationException extends InstitutionException {
-
+public class ValidationException extends InstitutionException
+{
     private static final long serialVersionUID = 1L;
 
     private final ArrayList<String> violations;
 
-    public ValidationException(String violation) {
+    /**
+     * Creates an exception for a single violation.
+     *
+     * @param violation human-readable description of the violation
+     */
+    public ValidationException(String violation)
+    {
         this(List.of(violation));
     }
 
-    public ValidationException(List<String> violations) {
+    /**
+     * Creates an exception for a list of violations.
+     *
+     * @param violations human-readable descriptions of the violations
+     */
+    public ValidationException(List<String> violations)
+    {
         super(String.join(" ; ", violations));
         this.violations = new ArrayList<>(violations);
     }
 
-    /** Liste de toutes les violations détectées, lisibles par un humain. */
-    public List<String> getViolations() {
+    /**
+     * Returns all detected violations.
+     *
+     * @return an immutable copy of the violation list
+     */
+    public List<String> getViolations()
+    {
         return List.copyOf(violations);
     }
 }

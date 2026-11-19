@@ -10,22 +10,34 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Persistance de la configuration dans un fichier XML, source de vérité du module.
- * <p>
- * Écriture sûre : la nouvelle version est écrite dans un fichier temporaire du même dossier, relue
- * et validée par le XSD, puis l'ancien fichier est copié en {@code <fichier>.bak} avant d'être
- * remplacé par un déplacement atomique. Si une étape échoue, l'ancien fichier reste intact.
- * <p>
- * Les classes d'infrastructure ne doivent jamais être utilisées par les autres modules.
+ * @brief XML file persistence for the institution configuration.
+ *
+ * <p>The XML file is the source of truth of the module. Writes are safe: the new version is written
+ * to a temporary file in the same directory, read back and validated against the XSD, then the
+ * previous file is copied to {@code <file>.bak} before being replaced by an atomic move. If any step
+ * fails, the previous file remains intact.</p>
+ *
+ * <p>Infrastructure classes must never be used by other modules directly; they are wired by
+ * {@link com.dess.institution.InstitutionModule}.</p>
  */
-public final class InstitutionConfigRepository implements ConfigPersistence {
-
-    /** Point d'extension de test : exécuté juste avant le remplacement du fichier. */
+public final class InstitutionConfigRepository implements ConfigPersistence
+{
+    /**
+     * Test extension point executed immediately before the file replacement.
+     */
     @FunctionalInterface
-    interface BeforeReplaceHook {
+    interface BeforeReplaceHook
+    {
+        /**
+         * Runs before the temporary file replaces the current configuration file.
+         *
+         * @param temporaryFile validated temporary file
+         * @throws IOException if the hook fails
+         */
         void run(Path temporaryFile) throws IOException;
     }
 
@@ -34,73 +46,123 @@ public final class InstitutionConfigRepository implements ConfigPersistence {
     private final XmlConfigWriter writer;
     private final BeforeReplaceHook beforeReplace;
 
-    public InstitutionConfigRepository(Path file) {
-        this(file, temp -> {
+    /**
+     * Creates a repository for the supplied XML file.
+     *
+     * @param file configuration file path
+     * @throws NullPointerException if {@code file} is {@code null}
+     */
+    public InstitutionConfigRepository(Path file)
+    {
+        this(file, temporaryFile ->
+        {
         });
     }
 
-    InstitutionConfigRepository(Path file, BeforeReplaceHook beforeReplace) {
-        this.file = file.toAbsolutePath().normalize();
+    /**
+     * Creates a repository with a test hook.
+     *
+     * @param file          configuration file path
+     * @param beforeReplace hook executed before the file replacement
+     * @throws NullPointerException if {@code file} or {@code beforeReplace} is {@code null}
+     */
+    InstitutionConfigRepository(Path file, BeforeReplaceHook beforeReplace)
+    {
+        this.file = Objects.requireNonNull(file, "file").toAbsolutePath().normalize();
         this.loader = new XmlConfigLoader();
         this.writer = new XmlConfigWriter();
-        this.beforeReplace = beforeReplace;
-    }
-
-    public Path file() {
-        return file;
-    }
-
-    public Path backupFile() {
-        return file.resolveSibling(file.getFileName() + ".bak");
+        this.beforeReplace = Objects.requireNonNull(beforeReplace, "beforeReplace");
     }
 
     @Override
-    public Optional<InstitutionConfig> load() {
-        if (!Files.exists(file)) {
+    public Optional<InstitutionConfig> load()
+    {
+        if (!Files.exists(file))
+        {
             return Optional.empty();
         }
+
         return Optional.of(loader.load(file));
     }
 
     @Override
-    public synchronized void save(InstitutionConfig config) {
+    public synchronized void save(InstitutionConfig config)
+    {
         byte[] bytes = writer.toBytes(config);
-        Path temp = null;
-        try {
-            Path dir = file.getParent();
-            Files.createDirectories(dir);
-            temp = Files.createTempFile(dir, file.getFileName().toString(), ".tmp");
-            Files.write(temp, bytes);
+        Path temporaryFile = null;
 
-            // Relecture : on ne remplace jamais un fichier valide par un fichier qui ne se relirait pas.
-            try {
-                loader.load(temp);
-            } catch (InstitutionException e) {
-                throw new ConfigurationSaveException("Le XML produit est invalide, sauvegarde annulée : "
-                        + e.getMessage(), e);
+        try
+        {
+            Path directory = file.getParent();
+            Files.createDirectories(directory);
+
+            temporaryFile = Files.createTempFile(directory, file.getFileName().toString(), ".tmp");
+            Files.write(temporaryFile, bytes);
+
+            // Read the produced XML back: a valid file is never replaced by one that cannot be reloaded.
+            try
+            {
+                loader.load(temporaryFile);
+            }
+            catch (InstitutionException e)
+            {
+                throw new ConfigurationSaveException("The produced XML is invalid; save cancelled: "
+                                                     + e.getMessage(), e);
             }
 
-            beforeReplace.run(temp);
+            beforeReplace.run(temporaryFile);
 
-            if (Files.exists(file)) {
+            if (Files.exists(file))
+            {
                 Files.copy(file, backupFile(), StandardCopyOption.REPLACE_EXISTING);
             }
-            try {
-                Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+
+            try
+            {
+                Files.move(
+                    temporaryFile,
+                    file,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                );
             }
-            temp = null;
-        } catch (IOException e) {
-            throw new ConfigurationSaveException("Écriture impossible du fichier " + file + " : " + e.getMessage(), e);
-        } finally {
-            if (temp != null) {
-                try {
-                    Files.deleteIfExists(temp);
-                } catch (IOException ignored) {
-                    // nettoyage au mieux
+            catch (AtomicMoveNotSupportedException e)
+            {
+                Files.move(temporaryFile, file, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            temporaryFile = null;
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationSaveException(
+                "Unable to write file " + file + ": " + e.getMessage(),
+                e
+            );
+        }
+        finally
+        {
+            if (temporaryFile != null)
+            {
+                try
+                {
+                    Files.deleteIfExists(temporaryFile);
+                }
+                catch (IOException ignored)
+                {
+                    // Best-effort cleanup; the original exception, if any, remains the relevant one.
                 }
             }
         }
+    }
+
+    /**
+     * Returns the backup file path.
+     *
+     * @return sibling path suffixed with {@code .bak}
+     */
+    private Path backupFile()
+    {
+        return file.resolveSibling(file.getFileName() + ".bak");
     }
 }

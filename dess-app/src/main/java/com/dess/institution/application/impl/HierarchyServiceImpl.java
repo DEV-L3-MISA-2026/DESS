@@ -11,282 +11,364 @@ import com.dess.institution.exception.NotFoundException;
 import com.dess.institution.exception.ValidationException;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-public final class HierarchyServiceImpl implements HierarchyService {
-
+/**
+ * @brief Default implementation of {@link HierarchyService}.
+ *
+ * <p>Tree traversal is delegated to {@link InstitutionConfig}; this class focuses on use-case
+ * orchestration, validation entry points and immutable updates through
+ * {@link ConfigurationHolder#update(java.util.function.Function)}.</p>
+ */
+public final class HierarchyServiceImpl implements HierarchyService
+{
     private final ConfigurationHolder holder;
 
-    public HierarchyServiceImpl(ConfigurationHolder holder) {
-        this.holder = holder;
+    /**
+     * Creates the service.
+     *
+     * @param holder configuration holder shared by the module
+     * @throws NullPointerException if {@code holder} is {@code null}
+     */
+    public HierarchyServiceImpl(ConfigurationHolder holder)
+    {
+        this.holder = Objects.requireNonNull(holder, "holder");
     }
 
-    // ------------------------------------------------------------ consultation
-
     @Override
-    public Optional<OrganizationalUnit> getById(String id) {
+    public Optional<OrganizationalUnit> getById(String id)
+    {
         return holder.current().findUnit(id);
     }
 
     @Override
-    public Optional<OrganizationalUnit> getByCode(String code) {
+    public Optional<OrganizationalUnit> getByCode(String code)
+    {
         return holder.current().findUnitByCode(code);
     }
 
     @Override
-    public List<OrganizationalUnit> getRoots() {
-        return holder.current().units().stream().filter(OrganizationalUnit::isRoot).toList();
+    public List<OrganizationalUnit> getRoots()
+    {
+        return holder.current()
+                     .units()
+                     .stream()
+                     .filter(OrganizationalUnit::isRoot)
+                     .toList();
     }
 
     @Override
-    public List<OrganizationalUnit> getChildren(String id) {
-        InstitutionConfig cfg = holder.current();
-        require(cfg, id);
-        return cfg.childrenOf(id);
+    public List<OrganizationalUnit> getChildren(String id)
+    {
+        InstitutionConfig configuration = holder.current();
+        require(configuration, id);
+
+        return configuration.childrenOf(id);
     }
 
     @Override
-    public Optional<OrganizationalUnit> getParent(String id) {
-        InstitutionConfig cfg = holder.current();
-        OrganizationalUnit unit = require(cfg, id);
-        return unit.parentId() == null ? Optional.empty() : cfg.findUnit(unit.parentId());
+    public Optional<OrganizationalUnit> getParent(String id)
+    {
+        InstitutionConfig configuration = holder.current();
+        OrganizationalUnit unit = require(configuration, id);
+
+        return unit.parentId() == null
+            ? Optional.empty()
+            : configuration.findUnit(unit.parentId());
     }
 
     @Override
-    public List<OrganizationalUnit> getDescendants(String id) {
-        InstitutionConfig cfg = holder.current();
-        require(cfg, id);
-        return descendants(cfg, id);
+    public List<OrganizationalUnit> getDescendants(String id)
+    {
+        InstitutionConfig configuration = holder.current();
+        require(configuration, id);
+
+        return configuration.descendantsOf(id);
     }
 
     @Override
-    public List<OrganizationalUnit> getAncestors(String id) {
-        InstitutionConfig cfg = holder.current();
-        return ancestors(cfg, require(cfg, id));
+    public List<OrganizationalUnit> getAncestors(String id)
+    {
+        InstitutionConfig configuration = holder.current();
+
+        return configuration.ancestorsOf(require(configuration, id));
     }
 
     @Override
-    public List<OrganizationalUnit> getPath(String id) {
-        InstitutionConfig cfg = holder.current();
-        OrganizationalUnit unit = require(cfg, id);
-        List<OrganizationalUnit> path = new ArrayList<>(ancestors(cfg, unit));
-        Collections.reverse(path);
-        path.add(unit);
-        return List.copyOf(path);
+    public List<OrganizationalUnit> getPath(String id)
+    {
+        InstitutionConfig configuration = holder.current();
+
+        return configuration.pathOf(require(configuration, id));
     }
 
     @Override
-    public List<OrganizationalUnit> getByType(String typeCode) {
-        return holder.current().units().stream().filter(u -> u.typeCode().equals(typeCode)).toList();
+    public List<OrganizationalUnit> getByType(String typeCode)
+    {
+        return holder.current()
+                     .units()
+                     .stream()
+                     .filter(unit -> unit.typeCode().equals(typeCode))
+                     .toList();
     }
 
     @Override
-    public List<OrganizationalUnit> getSubtree(String id) {
-        InstitutionConfig cfg = holder.current();
-        OrganizationalUnit unit = require(cfg, id);
+    public List<OrganizationalUnit> getSubtree(String id)
+    {
+        InstitutionConfig configuration = holder.current();
+        OrganizationalUnit unit = require(configuration, id);
+
         List<OrganizationalUnit> result = new ArrayList<>();
         result.add(unit);
-        result.addAll(descendants(cfg, id));
+        result.addAll(configuration.descendantsOf(id));
+
         return List.copyOf(result);
     }
 
     @Override
-    public boolean isDescendantOf(String candidateId, String ancestorId) {
-        InstitutionConfig cfg = holder.current();
-        OrganizationalUnit candidate = require(cfg, candidateId);
-        require(cfg, ancestorId);
-        return ancestors(cfg, candidate).stream().anyMatch(a -> a.id().equals(ancestorId));
+    public boolean isDescendantOf(String candidateId, String ancestorId)
+    {
+        InstitutionConfig configuration = holder.current();
+        OrganizationalUnit candidate = require(configuration, candidateId);
+        require(configuration, ancestorId);
+
+        return configuration.ancestorsOf(candidate)
+                            .stream()
+                            .anyMatch(ancestor -> ancestor.id().equals(ancestorId));
     }
 
     @Override
-    public boolean areInSameBranch(String idA, String idB) {
-        return idA.equals(idB) ? require(holder.current(), idA) != null
-                : isDescendantOf(idA, idB) || isDescendantOf(idB, idA);
+    public boolean areInSameBranch(String idA, String idB)
+    {
+        if (idA.equals(idB))
+        {
+            require(holder.current(), idA);
+            return true;
+        }
+
+        return isDescendantOf(idA, idB) || isDescendantOf(idB, idA);
     }
 
     @Override
-    public Optional<OrganizationalUnit> getNearestCommonAncestor(String idA, String idB) {
-        InstitutionConfig cfg = holder.current();
-        OrganizationalUnit a = require(cfg, idA);
-        OrganizationalUnit b = require(cfg, idB);
+    public Optional<OrganizationalUnit> getNearestCommonAncestor(String idA, String idB)
+    {
+        InstitutionConfig configuration = holder.current();
+        List<OrganizationalUnit> pathA = configuration.pathOf(require(configuration, idA));
+        List<OrganizationalUnit> pathB = configuration.pathOf(require(configuration, idB));
+        int commonLength = 0;
 
-        Set<String> fromA = new HashSet<>();
-        fromA.add(a.id());
-        ancestors(cfg, a).forEach(u -> fromA.add(u.id()));
+        while (commonLength < pathA.size()
+               && commonLength < pathB.size()
+               && pathA.get(commonLength).id().equals(pathB.get(commonLength).id()))
+        {
+            commonLength++;
+        }
 
-        List<OrganizationalUnit> chainB = new ArrayList<>();
-        chainB.add(b);
-        chainB.addAll(ancestors(cfg, b));
-        return chainB.stream().filter(u -> fromA.contains(u.id())).findFirst();
+        return commonLength == 0
+            ? Optional.empty()
+            : Optional.of(pathA.get(commonLength - 1));
     }
 
-    // ------------------------------------------------------------ modification
-
     @Override
-    public OrganizationalUnit createUnit(CreateUnitCommand cmd) {
-        return holder.update(cfg -> {
-            UnitTypeDefinition type = cfg.findType(Texts.orEmpty(cmd.typeCode())).orElseThrow(() ->
-                    new ValidationException("Le type d'unité « " + cmd.typeCode() + " » n'existe pas"));
-            if (!type.active()) {
-                throw new ValidationException("Le type « " + type.code() + " » est inactif : "
-                        + "impossible d'y créer de nouvelles unités");
+    public OrganizationalUnit createUnit(CreateUnitCommand command)
+    {
+        return holder.update(configuration ->
+        {
+            UnitTypeDefinition type = configuration.findType(Texts.orEmpty(command.typeCode()))
+                                                   .orElseThrow(() -> new ValidationException(
+                                                       "Unit type '" + command.typeCode() + "' does not exist"
+                                                   ));
+
+            if (!type.active())
+            {
+                throw new ValidationException("Type '" + type.code() + "' is inactive: "
+                                              + "new units cannot be created under it");
             }
-            String id = Texts.isBlank(cmd.id()) ? UUID.randomUUID().toString() : cmd.id();
-            OrganizationalUnit unit = new OrganizationalUnit(id, cmd.code(), cmd.name(), cmd.description(),
-                    type.code(), cmd.parentId(), cmd.active(), UnitValues.build(type, cmd.values()));
-            List<OrganizationalUnit> units = new ArrayList<>(cfg.units());
+
+            String id = Texts.isBlank(command.id()) ? UUID.randomUUID().toString() : command.id();
+            OrganizationalUnit unit = new OrganizationalUnit(
+                id,
+                command.code(),
+                command.name(),
+                command.description(),
+                type.code(),
+                command.parentId(),
+                command.active(),
+                UnitValues.build(type, command.values())
+            );
+
+            List<OrganizationalUnit> units = new ArrayList<>(configuration.units());
             units.add(unit);
-            return new ConfigurationHolder.Change<>(cfg.withUnits(units), unit);
+
+            return new ConfigurationHolder.Change<>(configuration.withUnits(units), unit);
         });
     }
 
     @Override
-    public OrganizationalUnit updateUnit(String id, UpdateUnitCommand cmd) {
-        return holder.update(cfg -> {
-            OrganizationalUnit unit = require(cfg, id);
+    public OrganizationalUnit updateUnit(String id, UpdateUnitCommand command)
+    {
+        return holder.update(configuration ->
+        {
+            OrganizationalUnit unit = require(configuration, id);
             OrganizationalUnit updated = unit.withDetails(
-                    cmd.code() != null ? cmd.code() : unit.code(),
-                    cmd.name() != null ? cmd.name() : unit.name(),
-                    cmd.description() != null ? cmd.description() : unit.description());
-            if (cmd.values() != null) {
-                UnitTypeDefinition type = cfg.findType(unit.typeCode()).orElseThrow(() ->
-                        new ValidationException("Le type « " + unit.typeCode() + " » n'existe pas"));
-                updated = updated.withValues(UnitValues.build(type, cmd.values()));
+                Objects.requireNonNullElse(command.code(), unit.code()),
+                Objects.requireNonNullElse(command.name(), unit.name()),
+                command.description() != null ? command.description() : unit.description()
+            );
+
+            if (command.values() != null)
+            {
+                UnitTypeDefinition type = configuration.findType(unit.typeCode())
+                                                       .orElseThrow(() -> new ValidationException(
+                                                           "Type '" + unit.typeCode() + "' does not exist"
+                                                       ));
+
+                updated = updated.withValues(UnitValues.build(type, command.values()));
             }
-            return new ConfigurationHolder.Change<>(cfg.replaceUnit(updated), updated);
+
+            return new ConfigurationHolder.Change<>(configuration.replaceUnit(updated), updated);
         });
     }
 
     @Override
-    public OrganizationalUnit moveUnit(String id, String newParentId) {
-        return holder.update(cfg -> {
-            OrganizationalUnit unit = require(cfg, id);
-            String target = Texts.blankToNull(newParentId);
-            if (target != null) {
-                if (target.equals(id)) {
-                    throw new ValidationException("Une unité ne peut pas être son propre parent");
+    public OrganizationalUnit moveUnit(String id, String newParentId)
+    {
+        return holder.update(configuration ->
+        {
+            OrganizationalUnit unit = require(configuration, id);
+            String targetId = Texts.blankToNull(newParentId);
+
+            if (targetId != null)
+            {
+                if (targetId.equals(id))
+                {
+                    throw new ValidationException("A unit cannot be its own parent");
                 }
-                OrganizationalUnit newParent = cfg.findUnit(target).orElseThrow(() ->
-                        new NotFoundException("Nouveau parent introuvable : " + target));
-                boolean underDescendant = descendants(cfg, id).stream().anyMatch(d -> d.id().equals(newParent.id()));
-                if (underDescendant) {
-                    throw new ValidationException("Impossible de déplacer « " + unit.name()
-                            + " » sous l'un de ses descendants (« " + newParent.name() + " ») : cela créerait un cycle");
+
+                OrganizationalUnit newParent = configuration.findUnit(targetId)
+                                                            .orElseThrow(() -> new NotFoundException(
+                                                                "New parent not found: " + targetId
+                                                            ));
+                boolean underDescendant = configuration.descendantsOf(id)
+                                                       .stream()
+                                                       .anyMatch(descendant -> descendant.id().equals(newParent.id()));
+
+                if (underDescendant)
+                {
+                    throw new ValidationException("Cannot move '" + unit.name()
+                                                  + "' under one of its descendants ('" + newParent.name()
+                                                  + "'): this would create a cycle");
                 }
             }
-            OrganizationalUnit moved = unit.withParentId(target);
-            return new ConfigurationHolder.Change<>(cfg.replaceUnit(moved), moved);
+
+            OrganizationalUnit moved = unit.withParentId(targetId);
+
+            return new ConfigurationHolder.Change<>(configuration.replaceUnit(moved), moved);
         });
     }
 
     @Override
-    public OrganizationalUnit deactivateUnit(String id, boolean cascade) {
-        return holder.update(cfg -> {
-            OrganizationalUnit unit = require(cfg, id);
-            Set<String> targets = new HashSet<>();
-            targets.add(id);
-            if (cascade) {
-                descendants(cfg, id).forEach(d -> targets.add(d.id()));
-            } else {
-                long activeChildren = cfg.childrenOf(id).stream().filter(OrganizationalUnit::active).count();
-                if (activeChildren > 0) {
-                    throw new ValidationException("L'unité « " + unit.name() + " » a " + activeChildren
-                            + " enfant(s) actif(s) : les désactiver d'abord ou utiliser la désactivation en cascade");
+    public OrganizationalUnit deactivateUnit(String id, boolean cascade)
+    {
+        return holder.update(configuration ->
+        {
+            OrganizationalUnit unit = require(configuration, id);
+            Set<String> targetIds = new HashSet<>();
+            targetIds.add(id);
+
+            if (cascade)
+            {
+                configuration.descendantsOf(id)
+                             .forEach(descendant -> targetIds.add(descendant.id()));
+            }
+            else
+            {
+                long activeChildren = configuration.childrenOf(id)
+                                                     .stream()
+                                                     .filter(OrganizationalUnit::active)
+                                                     .count();
+
+                if (activeChildren > 0)
+                {
+                    throw new ValidationException("Unit '" + unit.name() + "' has " + activeChildren
+                                                  + " active child(ren): deactivate them first or use "
+                                                  + "cascade deactivation");
                 }
             }
+
             List<OrganizationalUnit> units = new ArrayList<>();
             OrganizationalUnit result = null;
-            for (OrganizationalUnit u : cfg.units()) {
-                if (targets.contains(u.id())) {
-                    u = u.withActive(false);
+
+            for (OrganizationalUnit current : configuration.units())
+            {
+                if (targetIds.contains(current.id()))
+                {
+                    current = current.withActive(false);
                 }
-                if (u.id().equals(id)) {
-                    result = u;
+
+                if (current.id().equals(id))
+                {
+                    result = current;
                 }
-                units.add(u);
+
+                units.add(current);
             }
-            return new ConfigurationHolder.Change<>(cfg.withUnits(units), result);
+
+            return new ConfigurationHolder.Change<>(configuration.withUnits(units), result);
         });
     }
 
     @Override
-    public OrganizationalUnit activateUnit(String id) {
-        return holder.update(cfg -> {
-            OrganizationalUnit unit = require(cfg, id);
-            if (unit.parentId() != null) {
-                cfg.findUnit(unit.parentId()).filter(p -> !p.active()).ifPresent(p -> {
-                    throw new ValidationException("L'unité « " + unit.name() + " » ne peut pas être réactivée : "
-                            + "son parent « " + p.name() + " » est inactif");
-                });
+    public OrganizationalUnit activateUnit(String id)
+    {
+        return holder.update(configuration ->
+        {
+            OrganizationalUnit unit = require(configuration, id);
+            OrganizationalUnit parent = unit.parentId() == null
+                ? null
+                : configuration.findUnit(unit.parentId()).orElse(null);
+
+            if (parent != null && !parent.active())
+            {
+                throw new ValidationException("Unit '" + unit.name() + "' cannot be reactivated: "
+                                              + "its parent '" + parent.name() + "' is inactive");
             }
+
             OrganizationalUnit activated = unit.withActive(true);
-            return new ConfigurationHolder.Change<>(cfg.replaceUnit(activated), activated);
+
+            return new ConfigurationHolder.Change<>(configuration.replaceUnit(activated), activated);
         });
     }
 
     @Override
-    public void deleteUnit(String id) {
-        holder.update(cfg -> {
-            OrganizationalUnit unit = require(cfg, id);
-            int children = cfg.childrenOf(id).size();
-            if (children > 0) {
-                throw new ValidationException("L'unité « " + unit.name() + " » a " + children
-                        + " enfant(s) : suppression refusée pour ne pas créer d'orphelins");
+    public void deleteUnit(String id)
+    {
+        holder.update(configuration ->
+        {
+            OrganizationalUnit unit = require(configuration, id);
+            int children = configuration.childrenOf(id).size();
+
+            if (children > 0)
+            {
+                throw new ValidationException("Unit '" + unit.name() + "' has " + children
+                                              + " child(ren): deletion refused to avoid orphans");
             }
-            List<OrganizationalUnit> units = new ArrayList<>(cfg.units());
-            units.removeIf(u -> u.id().equals(id));
-            return new ConfigurationHolder.Change<>(cfg.withUnits(units), null);
+
+            List<OrganizationalUnit> units = new ArrayList<>(configuration.units());
+            units.removeIf(current -> current.id().equals(id));
+
+            return new ConfigurationHolder.Change<>(configuration.withUnits(units), null);
         });
     }
 
-    // ------------------------------------------------------------ utilitaires
-
-    private static OrganizationalUnit require(InstitutionConfig cfg, String id) {
-        return cfg.findUnit(id).orElseThrow(() -> new NotFoundException("Unité introuvable : " + id));
-    }
-
-    private static List<OrganizationalUnit> ancestors(InstitutionConfig cfg, OrganizationalUnit unit) {
-        List<OrganizationalUnit> result = new ArrayList<>();
-        Set<String> visited = new HashSet<>();
-        visited.add(unit.id());
-        OrganizationalUnit current = unit;
-        while (current.parentId() != null) {
-            Optional<OrganizationalUnit> parent = cfg.findUnit(current.parentId());
-            if (parent.isEmpty() || !visited.add(parent.get().id())) {
-                break;
-            }
-            result.add(parent.get());
-            current = parent.get();
-        }
-        return List.copyOf(result);
-    }
-
-    private static List<OrganizationalUnit> descendants(InstitutionConfig cfg, String id) {
-        Map<String, List<OrganizationalUnit>> byParent = new HashMap<>();
-        for (OrganizationalUnit u : cfg.units()) {
-            if (u.parentId() != null) {
-                byParent.computeIfAbsent(u.parentId(), k -> new ArrayList<>()).add(u);
-            }
-        }
-        List<OrganizationalUnit> result = new ArrayList<>();
-        collect(byParent, id, result, new HashSet<>(Set.of(id)));
-        return List.copyOf(result);
-    }
-
-    private static void collect(Map<String, List<OrganizationalUnit>> byParent, String id,
-                                List<OrganizationalUnit> out, Set<String> visited) {
-        for (OrganizationalUnit child : byParent.getOrDefault(id, List.of())) {
-            if (visited.add(child.id())) {
-                out.add(child);
-                collect(byParent, child.id(), out, visited);
-            }
-        }
+    private static OrganizationalUnit require(InstitutionConfig configuration, String id)
+    {
+        return configuration.findUnit(id)
+                            .orElseThrow(() -> new NotFoundException("Unit not found: " + id));
     }
 }

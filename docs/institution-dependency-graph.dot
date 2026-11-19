@@ -1,0 +1,206 @@
+digraph institution {
+  rankdir=LR;
+  graph [fontname="Helvetica", fontsize=10, compound=true];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=9];
+  edge [color="#64748b", arrowsize=0.6];
+  subgraph cluster_root {
+    label="root"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "InstitutionModule" [fillcolor="#fee2e2", label="InstitutionModule\n124 loc"];
+    "InstitutionSettings" [fillcolor="#fee2e2", label="InstitutionSettings\n53 loc"];
+  }
+  subgraph cluster_cdi {
+    label="cdi"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "InstitutionProducers" [fillcolor="#f3e8ff", label="InstitutionProducers\n93 loc"];
+  }
+  subgraph cluster_app_api {
+    label="app.api"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "AttributeService" [fillcolor="#dcfce7", label="AttributeService\n138 loc"];
+    "ConfigurationStatus" [fillcolor="#dcfce7", label="ConfigurationStatus\n17 loc"];
+    "CreateUnitCommand" [fillcolor="#dcfce7", label="CreateUnitCommand\n42 loc"];
+    "HierarchyService" [fillcolor="#dcfce7", label="HierarchyService\n205 loc"];
+    "InstitutionInfo" [fillcolor="#dcfce7", label="InstitutionInfo\n13 loc"];
+    "InstitutionService" [fillcolor="#dcfce7", label="InstitutionService\n81 loc"];
+    "UnitTypeService" [fillcolor="#dcfce7", label="UnitTypeService\n131 loc"];
+    "UpdateUnitCommand" [fillcolor="#dcfce7", label="UpdateUnitCommand\n19 loc"];
+    "ValidationReport" [fillcolor="#dcfce7", label="ValidationReport\n31 loc"];
+  }
+  subgraph cluster_app_impl {
+    label="app.impl"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "AttributeServiceImpl" [fillcolor="#fef9c3", label="AttributeServiceImpl\n313 loc"];
+    "ConfigurationHolder" [fillcolor="#fef9c3", label="ConfigurationHolder\n139 loc"];
+    "HierarchyServiceImpl" [fillcolor="#fef9c3", label="HierarchyServiceImpl\n374 loc"];
+    "InstitutionServiceImpl" [fillcolor="#fef9c3", label="InstitutionServiceImpl\n101 loc"];
+    "UnitTypeServiceImpl" [fillcolor="#fef9c3", label="UnitTypeServiceImpl\n209 loc"];
+    "UnitValues" [fillcolor="#fef9c3", label="UnitValues\n57 loc"];
+  }
+  subgraph cluster_app_spi {
+    label="app.spi"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "ConfigPersistence" [fillcolor="#e0e7ff", label="ConfigPersistence\n34 loc"];
+  }
+  subgraph cluster_validation {
+    label="validation"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "AttributeValidator" [fillcolor="#fce7f3", label="AttributeValidator\n118 loc"];
+    "InstitutionValidator" [fillcolor="#fce7f3", label="InstitutionValidator\n286 loc"];
+  }
+  subgraph cluster_infra_xml {
+    label="infra.xml"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "InstitutionConfigRepository" [fillcolor="#ffedd5", label="InstitutionConfigRepository\n168 loc"];
+    "SecureXml" [fillcolor="#ffedd5", label="SecureXml\n112 loc"];
+    "XmlConfigLoader" [fillcolor="#ffedd5", label="XmlConfigLoader\n421 loc"];
+    "XmlConfigWriter" [fillcolor="#ffedd5", label="XmlConfigWriter\n256 loc"];
+  }
+  subgraph cluster_domain {
+    label="domain"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "AllowedParentChildPair" [fillcolor="#dbeafe", label="AllowedParentChildPair\n24 loc"];
+    "AttributeDefinition" [fillcolor="#dbeafe", label="AttributeDefinition\n84 loc"];
+    "AttributeType" [fillcolor="#dbeafe", label="AttributeType\n231 loc"];
+    "AttributeValue" [fillcolor="#dbeafe", label="AttributeValue\n25 loc"];
+    "InstitutionConfig" [fillcolor="#dbeafe", label="InstitutionConfig\n304 loc"];
+    "OrganizationalUnit" [fillcolor="#dbeafe", label="OrganizationalUnit\n126 loc"];
+    "Texts" [fillcolor="#dbeafe", label="Texts\n47 loc"];
+    "UnitTypeDefinition" [fillcolor="#dbeafe", label="UnitTypeDefinition\n111 loc"];
+  }
+  subgraph cluster_exception {
+    label="exception"; fontsize=11; style="rounded,dashed"; color="#94a3b8";
+    "ConfigurationLoadException" [fillcolor="#f3f4f6", label="ConfigurationLoadException\n36 loc"];
+    "ConfigurationSaveException" [fillcolor="#f3f4f6", label="ConfigurationSaveException\n33 loc"];
+    "InstitutionException" [fillcolor="#f3f4f6", label="InstitutionException\n30 loc"];
+    "MalformedXmlException" [fillcolor="#f3f4f6", label="MalformedXmlException\n22 loc"];
+    "NotFoundException" [fillcolor="#f3f4f6", label="NotFoundException\n21 loc"];
+    "NotInitializedException" [fillcolor="#f3f4f6", label="NotInitializedException\n21 loc"];
+    "SchemaViolationException" [fillcolor="#f3f4f6", label="SchemaViolationException\n38 loc"];
+    "ValidationException" [fillcolor="#f3f4f6", label="ValidationException\n49 loc"];
+  }
+  "AllowedParentChildPair" -> "Texts";
+  "AttributeDefinition" -> "AttributeType";
+  "AttributeDefinition" -> "Texts";
+  "AttributeService" -> "AttributeDefinition";
+  "AttributeService" -> "AttributeValue";
+  "AttributeService" -> "ValidationReport";
+  "AttributeServiceImpl" -> "AttributeDefinition";
+  "AttributeServiceImpl" -> "AttributeService";
+  "AttributeServiceImpl" -> "AttributeValidator";
+  "AttributeServiceImpl" -> "AttributeValue";
+  "AttributeServiceImpl" -> "ConfigurationHolder";
+  "AttributeServiceImpl" -> "InstitutionConfig";
+  "AttributeServiceImpl" -> "NotFoundException";
+  "AttributeServiceImpl" -> "OrganizationalUnit";
+  "AttributeServiceImpl" -> "Texts";
+  "AttributeServiceImpl" -> "UnitTypeDefinition";
+  "AttributeServiceImpl" -> "UnitValues";
+  "AttributeServiceImpl" -> "ValidationException";
+  "AttributeServiceImpl" -> "ValidationReport";
+  "AttributeValidator" -> "AttributeDefinition";
+  "AttributeValidator" -> "AttributeValue";
+  "AttributeValidator" -> "Texts";
+  "AttributeValidator" -> "UnitTypeDefinition";
+  "AttributeValue" -> "Texts";
+  "ConfigPersistence" -> "InstitutionConfig";
+  "ConfigurationHolder" -> "ConfigPersistence";
+  "ConfigurationHolder" -> "InstitutionConfig";
+  "ConfigurationHolder" -> "InstitutionValidator";
+  "ConfigurationHolder" -> "NotInitializedException";
+  "ConfigurationHolder" -> "ValidationException";
+  "ConfigurationLoadException" -> "InstitutionException";
+  "ConfigurationSaveException" -> "InstitutionException";
+  "HierarchyService" -> "CreateUnitCommand";
+  "HierarchyService" -> "OrganizationalUnit";
+  "HierarchyService" -> "UpdateUnitCommand";
+  "HierarchyServiceImpl" -> "ConfigurationHolder";
+  "HierarchyServiceImpl" -> "CreateUnitCommand";
+  "HierarchyServiceImpl" -> "HierarchyService";
+  "HierarchyServiceImpl" -> "InstitutionConfig";
+  "HierarchyServiceImpl" -> "NotFoundException";
+  "HierarchyServiceImpl" -> "OrganizationalUnit";
+  "HierarchyServiceImpl" -> "Texts";
+  "HierarchyServiceImpl" -> "UnitTypeDefinition";
+  "HierarchyServiceImpl" -> "UnitValues";
+  "HierarchyServiceImpl" -> "UpdateUnitCommand";
+  "HierarchyServiceImpl" -> "ValidationException";
+  "InstitutionConfig" -> "AllowedParentChildPair";
+  "InstitutionConfig" -> "OrganizationalUnit";
+  "InstitutionConfig" -> "Texts";
+  "InstitutionConfig" -> "UnitTypeDefinition";
+  "InstitutionConfigRepository" -> "ConfigPersistence";
+  "InstitutionConfigRepository" -> "ConfigurationSaveException";
+  "InstitutionConfigRepository" -> "InstitutionConfig";
+  "InstitutionConfigRepository" -> "InstitutionException";
+  "InstitutionConfigRepository" -> "XmlConfigLoader";
+  "InstitutionConfigRepository" -> "XmlConfigWriter";
+  "InstitutionModule" -> "AttributeService";
+  "InstitutionModule" -> "AttributeServiceImpl";
+  "InstitutionModule" -> "ConfigPersistence";
+  "InstitutionModule" -> "ConfigurationHolder";
+  "InstitutionModule" -> "HierarchyService";
+  "InstitutionModule" -> "HierarchyServiceImpl";
+  "InstitutionModule" -> "InstitutionConfigRepository";
+  "InstitutionModule" -> "InstitutionService";
+  "InstitutionModule" -> "InstitutionServiceImpl";
+  "InstitutionModule" -> "InstitutionSettings";
+  "InstitutionModule" -> "UnitTypeService";
+  "InstitutionModule" -> "UnitTypeServiceImpl";
+  "InstitutionProducers" -> "AttributeService";
+  "InstitutionProducers" -> "HierarchyService";
+  "InstitutionProducers" -> "InstitutionModule";
+  "InstitutionProducers" -> "InstitutionService";
+  "InstitutionProducers" -> "InstitutionSettings";
+  "InstitutionProducers" -> "UnitTypeService";
+  "InstitutionService" -> "ConfigurationStatus";
+  "InstitutionService" -> "InstitutionConfig";
+  "InstitutionService" -> "InstitutionInfo";
+  "InstitutionService" -> "ValidationReport";
+  "InstitutionServiceImpl" -> "ConfigurationHolder";
+  "InstitutionServiceImpl" -> "ConfigurationStatus";
+  "InstitutionServiceImpl" -> "InstitutionConfig";
+  "InstitutionServiceImpl" -> "InstitutionInfo";
+  "InstitutionServiceImpl" -> "InstitutionService";
+  "InstitutionServiceImpl" -> "InstitutionValidator";
+  "InstitutionServiceImpl" -> "ValidationReport";
+  "InstitutionValidator" -> "AllowedParentChildPair";
+  "InstitutionValidator" -> "AttributeValidator";
+  "InstitutionValidator" -> "InstitutionConfig";
+  "InstitutionValidator" -> "OrganizationalUnit";
+  "InstitutionValidator" -> "Texts";
+  "InstitutionValidator" -> "UnitTypeDefinition";
+  "InstitutionValidator" -> "ValidationException";
+  "MalformedXmlException" -> "ConfigurationLoadException";
+  "NotFoundException" -> "InstitutionException";
+  "NotInitializedException" -> "InstitutionException";
+  "OrganizationalUnit" -> "AttributeValue";
+  "OrganizationalUnit" -> "Texts";
+  "SchemaViolationException" -> "ConfigurationLoadException";
+  "UnitTypeDefinition" -> "AttributeDefinition";
+  "UnitTypeDefinition" -> "Texts";
+  "UnitTypeService" -> "AllowedParentChildPair";
+  "UnitTypeService" -> "UnitTypeDefinition";
+  "UnitTypeServiceImpl" -> "AllowedParentChildPair";
+  "UnitTypeServiceImpl" -> "ConfigurationHolder";
+  "UnitTypeServiceImpl" -> "InstitutionConfig";
+  "UnitTypeServiceImpl" -> "NotFoundException";
+  "UnitTypeServiceImpl" -> "UnitTypeDefinition";
+  "UnitTypeServiceImpl" -> "UnitTypeService";
+  "UnitTypeServiceImpl" -> "ValidationException";
+  "UnitValues" -> "AttributeDefinition";
+  "UnitValues" -> "AttributeValue";
+  "UnitValues" -> "UnitTypeDefinition";
+  "ValidationException" -> "InstitutionException";
+  "XmlConfigLoader" -> "AllowedParentChildPair";
+  "XmlConfigLoader" -> "AttributeDefinition";
+  "XmlConfigLoader" -> "AttributeType";
+  "XmlConfigLoader" -> "AttributeValue";
+  "XmlConfigLoader" -> "ConfigurationLoadException";
+  "XmlConfigLoader" -> "InstitutionConfig";
+  "XmlConfigLoader" -> "MalformedXmlException";
+  "XmlConfigLoader" -> "OrganizationalUnit";
+  "XmlConfigLoader" -> "SchemaViolationException";
+  "XmlConfigLoader" -> "SecureXml";
+  "XmlConfigLoader" -> "UnitTypeDefinition";
+  "XmlConfigWriter" -> "AllowedParentChildPair";
+  "XmlConfigWriter" -> "AttributeDefinition";
+  "XmlConfigWriter" -> "AttributeValue";
+  "XmlConfigWriter" -> "ConfigurationSaveException";
+  "XmlConfigWriter" -> "InstitutionConfig";
+  "XmlConfigWriter" -> "OrganizationalUnit";
+  "XmlConfigWriter" -> "SecureXml";
+  "XmlConfigWriter" -> "UnitTypeDefinition";
+}

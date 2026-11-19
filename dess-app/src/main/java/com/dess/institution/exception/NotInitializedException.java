@@ -1,16 +1,21 @@
 package com.dess.institution.exception;
 
 /**
- * Levée lorsqu'aucune configuration d'établissement n'existe encore (fichier XML absent).
- * Une configuration initiale doit être fournie explicitement (fichier XML ou
- * {@code InstitutionService#initialize}) : le module n'invente jamais d'établissement.
+ * @brief No institution configuration is available yet.
+ *
+ * <p>The configuration must be supplied explicitly, either as an initial XML file or through
+ * {@code InstitutionService#initialize}. The module never invents an institution.</p>
  */
-public class NotInitializedException extends InstitutionException {
-
+public class NotInitializedException extends InstitutionException
+{
     private static final long serialVersionUID = 1L;
 
-    public NotInitializedException() {
-        super("Aucune configuration d'établissement n'est chargée : fournir le fichier XML initial "
-                + "ou initialiser l'établissement.");
+    /**
+     * Creates the exception with the standard not-initialized message.
+     */
+    public NotInitializedException()
+    {
+        super("No institution configuration is loaded: provide the initial XML file "
+              + "or initialize the institution.");
     }
 }

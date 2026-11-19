@@ -7,35 +7,51 @@ import com.dess.institution.domain.UnitTypeDefinition;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Normalisation des valeurs saisies avant validation : suppression des blancs vides, valeurs par défaut. */
-final class UnitValues {
-
-    private UnitValues() {
+/**
+ * @brief Normalizes submitted attribute values before validation.
+ *
+ * <p>Blank values are treated as absent, values are stripped, and defaults are applied to attributes
+ * that were not supplied. Unknown keys are preserved so that the validator can report them.</p>
+ */
+final class UnitValues
+{
+    private UnitValues()
+    {
     }
 
     /**
-     * Construit la map de valeurs d'une unité à partir de la saisie : les valeurs blanches sont ignorées
-     * (une valeur absente), les valeurs par défaut sont appliquées aux attributs non renseignés. Les clés
-     * inconnues sont conservées telles quelles afin que le validateur les signale.
+     * Builds the attribute value map of a unit from user input.
+     *
+     * @param type  unit type providing the attribute definitions
+     * @param input submitted values keyed by attribute key; may be {@code null}
+     * @return a mutable map of normalized values, ready for validation
      */
-    static Map<String, AttributeValue> build(UnitTypeDefinition type, Map<String, String> input) {
+    static Map<String, AttributeValue> build(UnitTypeDefinition type, Map<String, String> input)
+    {
         Map<String, AttributeValue> values = new LinkedHashMap<>();
-        if (input != null) {
-            input.forEach((key, raw) -> {
-                if (raw != null && !raw.isBlank()) {
-                    values.put(key, new AttributeValue(key, raw.trim()));
+
+        if (input != null)
+        {
+            input.forEach((key, rawValue) ->
+            {
+                if (rawValue != null && !rawValue.isBlank())
+                {
+                    values.put(key, new AttributeValue(key, rawValue.strip()));
                 }
             });
         }
-        applyDefaults(type, values);
-        return values;
-    }
 
-    static void applyDefaults(UnitTypeDefinition type, Map<String, AttributeValue> values) {
-        for (AttributeDefinition def : type.attributes()) {
-            if (def.hasDefault() && !values.containsKey(def.key())) {
-                values.put(def.key(), new AttributeValue(def.key(), def.defaultValue()));
+        for (AttributeDefinition definition : type.attributes())
+        {
+            if (definition.hasDefault() && !values.containsKey(definition.key()))
+            {
+                values.put(
+                    definition.key(),
+                    new AttributeValue(definition.key(), definition.defaultValue())
+                );
             }
         }
+
+        return values;
     }
 }

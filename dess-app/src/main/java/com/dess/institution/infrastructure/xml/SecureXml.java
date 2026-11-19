@@ -7,62 +7,106 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 
 /**
- * Fabriques XML durcies contre XXE : DOCTYPE interdit, aucune entité externe, aucun accès réseau
- * ni fichier depuis le XML. Le XML est traité comme des données purement déclaratives.
+ * @brief Hardened XML factories used by the institution XML infrastructure.
+ *
+ * <p>The factories disable external entity resolution and DOCTYPE declarations, and prevent network
+ * or filesystem access from XML content. Configuration XML is treated as purely declarative data.</p>
  */
-final class SecureXml {
-
-    private SecureXml() {
+final class SecureXml
+{
+    private SecureXml()
+    {
     }
 
-    static DocumentBuilderFactory documentBuilderFactory() {
-        try {
-            DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
-            f.setNamespaceAware(true);
-            f.setXIncludeAware(false);
-            f.setExpandEntityReferences(false);
-            f.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            try {
-                f.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-                f.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-            } catch (IllegalArgumentException ignored) {
-                // attribut non supporté par l'implémentation : les features ci-dessus protègent déjà
+    /**
+     * Creates a hardened namespace-aware document builder factory.
+     *
+     * @return a document builder factory with secure processing enabled
+     * @throws IllegalStateException if the platform parser cannot apply the required settings
+     */
+    static DocumentBuilderFactory documentBuilderFactory()
+    {
+        try
+        {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+
+            try
+            {
+                factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             }
-            return f;
-        } catch (ParserConfigurationException e) {
-            throw new IllegalStateException("Impossible de configurer un parseur XML sécurisé", e);
+            catch (IllegalArgumentException ignored)
+            {
+                // Attribute not supported by this implementation; the features above already protect it.
+            }
+
+            return factory;
+        }
+        catch (ParserConfigurationException e)
+        {
+            throw new IllegalStateException("Unable to configure a secure XML parser", e);
         }
     }
 
-    static SchemaFactory schemaFactory() {
-        try {
-            SchemaFactory f = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            f.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            f.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            f.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-            return f;
-        } catch (Exception e) {
-            throw new IllegalStateException("Impossible de configurer la fabrique de schémas XSD", e);
+    /**
+     * Creates a hardened schema factory for the institution XSD.
+     *
+     * @return a schema factory with secure processing enabled
+     * @throws IllegalStateException if the platform schema factory cannot be configured
+     */
+    static SchemaFactory schemaFactory()
+    {
+        try
+        {
+            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+
+            return factory;
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("Unable to configure the XSD schema factory", e);
         }
     }
 
-    static TransformerFactory transformerFactory() {
-        try {
-            TransformerFactory f = TransformerFactory.newInstance();
-            f.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            try {
-                f.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-                f.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-            } catch (IllegalArgumentException ignored) {
-                // voir ci-dessus
+    /**
+     * Creates a hardened transformer factory for XML serialization.
+     *
+     * @return a transformer factory with secure processing enabled
+     * @throws IllegalStateException if the platform transformer factory cannot be configured
+     */
+    static TransformerFactory transformerFactory()
+    {
+        try
+        {
+            TransformerFactory factory = TransformerFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
+            try
+            {
+                factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             }
-            return f;
-        } catch (Exception e) {
-            throw new IllegalStateException("Impossible de configurer la fabrique de transformation XML", e);
+            catch (IllegalArgumentException ignored)
+            {
+                // Attribute not supported by this implementation; secure processing is still enabled.
+            }
+
+            return factory;
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("Unable to configure the XML transformer factory", e);
         }
     }
 }

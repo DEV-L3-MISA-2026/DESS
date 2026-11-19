@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- L'attribut obligatoire "chef" n'est pas renseigné -->
+<!-- The required attribute "head" is not provided -->
 <institution id="i1" code="TEST" name="Test">
     <unitTypes>
         <type code="A" label="A">
             <attributes>
-                <attribute key="chef" label="Chef" type="TEXT" required="true"/>
+                <attribute key="head" label="Head" type="TEXT" required="true"/>
             </attributes>
         </type>
     </unitTypes>
     <units>
-        <unit id="u1" code="U1" name="Unité 1" type="A"/>
+        <unit id="u1" code="U1" name="Unit 1" type="A"/>
     </units>
 </institution>

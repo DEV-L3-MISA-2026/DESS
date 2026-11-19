@@ -9,138 +9,201 @@ import com.dess.institution.exception.ValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-public final class UnitTypeServiceImpl implements UnitTypeService {
-
+/**
+ * @brief Default implementation of {@link UnitTypeService}.
+ *
+ * <p>The service validates type codes, protects types that are still referenced by units or allowed
+ * relations, and delegates every write to {@link ConfigurationHolder#update(java.util.function.Function)}.</p>
+ */
+public final class UnitTypeServiceImpl implements UnitTypeService
+{
     private final ConfigurationHolder holder;
 
-    public UnitTypeServiceImpl(ConfigurationHolder holder) {
-        this.holder = holder;
+    /**
+     * Creates the service.
+     *
+     * @param holder configuration holder shared by the module
+     * @throws NullPointerException if {@code holder} is {@code null}
+     */
+    public UnitTypeServiceImpl(ConfigurationHolder holder)
+    {
+        this.holder = Objects.requireNonNull(holder, "holder");
     }
 
     @Override
-    public UnitTypeDefinition create(UnitTypeDefinition type) {
-        return holder.update(cfg -> {
-            if (cfg.findType(type.code()).isPresent()) {
-                throw new ValidationException("Le type « " + type.code() + " » existe déjà");
+    public UnitTypeDefinition create(UnitTypeDefinition type)
+    {
+        return holder.update(configuration ->
+        {
+            if (configuration.findType(type.code()).isPresent())
+            {
+                throw new ValidationException("Unit type '" + type.code() + "' already exists");
             }
-            List<UnitTypeDefinition> types = new ArrayList<>(cfg.unitTypes());
+
+            List<UnitTypeDefinition> types = new ArrayList<>(configuration.unitTypes());
             types.add(type);
-            return new ConfigurationHolder.Change<>(cfg.withUnitTypes(types), type);
+
+            return new ConfigurationHolder.Change<>(configuration.withUnitTypes(types), type);
         });
     }
 
     @Override
-    public UnitTypeDefinition update(String code, String label, String description) {
-        return holder.update(cfg -> {
-            UnitTypeDefinition updated = require(cfg, code).withLabelAndDescription(label, description);
-            return new ConfigurationHolder.Change<>(cfg.replaceType(updated), updated);
+    public UnitTypeDefinition update(String code, String label, String description)
+    {
+        return holder.update(configuration ->
+        {
+            UnitTypeDefinition updated = require(configuration, code)
+                .withLabelAndDescription(label, description);
+
+            return new ConfigurationHolder.Change<>(configuration.replaceType(updated), updated);
         });
     }
 
     @Override
-    public Optional<UnitTypeDefinition> getByCode(String code) {
+    public Optional<UnitTypeDefinition> getByCode(String code)
+    {
         return holder.current().findType(code);
     }
 
     @Override
-    public List<UnitTypeDefinition> getAll() {
+    public List<UnitTypeDefinition> getAll()
+    {
         return holder.current().unitTypes();
     }
 
     @Override
-    public UnitTypeDefinition deactivate(String code) {
+    public UnitTypeDefinition deactivate(String code)
+    {
         return setActive(code, false);
     }
 
     @Override
-    public UnitTypeDefinition activate(String code) {
+    public UnitTypeDefinition activate(String code)
+    {
         return setActive(code, true);
     }
 
-    private UnitTypeDefinition setActive(String code, boolean active) {
-        return holder.update(cfg -> {
-            UnitTypeDefinition updated = require(cfg, code).withActive(active);
-            return new ConfigurationHolder.Change<>(cfg.replaceType(updated), updated);
+    @Override
+    public void delete(String code)
+    {
+        holder.update(configuration ->
+        {
+            require(configuration, code);
+
+            long usedBy = configuration.units()
+                                       .stream()
+                                       .filter(unit -> unit.typeCode().equals(code))
+                                       .count();
+
+            if (usedBy > 0)
+            {
+                throw new ValidationException("Unit type '" + code + "' is used by " + usedBy
+                                              + " unit(s): deletion refused");
+            }
+
+            List<String> pairs = configuration.allowedPairs()
+                                              .stream()
+                                              .filter(pair -> pair.parent().equals(code)
+                                                              || pair.child().equals(code))
+                                              .map(pair -> pair.parent() + " → " + pair.child())
+                                              .toList();
+
+            if (!pairs.isEmpty())
+            {
+                throw new ValidationException("Unit type '" + code + "' is referenced by allowed relations ("
+                                              + String.join(", ", pairs)
+                                              + "): remove them first");
+            }
+
+            List<UnitTypeDefinition> types = new ArrayList<>(configuration.unitTypes());
+            types.removeIf(current -> current.code().equals(code));
+
+            return new ConfigurationHolder.Change<>(configuration.withUnitTypes(types), null);
         });
     }
 
     @Override
-    public void delete(String code) {
-        holder.update(cfg -> {
-            require(cfg, code);
-            long usedBy = cfg.units().stream().filter(u -> u.typeCode().equals(code)).count();
-            if (usedBy > 0) {
-                throw new ValidationException("Le type « " + code + " » est utilisé par " + usedBy
-                        + " unité(s) : suppression refusée");
-            }
-            List<String> pairs = cfg.allowedPairs().stream()
-                    .filter(p -> p.parent().equals(code) || p.child().equals(code))
-                    .map(p -> p.parent() + " → " + p.child())
-                    .toList();
-            if (!pairs.isEmpty()) {
-                throw new ValidationException("Le type « " + code + " » est référencé par des relations autorisées ("
-                        + String.join(", ", pairs) + ") : les retirer d'abord");
-            }
-            List<UnitTypeDefinition> types = new ArrayList<>(cfg.unitTypes());
-            types.removeIf(t -> t.code().equals(code));
-            return new ConfigurationHolder.Change<>(cfg.withUnitTypes(types), null);
-        });
-    }
-
-    // ------------------------------------------------------------ relations autorisées
-
-    @Override
-    public List<AllowedParentChildPair> getAllowedPairs() {
+    public List<AllowedParentChildPair> getAllowedPairs()
+    {
         return holder.current().allowedPairs();
     }
 
     @Override
-    public AllowedParentChildPair addAllowedPair(String parentType, String childType) {
-        return holder.update(cfg -> {
+    public AllowedParentChildPair addAllowedPair(String parentType, String childType)
+    {
+        return holder.update(configuration ->
+        {
             AllowedParentChildPair pair = new AllowedParentChildPair(parentType, childType);
-            List<AllowedParentChildPair> pairs = new ArrayList<>(cfg.allowedPairs());
+            List<AllowedParentChildPair> pairs = new ArrayList<>(configuration.allowedPairs());
             pairs.add(pair);
-            return new ConfigurationHolder.Change<>(cfg.withAllowedPairs(pairs), pair);
+
+            return new ConfigurationHolder.Change<>(configuration.withAllowedPairs(pairs), pair);
         });
     }
 
     @Override
-    public void removeAllowedPair(String parentType, String childType) {
-        holder.update(cfg -> {
+    public void removeAllowedPair(String parentType, String childType)
+    {
+        holder.update(configuration ->
+        {
             AllowedParentChildPair pair = new AllowedParentChildPair(parentType, childType);
-            if (!cfg.allowedPairs().contains(pair)) {
-                throw new NotFoundException("Relation autorisée introuvable : " + parentType + " → " + childType);
+
+            if (!configuration.allowedPairs().contains(pair))
+            {
+                throw new NotFoundException("Allowed relation not found: " + parentType + " → " + childType);
             }
-            List<AllowedParentChildPair> pairs = new ArrayList<>(cfg.allowedPairs());
+
+            List<AllowedParentChildPair> pairs = new ArrayList<>(configuration.allowedPairs());
             pairs.remove(pair);
-            return new ConfigurationHolder.Change<>(cfg.withAllowedPairs(pairs), null);
+
+            return new ConfigurationHolder.Change<>(configuration.withAllowedPairs(pairs), null);
         });
     }
 
     @Override
-    public boolean isAllowed(String parentType, String childType) {
+    public boolean isAllowed(String parentType, String childType)
+    {
         return holder.current().isAllowed(parentType, childType);
     }
 
     @Override
-    public List<String> getAllowedChildTypes(String parentType) {
-        return holder.current().allowedPairs().stream()
-                .filter(p -> p.parent().equals(parentType))
-                .map(AllowedParentChildPair::child)
-                .toList();
+    public List<String> getAllowedChildTypes(String parentType)
+    {
+        return holder.current()
+                     .allowedPairs()
+                     .stream()
+                     .filter(pair -> pair.parent().equals(parentType))
+                     .map(AllowedParentChildPair::child)
+                     .toList();
     }
 
     @Override
-    public List<String> getAllowedParentTypes(String childType) {
-        return holder.current().allowedPairs().stream()
-                .filter(p -> p.child().equals(childType))
-                .map(AllowedParentChildPair::parent)
-                .toList();
+    public List<String> getAllowedParentTypes(String childType)
+    {
+        return holder.current()
+                     .allowedPairs()
+                     .stream()
+                     .filter(pair -> pair.child().equals(childType))
+                     .map(AllowedParentChildPair::parent)
+                     .toList();
     }
 
-    private static UnitTypeDefinition require(InstitutionConfig cfg, String code) {
-        return cfg.findType(code).orElseThrow(() -> new NotFoundException("Type d'unité introuvable : " + code));
+    private UnitTypeDefinition setActive(String code, boolean active)
+    {
+        return holder.update(configuration ->
+        {
+            UnitTypeDefinition updated = require(configuration, code).withActive(active);
+
+            return new ConfigurationHolder.Change<>(configuration.replaceType(updated), updated);
+        });
+    }
+
+    private static UnitTypeDefinition require(InstitutionConfig configuration, String code)
+    {
+        return configuration.findType(code)
+                            .orElseThrow(() -> new NotFoundException("Unit type not found: " + code));
     }
 }

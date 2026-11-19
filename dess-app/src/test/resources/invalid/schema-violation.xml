@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Bien formé mais non conforme au XSD : attribut "code" absent de la racine, type d'attribut inconnu -->
+<!-- Well-formed but not valid against the XSD: "code" attribute missing on the root, unknown attribute type -->
 <institution id="i1" name="Test">
     <unitTypes>
         <type code="A" label="A">
