@@ -48,11 +48,11 @@
 <%!
     private static final List<String> EXAMPLES = List.of("university", "high-school", "custom-school");
 
-    private static final int GRAPH_NODE_W = 200;
-    private static final int GRAPH_NODE_H = 68;
-    private static final int GRAPH_H_GAP = 28;
-    private static final int GRAPH_V_GAP = 76;
-    private static final int GRAPH_MARGIN = 28;
+    private static final int GRAPH_NODE_W = 220;
+    private static final int GRAPH_NODE_H = 78;
+    private static final int GRAPH_H_GAP = 34;
+    private static final int GRAPH_V_GAP = 86;
+    private static final int GRAPH_MARGIN = 32;
 
 
     /**
@@ -1178,8 +1178,8 @@
             </div>
             <% if (!graphBoxes.isEmpty()) { %>
             <p class="legend" id="graph-legend">
-                Drag a node to move it · Shift-drag onto another node to re-parent it ·
-                use <strong>+</strong> on a node to add a child. Positions are kept in this browser.
+                Drag a node to arrange it. Drag the round handle on a node onto another node to
+                connect them. Use <strong>+</strong> to add a child. Positions are kept in this browser.
                 <span class="graph-hint">
                     On a small screen, scroll the canvas sideways to reach every unit.
                 </span>
@@ -1202,8 +1202,12 @@
                      data-width="<%= graphWidth %>" data-height="<%= graphHeight %>"
                      aria-label="Institution unit graph">
                     <g class="edges">
-                        <% for (GraphEdge edge : graphEdges) { %>
-                        <path class="edge"
+                        <% for (GraphEdge edge : graphEdges) {
+                            boolean connected = selectedUnit != null
+                                && (selectedUnit.id().equals(edge.parentId)
+                                    || selectedUnit.id().equals(edge.childId));
+                        %>
+                        <path class="edge<%= connected ? " connected" : "" %>"
                               data-parent="<%= esc(edge.parentId) %>"
                               data-child="<%= esc(edge.childId) %>"
                               d="<%= edge.path %>"></path>
@@ -1240,13 +1244,13 @@
                                + unit.typeCode() + (unit.active() ? ", active" : ", inactive")) %>">
                             <title><%= esc(unit.name() + " (" + unit.code() + ") · " + unit.typeCode()
                                              + (unit.active() ? " · active" : " · inactive")) %></title>
-                            <rect width="<%= GRAPH_NODE_W %>" height="<%= GRAPH_NODE_H %>" rx="8"></rect>
+                            <rect width="<%= GRAPH_NODE_W %>" height="<%= GRAPH_NODE_H %>" rx="10"></rect>
                             <circle class="gdot <%= unit.active() ? "ok" : "off" %>"
-                                    cx="<%= GRAPH_NODE_W - 14 %>" cy="14" r="4.5"></circle>
-                            <text class="gname" x="12" y="25"><%= esc(clipText(unit.name(), 25)) %></text>
-                            <text class="gline" x="12" y="43"><%= esc(clipText(
-                                unit.code() + " · " + unit.typeCode(), 32)) %></text>
-                            <text class="gmeta" x="12" y="58"><%= esc(meta) %></text>
+                                    cx="<%= GRAPH_NODE_W - 16 %>" cy="16" r="4.5"></circle>
+                            <text class="gname" x="14" y="27"><%= esc(clipText(unit.name(), 28)) %></text>
+                            <text class="gline" x="14" y="47"><%= esc(clipText(
+                                unit.code() + " · " + unit.typeCode(), 35)) %></text>
+                            <text class="gmeta" x="14" y="64"><%= esc(meta) %></text>
                         </g>
                         <% } %>
                     </g>
@@ -1263,8 +1267,21 @@
                         </g>
                         <% } %>
                     </g>
+                    <g class="handles">
+                        <% for (GraphBox box : graphBoxes) { %>
+                        <g class="link-handle" data-for="<%= esc(box.unit.id()) %>"
+                           transform="translate(<%= box.x %>,<%= box.y + GRAPH_NODE_H / 2 %>)"
+                           tabindex="0" role="button"
+                           aria-label="<%= esc("Connect " + box.unit.name() + " to another unit") %>">
+                            <title>Connect <%= esc(box.unit.name()) %> to another unit</title>
+                            <circle class="link-handle-hit" r="15"></circle>
+                            <circle class="link-handle-dot" r="6"></circle>
+                        </g>
+                        <% } %>
+                    </g>
                 </svg>
             </div>
+            <p class="visually-hidden" id="graph-status" role="status" aria-live="polite"></p>
             <% } %>
 
             <form id="moveForm" method="post" class="hidden-form">
@@ -1284,9 +1301,9 @@
             Select a node in the graph to edit its fields, parent and status.
         </p>
         <p class="muted">
-            Drag nodes to arrange the canvas. Shift-drag one node onto another to change its
-            parent. Positions are stored in this browser; <em>Tidy layout</em> restores the
-            automatic tree.
+            Drag nodes to arrange the canvas. Drag the round handle on a node onto another node
+            to choose which unit becomes the parent. Positions are stored in this browser;
+            <em>Tidy layout</em> restores the automatic tree.
         </p>
         <button type="button" class="btn btn-sm btn-ghost new-root">+ New root unit</button>
         <% } else {
@@ -1428,7 +1445,7 @@
             </div>
         </form>
         <p class="hint" id="move-hint">
-            Or Shift-drag the node onto the new parent in the graph.
+            Or drag from the node's link handle onto the new parent in the graph.
         </p>
 
         <hr>
@@ -1759,6 +1776,41 @@
         <% } %>
     </dialog>
 
+    <dialog id="linkDialog" class="link-dialog" aria-labelledby="linkTitle"
+            aria-describedby="linkNote">
+        <div class="dialog-panel">
+            <div class="dialog-head">
+                <div>
+                    <h2 id="linkTitle">Connect units</h2>
+                    <p class="muted">Choose which unit becomes the parent.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close-link
+                        aria-label="Close dialog">×</button>
+            </div>
+            <div class="dialog-body">
+                <fieldset class="link-choices">
+                    <legend class="visually-hidden">Parent and child</legend>
+                    <label class="link-option">
+                        <input type="radio" name="linkDirection" value="a" checked>
+                        <span id="linkOptionA"></span>
+                    </label>
+                    <label class="link-option">
+                        <input type="radio" name="linkDirection" value="b">
+                        <span id="linkOptionB"></span>
+                    </label>
+                </fieldset>
+                <p class="hint flush-top" id="linkNote">
+                    The move is checked when you confirm. Invalid relations and moves that
+                    create a cycle are refused.
+                </p>
+            </div>
+            <div class="dialog-foot">
+                <button type="button" class="btn btn-ghost" data-close-link>Cancel</button>
+                <button type="button" class="btn" id="linkConfirm">Connect</button>
+            </div>
+        </div>
+    </dialog>
+
     <footer class="dess-footer">
         <p>Changes are validated by the institution module and then written atomically to the XML file.</p>
         <p>This page is only for local development.</p>
@@ -1786,8 +1838,17 @@
             var moveForm = document.getElementById('moveForm');
             var moveId = document.getElementById('moveId');
             var moveParent = document.getElementById('moveParentId');
+            var linkDialog = document.getElementById('linkDialog');
+            var linkOptionA = document.getElementById('linkOptionA');
+            var linkOptionB = document.getElementById('linkOptionB');
+            var linkConfirm = document.getElementById('linkConfirm');
+            var linkStatus = document.getElementById('graph-status');
+            var legendEl = document.getElementById('graph-legend');
+            var legendDefault = legendEl ? legendEl.innerHTML : '';
+            var statusTimer = null;
             var nodes = {};
             var adds = {};
+            var handles = {};
             var positions = {};
             var storageKey = svg
                 ? 'dess.institution.layout.' + svg.getAttribute('data-tree')
@@ -1797,6 +1858,9 @@
             var overlay = null;
             var dragged = false;
             var linkMode = false;
+            var pickSourceId = null;
+            var linkSourceId = null;
+            var linkTargetId = null;
             var startClientX = 0;
             var startClientY = 0;
             var pointerX = 0;
@@ -1813,6 +1877,11 @@
 
             document.querySelectorAll('.add-child').forEach(function (add) {
                 adds[add.getAttribute('data-for')] = add;
+            });
+
+            document.querySelectorAll('.link-handle').forEach(function (handle) {
+                handles[handle.getAttribute('data-for')] = handle;
+                handle.setAttribute('aria-pressed', 'false');
             });
 
             function syncAttributes() {
@@ -2023,6 +2092,17 @@
                     node.addEventListener('keydown', function (event) {
                         if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
+
+                            if (pickSourceId) {
+                                if (pickSourceId === id) {
+                                    cancelPickMode(true);
+                                } else {
+                                    openLinkDialog(pickSourceId, id);
+                                }
+
+                                return;
+                            }
+
                             openNode(id);
                         }
                     });
@@ -2047,6 +2127,44 @@
                             openForNode(id);
                         }
                     });
+                });
+
+                svg.querySelectorAll('.link-handle').forEach(function (handle) {
+                    var id = handle.getAttribute('data-for');
+
+                    handle.addEventListener('pointerdown', function (event) {
+                        if (event.button !== 0) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                        beginLinkDrag(id, event);
+                    });
+
+                    handle.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+
+                            if (pickSourceId === id) {
+                                cancelPickMode(true);
+                            } else {
+                                startPickMode(id);
+                            }
+                        }
+                    });
+                });
+
+                svg.addEventListener('click', function (event) {
+                    if (!pickSourceId) {
+                        return;
+                    }
+
+                    if (event.target.closest('.gnode') || event.target.closest('.link-handle')) {
+                        return;
+                    }
+
+                    cancelPickMode(true);
                 });
 
                 loadStored();
@@ -2086,10 +2204,211 @@
                 window.location.href = '?node=' + encodeURIComponent(id) + '#editor';
             }
 
+            function nameOf(id) {
+                var node = nodes[id];
+
+                return node ? node.getAttribute('data-name') : id;
+            }
+
+            function setGraphStatus(text) {
+                if (!linkStatus) {
+                    return;
+                }
+
+                linkStatus.textContent = text;
+
+                // While a source is picked, the legend line shows the same
+                // instruction in view; otherwise it returns to the static help.
+                if (legendEl && text && pickSourceId) {
+                    legendEl.textContent = text;
+                    legendEl.classList.add('picking');
+                } else if (legendEl && legendEl.classList.contains('picking')) {
+                    legendEl.innerHTML = legendDefault;
+                    legendEl.classList.remove('picking');
+                }
+
+                if (statusTimer) {
+                    window.clearTimeout(statusTimer);
+                    statusTimer = null;
+                }
+
+                // A message that describes a finished action clears itself; a
+                // pick-mode hint stays until the mode ends.
+                if (text && !pickSourceId) {
+                    statusTimer = window.setTimeout(function () {
+                        linkStatus.textContent = '';
+                        statusTimer = null;
+                    }, 6000);
+                }
+            }
+
+            function markSource(id) {
+                Object.keys(nodes).forEach(function (key) {
+                    nodes[key].classList.toggle('link-source', key === id);
+                });
+
+                Object.keys(handles).forEach(function (key) {
+                    handles[key].setAttribute('aria-pressed', key === id ? 'true' : 'false');
+                });
+
+                svg.classList.toggle('picking', Boolean(id));
+            }
+
+            function startPickMode(id) {
+                if (!nodes[id] || !positions[id]) {
+                    return;
+                }
+
+                pickSourceId = id;
+                markSource(id);
+                setGraphStatus('Connecting from ' + nameOf(id)
+                    + '. Select another unit to connect, or press Escape to cancel.');
+            }
+
+            function cancelPickMode(announce) {
+                if (!pickSourceId) {
+                    return;
+                }
+
+                markSource(null);
+                pickSourceId = null;
+                setGraphStatus(announce ? 'Connection cancelled.' : '');
+            }
+
+            function beginLinkDrag(id, event) {
+                if (!positions[id] || !nodes[id]) {
+                    return;
+                }
+
+                cancelPickMode(false);
+                activeNode = nodes[id];
+                dragged = false;
+                linkMode = true;
+                startClientX = event.clientX;
+                startClientY = event.clientY;
+                originX = positions[id].x;
+                originY = positions[id].y;
+                // A handle drag starts at the node's left edge; a Shift-drag on
+                // the node body starts at its centre.
+                cableX = originX;
+                cableY = originY + NODE_H / 2;
+
+                var point = svgPoint(event);
+                pointerX = point.x;
+                pointerY = point.y;
+
+                document.addEventListener('pointermove', onPointerMove);
+                document.addEventListener('pointerup', onPointerUp);
+                document.addEventListener('pointercancel', onPointerUp);
+            }
+
+            function openLinkDialog(sourceId, targetId) {
+                if (!linkDialog || !sourceId || !targetId || sourceId === targetId) {
+                    return;
+                }
+
+                linkSourceId = sourceId;
+                linkTargetId = targetId;
+
+                var sourceName = nameOf(sourceId);
+                var targetName = nameOf(targetId);
+
+                if (linkOptionA) {
+                    linkOptionA.textContent = targetName + ' becomes a child of ' + sourceName;
+                }
+
+                if (linkOptionB) {
+                    linkOptionB.textContent = sourceName + ' becomes a child of ' + targetName;
+                }
+
+                var first = linkDialog.querySelector('input[name="linkDirection"][value="a"]');
+
+                if (first) {
+                    first.checked = true;
+                }
+
+                cancelPickMode(false);
+
+                if (typeof linkDialog.showModal === 'function') {
+                    linkDialog.showModal();
+                } else {
+                    linkDialog.setAttribute('open', '');
+                }
+
+                if (first) {
+                    first.focus();
+                }
+            }
+
+            function closeLinkDialog() {
+                if (!linkDialog) {
+                    return;
+                }
+
+                if (linkDialog.close) {
+                    linkDialog.close();
+                } else {
+                    linkDialog.removeAttribute('open');
+                }
+
+                linkSourceId = null;
+                linkTargetId = null;
+            }
+
+            function submitLink() {
+                if (!moveForm || !moveId || !moveParent || !linkSourceId || !linkTargetId) {
+                    return;
+                }
+
+                var choice = linkDialog
+                    ? linkDialog.querySelector('input[name="linkDirection"]:checked')
+                    : null;
+                var targetBecomesChild = !choice || choice.value === 'a';
+                var childId = targetBecomesChild ? linkTargetId : linkSourceId;
+                var parentId = targetBecomesChild ? linkSourceId : linkTargetId;
+
+                moveId.value = childId;
+                moveParent.value = parentId;
+                closeLinkDialog();
+                moveForm.submit();
+            }
+
+            document.querySelectorAll('[data-close-link]').forEach(function (button) {
+                button.addEventListener('click', closeLinkDialog);
+            });
+
+            if (linkConfirm) {
+                linkConfirm.addEventListener('click', submitLink);
+            }
+
+            if (linkDialog) {
+                linkDialog.addEventListener('close', function () {
+                    linkSourceId = null;
+                    linkTargetId = null;
+                });
+
+                // The dialog is not a form, so Enter confirms from the radios.
+                linkDialog.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter'
+                        && event.target
+                        && event.target.tagName === 'INPUT') {
+                        event.preventDefault();
+                        submitLink();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && pickSourceId) {
+                    cancelPickMode(true);
+                }
+            });
+
             function applyPosition(id) {
                 var position = positions[id];
                 var node = nodes[id];
                 var add = adds[id];
+                var handle = handles[id];
 
                 if (!position || !node) {
                     return;
@@ -2100,6 +2419,11 @@
                 if (add) {
                     add.setAttribute('transform', 'translate('
                         + (position.x + NODE_W + PLUS_GAP) + ',' + (position.y + NODE_H / 2) + ')');
+                }
+
+                if (handle) {
+                    handle.setAttribute('transform', 'translate('
+                        + position.x + ',' + (position.y + NODE_H / 2) + ')');
                 }
             }
 
@@ -2196,6 +2520,7 @@
 
                 overlay = null;
                 activeNode = null;
+                linkMode = false;
                 svg.classList.remove('linking');
                 svg.classList.remove('moving');
             }
@@ -2208,6 +2533,18 @@
                 var id = event.currentTarget.getAttribute('data-id');
 
                 if (!positions[id]) {
+                    return;
+                }
+
+                if (pickSourceId) {
+                    event.preventDefault();
+
+                    if (pickSourceId === id) {
+                        cancelPickMode(true);
+                    } else {
+                        openLinkDialog(pickSourceId, id);
+                    }
+
                     return;
                 }
 
@@ -2265,7 +2602,11 @@
                     clearTarget();
 
                     var element = document.elementFromPoint(event.clientX, event.clientY);
-                    var target = element && element.closest ? element.closest('.gnode') : null;
+                    var handleEl = element && element.closest
+                        ? element.closest('.link-handle') : null;
+                    var target = handleEl
+                        ? nodes[handleEl.getAttribute('data-for')]
+                        : element && element.closest ? element.closest('.gnode') : null;
 
                     if (target && target !== activeNode) {
                         currentTarget = target;
@@ -2293,20 +2634,25 @@
 
                 var id = activeNode.getAttribute('data-id');
                 var targetId = currentTarget ? currentTarget.getAttribute('data-id') : null;
+                var wasLink = linkMode;
 
                 if (!dragged) {
                     cleanup();
+
+                    if (wasLink) {
+                        startPickMode(id);
+                        return;
+                    }
+
                     openNode(id);
                     return;
                 }
 
                 cleanup();
 
-                if (linkMode) {
-                    if (targetId && targetId !== id && moveForm && moveId && moveParent) {
-                        moveId.value = id;
-                        moveParent.value = targetId;
-                        moveForm.submit();
+                if (wasLink) {
+                    if (targetId && targetId !== id) {
+                        openLinkDialog(id, targetId);
                     }
 
                     return;
