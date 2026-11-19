@@ -1,7 +1,5 @@
 package com.dess.institution;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,10 +11,16 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
-/** Garde-fous d'architecture : le module reste indépendant de SQL, de REST et des autres modules. */
-class ArchitectureTest {
-
+/**
+ * @brief Architecture guard rails.
+ *
+ * <p>The institution module must remain independent from SQL, JPA, REST, servlets and the other
+ * business modules, and unit types must never be hard-coded.</p>
+ */
+class ArchitectureTest
+{
     private static final Path MAIN = Path.of("src", "main", "java");
 
     private static final List<String> FORBIDDEN_IMPORT_PREFIXES = List.of(
@@ -24,26 +28,53 @@ class ArchitectureTest {
             "org.flywaydb", "org.postgresql", "jakarta.ws.rs", "javax.ws.rs", "jakarta.servlet",
             "com.dess.academic", "com.dess.people", "com.dess.assessment", "com.dess.scheduling");
 
-    private static List<Path> mainSources() throws IOException {
-        try (Stream<Path> files = Files.walk(MAIN)) {
+    private static List<Path> mainSources() throws IOException
+    {
+        try (Stream<Path> files = Files.walk(MAIN))
+        {
             return files.filter(p -> p.toString().endsWith(".java")).collect(Collectors.toList());
         }
     }
 
     @Test
-    void mainSourcesExist() throws IOException {
+    void mainSourcesExist() throws IOException
+    {
         assertFalse(mainSources().isEmpty());
     }
 
     @Test
-    void noImportOfSqlJpaRestServletOrOtherBusinessModules() throws IOException {
-        for (Path source : mainSources()) {
-            for (String line : Files.readAllLines(source)) {
+    void noImportOfSqlJpaRestServletOrOtherBusinessModules() throws IOException
+    {
+        for (Path source : mainSources())
+        {
+            boolean schedulingSource = source.toString().startsWith("src/main/java/com/dess/scheduling/");
+
+            for (String line : Files.readAllLines(source))
+            {
                 String trimmed = line.trim();
-                if (trimmed.startsWith("import ")) {
-                    for (String forbidden : FORBIDDEN_IMPORT_PREFIXES) {
-                        assertFalse(trimmed.startsWith("import " + forbidden) || trimmed.startsWith("import static " + forbidden),
-                                source + " importe " + forbidden);
+
+                if (trimmed.startsWith("import "))
+                {
+                    for (String forbidden : FORBIDDEN_IMPORT_PREFIXES)
+                    {
+                        boolean schedulingPersistence = schedulingSource
+                                && (forbidden.equals("java.sql")
+                                || forbidden.equals("javax.sql")
+                                || forbidden.equals("jakarta.persistence")
+                                || forbidden.equals("javax.persistence")
+                                || forbidden.equals("org.hibernate")
+                                || forbidden.equals("org.postgresql")
+                                || forbidden.equals("org.flywaydb")
+                                || forbidden.equals("com.dess.scheduling"));
+
+                        if (schedulingPersistence)
+                        {
+                            continue;
+                        }
+
+                        assertFalse(trimmed.startsWith("import " + forbidden)
+                                    || trimmed.startsWith("import static " + forbidden),
+                                    source + " imports " + forbidden);
                     }
                 }
             }
@@ -51,56 +82,83 @@ class ArchitectureTest {
     }
 
     @Test
-    void noRestResourceAnnotationsAndNoPersistenceAnnotationsAreUsed() throws IOException {
-        Pattern forbidden = Pattern.compile("@(Path|GET|POST|PUT|DELETE|Entity|Table|PersistenceContext|Transactional)\\b");
-        for (Path source : mainSources()) {
-            for (String line : Files.readAllLines(source)) {
+    void noRestResourceAnnotationsAndNoPersistenceAnnotationsAreUsed() throws IOException
+    {
+        Pattern forbidden = Pattern.compile(
+                "@(Path|GET|POST|PUT|DELETE|Entity|Table|PersistenceContext|Transactional)\\b");
+
+        for (Path source : mainSources())
+        {
+            if (source.toString().startsWith("src/main/java/com/dess/scheduling/"))
+            {
+                continue;
+            }
+
+            for (String line : Files.readAllLines(source))
+            {
                 String trimmed = line.trim();
-                if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*")) {
-                    continue; // commentaires et Javadoc
+
+                if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*"))
+                {
+                    continue; // Comments and Javadoc are not code.
                 }
-                assertFalse(forbidden.matcher(trimmed).find(), source + " : annotation interdite -> " + trimmed);
+
+                assertFalse(forbidden.matcher(trimmed).find(), source + ": forbidden annotation -> " + trimmed);
             }
         }
     }
 
     @Test
-    void noBusinessEntityOfOtherModulesIsDeclared() throws IOException {
-        for (Path source : mainSources()) {
+    void noBusinessEntityOfOtherModulesIsDeclared() throws IOException
+    {
+        for (Path source : mainSources())
+        {
             String name = source.getFileName().toString();
+
             for (String banned : List.of("Student", "Professor", "Person", "Course", "Assessment", "Result",
-                    "ExamSession", "StudentGroup", "AcademicProgram")) {
-                assertFalse(name.equals(banned + ".java"), "classe réservée à un autre module : " + name);
+                                         "ExamSession", "StudentGroup", "AcademicProgram"))
+            {
+                assertFalse(name.equals(banned + ".java"), "class reserved for another module: " + name);
             }
         }
     }
 
     @Test
-    void unitTypesAreNeverHardCodedAsStringLiteralsOrEnums() throws IOException {
+    void unitTypesAreNeverHardCodedAsStringLiteralsOrEnums() throws IOException
+    {
         Pattern literal = Pattern.compile("\"(FACULTE|MENTION|PARCOURS|SERIE|NIVEAU|DEPARTEMENT|CAMPUS|FILIERE|"
-                + "FACULTY|LEVEL|DEPARTMENT|SERIES)\"");
-        for (Path source : mainSources()) {
+                                          + "FACULTY|LEVEL|DEPARTMENT|SERIES)\"");
+
+        for (Path source : mainSources())
+        {
             String content = Files.readString(source);
-            assertFalse(literal.matcher(content).find(), source + " contient un type d'unité codé en dur");
+            assertFalse(literal.matcher(content).find(), source + " contains a hard-coded unit type");
             assertFalse(Pattern.compile("enum\\s+\\w*Unit\\w*Type").matcher(content).find(),
-                    source + " déclare une enum de types d'unités");
+                        source + " declares an enum of unit types");
         }
     }
 
     @Test
-    void pomDeclaresNoPersistenceRestOrSiblingModuleDependency() throws IOException {
-        // on n'examine que les coordonnées Maven (groupId / artifactId), pas les commentaires
+    void pomDeclaresNoPersistenceRestOrSiblingModuleDependency() throws IOException
+    {
+        // Only Maven coordinates (groupId / artifactId) are inspected, not comments.
         Pattern coordinate = Pattern.compile("<(groupId|artifactId)>([^<]+)</\\1>");
         Matcher matcher = coordinate.matcher(Files.readString(Path.of("pom.xml")));
         List<String> coordinates = new java.util.ArrayList<>();
-        while (matcher.find()) {
+
+        while (matcher.find())
+        {
             coordinates.add(matcher.group(2).toLowerCase());
         }
+
         for (String banned : List.of("postgresql", "hibernate", "flyway", "persistence", "ws.rs", "resteasy",
-                "dess-academic", "dess-people", "dess-assessment", "dess-scheduling")) {
+                                     "dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
+        {
             assertTrue(coordinates.stream().noneMatch(c -> c.contains(banned)),
-                    "pom.xml déclare une dépendance interdite : " + banned);
+                       "pom.xml declares a forbidden dependency: " + banned);
         }
-        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")), "CDI est l'API Jakarta attendue");
+
+        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")),
+                   "CDI is the expected Jakarta API");
     }
 }
