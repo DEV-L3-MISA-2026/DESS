@@ -1,0 +1,399 @@
+/*
+ * DESS application shell.
+ *
+ * Desktop: a persistent sidebar and a sticky top bar.
+ * Small screens: the sidebar becomes an off-canvas drawer. The drawer only
+ * activates when JavaScript is available; without it the sidebar stays in the
+ * normal document flow and remains usable.
+ */
+
+.dess-skip-link {
+    position: fixed;
+    top: var(--dess-space-2);
+    left: var(--dess-space-2);
+    z-index: 100;
+    padding: var(--dess-space-2) var(--dess-space-3);
+    border: var(--dess-border-width) solid var(--dess-accent);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-surface);
+    color: var(--dess-primary);
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(-150%);
+}
+
+.dess-skip-link:focus-visible {
+    transform: translateY(0);
+}
+
+.dess-shell {
+    display: grid;
+    grid-template-columns: var(--dess-sidebar-width) minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+.dess-sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--dess-primary);
+    color: var(--dess-surface);
+}
+
+.dess-sidebar-header {
+    padding: var(--dess-space-5) var(--dess-space-4) var(--dess-space-4);
+    border-bottom: var(--dess-border-width) solid rgb(255 255 255 / 14%);
+}
+
+.dess-sidebar-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--dess-space-2);
+}
+
+.dess-sidebar-close {
+    display: none;
+    flex: none;
+    min-height: 32px;
+    padding: 4px 9px;
+    border: var(--dess-border-width) solid rgb(255 255 255 / 28%);
+    border-radius: var(--dess-radius-sm);
+    background: transparent;
+    color: var(--dess-surface);
+    font-size: var(--dess-font-size-meta);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dess-sidebar-close:hover {
+    background: rgb(255 255 255 / 10%);
+}
+
+.dess-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--dess-space-3);
+    color: var(--dess-surface);
+    text-decoration: none;
+}
+
+.dess-brand:hover {
+    color: var(--dess-surface);
+    text-decoration: none;
+}
+
+.dess-brand-mark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--dess-radius-md);
+    background: var(--dess-accent);
+    color: var(--dess-surface);
+    font-size: var(--dess-font-size-component-title);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.dess-brand-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.dess-brand-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+
+.dess-brand-sub {
+    color: rgb(255 255 255 / 68%);
+    font-size: var(--dess-font-size-meta);
+    line-height: 1.35;
+}
+
+.dess-nav {
+    flex: 1;
+    padding: var(--dess-space-4) var(--dess-space-3);
+}
+
+.dess-nav + .dess-nav {
+    padding-top: 0;
+}
+
+.dess-nav-heading {
+    margin: var(--dess-space-4) var(--dess-space-2) var(--dess-space-2);
+    color: rgb(255 255 255 / 55%);
+    font-size: var(--dess-font-size-meta);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.dess-nav-list {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dess-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--dess-space-2);
+    padding: 9px var(--dess-space-3);
+    border-left: 3px solid transparent;
+    border-radius: var(--dess-radius-sm);
+    color: rgb(255 255 255 / 82%);
+    font-size: var(--dess-font-size-body);
+    line-height: 1.35;
+    text-decoration: none;
+}
+
+a.dess-nav-link:hover {
+    background: rgb(255 255 255 / 8%);
+    color: var(--dess-surface);
+    text-decoration: none;
+}
+
+a.dess-nav-link[aria-current="page"] {
+    border-left-color: var(--dess-accent);
+    background: rgb(255 255 255 / 12%);
+    color: var(--dess-surface);
+    font-weight: 600;
+}
+
+.dess-nav-link.is-disabled {
+    color: rgb(255 255 255 / 55%);
+    cursor: default;
+}
+
+.dess-nav-soon {
+    margin-left: auto;
+    padding: 1px 5px;
+    border: var(--dess-border-width) solid rgb(255 255 255 / 24%);
+    border-radius: var(--dess-radius-sm);
+    color: rgb(255 255 255 / 62%);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+}
+
+.dess-sidebar-footer {
+    margin-top: auto;
+    padding: var(--dess-space-4);
+    border-top: var(--dess-border-width) solid rgb(255 255 255 / 14%);
+    color: rgb(255 255 255 / 58%);
+    font-size: var(--dess-font-size-meta);
+    line-height: 1.5;
+}
+
+.dess-sidebar-footer p {
+    margin: 0;
+}
+
+.dess-sidebar-footer p + p {
+    margin-top: 2px;
+}
+
+.dess-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.dess-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dess-space-4);
+    min-height: var(--dess-header-height);
+    padding: 0 var(--dess-space-6);
+    border-bottom: var(--dess-border-width) solid var(--dess-border);
+    background: var(--dess-surface);
+}
+
+.dess-topbar-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dess-space-2);
+    min-width: 0;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+.dess-topbar-title {
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-body);
+    font-weight: 600;
+}
+
+.dess-topbar-separator {
+    color: var(--dess-border);
+}
+
+.dess-topbar-right {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--dess-space-2);
+}
+
+.dess-env-label {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.dess-mobile-menu {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 4px var(--dess-space-3);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-surface);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dess-mobile-menu:hover {
+    background: var(--dess-background);
+}
+
+.dess-scrim {
+    display: none;
+    padding: 0;
+    border: 0;
+    background: rgb(23 44 67 / 45%);
+}
+
+.dess-content {
+    flex: 1;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--dess-space-6);
+}
+
+.dess-content:focus {
+    outline: none;
+}
+
+.dess-footer {
+    margin-top: var(--dess-space-8);
+    padding-top: var(--dess-space-4);
+    border-top: var(--dess-border-width) solid var(--dess-border);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    line-height: 1.5;
+}
+
+.dess-footer p {
+    margin: 0;
+}
+
+.dess-footer p + p {
+    margin-top: var(--dess-space-1);
+}
+
+@media (max-width: 960px) {
+    .dess-shell {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .js .dess-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 50;
+        width: min(86vw, 300px);
+        height: 100vh;
+        visibility: hidden;
+        transform: translateX(-100%);
+        transition: transform 180ms ease, visibility 0s linear 180ms;
+    }
+
+    .js .dess-sidebar.is-open {
+        visibility: visible;
+        transform: translateX(0);
+        transition: transform 180ms ease;
+    }
+
+    .js body.nav-open {
+        overflow: hidden;
+    }
+
+    .js .dess-scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: block;
+    }
+
+    .js .dess-mobile-menu {
+        display: inline-flex;
+    }
+
+    .js .dess-sidebar-close {
+        display: inline-flex;
+    }
+
+    .dess-topbar {
+        padding: 0 var(--dess-space-4);
+    }
+
+    .dess-content {
+        padding: var(--dess-space-4);
+    }
+}
+
+@media (max-width: 640px) {
+    .dess-content {
+        padding: var(--dess-space-3);
+    }
+
+    .dess-env-label {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .js .dess-sidebar {
+        transition: none;
+    }
+}
+
+@media print {
+    .dess-sidebar,
+    .dess-topbar,
+    .dess-mobile-menu,
+    .dess-scrim,
+    .dess-skip-link {
+        display: none !important;
+    }
+
+    .dess-shell {
+        display: block;
+    }
+
+    .dess-content {
+        max-width: none;
+        padding: 0;
+    }
+}
