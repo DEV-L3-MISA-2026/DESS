@@ -6,7 +6,6 @@ import com.dess.scheduling.domain.BookingStatus;
 import com.dess.scheduling.infrastructure.persistence.entity.BookingEntity;
 import com.dess.scheduling.infrastructure.persistence.entity.BookingSlotEntity;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -15,8 +14,12 @@ import java.util.UUID;
 
 public class JpaBookingSlotRepository implements BookingSlotRepository
 {
-    @PersistenceContext(unitName = "dessPU")
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    public JpaBookingSlotRepository(EntityManager entityManager)
+    {
+        this.entityManager = entityManager;
+    }
 
     @Override
     public BookingSlot save(BookingSlot slot)

@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.transaction.Transactional;
+
 import com.dess.scheduling.application.BookingService;
 import com.dess.scheduling.application.spi.BookingRepository;
 import com.dess.scheduling.application.spi.BookingSlotRepository;
 import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 
+@Transactional
 public class BookingServiceImpl implements BookingService
 {
     private final BookingRepository bookings;

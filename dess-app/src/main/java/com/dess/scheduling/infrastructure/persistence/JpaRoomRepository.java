@@ -4,7 +4,6 @@ import com.dess.scheduling.application.spi.RoomRepository;
 import com.dess.scheduling.domain.Room;
 import com.dess.scheduling.infrastructure.persistence.entity.RoomEntity;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,8 +11,12 @@ import java.util.UUID;
 
 public class JpaRoomRepository implements RoomRepository
 {
-    @PersistenceContext(unitName = "dessPU")
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    public JpaRoomRepository(EntityManager entityManager)
+    {
+        this.entityManager = entityManager;
+    }
 
     @Override
     public Room save(Room room)

@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.transaction.Transactional;
+
 import com.dess.scheduling.application.RoomService;
 import com.dess.scheduling.application.spi.RoomRepository;
 import com.dess.scheduling.domain.Room;
 
+@Transactional
 public class RoomServiceImpl implements RoomService
 {
     private final RoomRepository rooms;
