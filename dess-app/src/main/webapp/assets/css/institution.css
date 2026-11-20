@@ -316,7 +316,8 @@ svg.graph.picking .gnode {
     background: var(--dess-surface);
     cursor: pointer;
     line-height: 1.45;
-    transition: border-color 120ms ease, background 120ms ease;
+    transition: border-color var(--dess-transition-fast),
+        background var(--dess-transition-fast);
 }
 
 /* The shared form styles stretch every label input; a radio needs its
@@ -343,7 +344,7 @@ svg.graph.picking .gnode {
 
 .link-option:has(input:checked) {
     border-color: var(--dess-accent);
-    background: var(--dess-background);
+    background: var(--dess-accent-soft);
 }
 
 .link-option:has(input:focus-visible) {

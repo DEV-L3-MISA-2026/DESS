@@ -45,7 +45,7 @@
 
 .dess-sidebar-header {
     padding: var(--dess-space-5) var(--dess-space-4) var(--dess-space-4);
-    border-bottom: var(--dess-border-width) solid rgb(255 255 255 / 14%);
+    border-bottom: var(--dess-border-width) solid var(--dess-border-on-dark);
 }
 
 .dess-sidebar-header-row {
@@ -58,9 +58,9 @@
 .dess-sidebar-close {
     display: none;
     flex: none;
-    min-height: 32px;
-    padding: 4px 9px;
-    border: var(--dess-border-width) solid rgb(255 255 255 / 28%);
+    min-height: var(--dess-control-height-sm);
+    padding: var(--dess-space-1) var(--dess-space-2);
+    border: var(--dess-border-width) solid var(--dess-border-on-dark);
     border-radius: var(--dess-radius-sm);
     background: transparent;
     color: var(--dess-surface);
@@ -70,7 +70,7 @@
 }
 
 .dess-sidebar-close:hover {
-    background: rgb(255 255 255 / 10%);
+    background: var(--dess-on-dark-hover);
 }
 
 .dess-brand {
@@ -90,8 +90,8 @@
     display: grid;
     flex: none;
     place-items: center;
-    width: 38px;
-    height: 38px;
+    width: var(--dess-brand-mark-size);
+    height: var(--dess-brand-mark-size);
     border-radius: var(--dess-radius-md);
     background: var(--dess-accent);
     color: var(--dess-surface);
@@ -107,14 +107,14 @@
 }
 
 .dess-brand-name {
-    font-size: 1.125rem;
+    font-size: var(--dess-font-size-brand);
     font-weight: 700;
     letter-spacing: 0.01em;
     line-height: 1.2;
 }
 
 .dess-brand-sub {
-    color: rgb(255 255 255 / 68%);
+    color: var(--dess-on-dark-muted);
     font-size: var(--dess-font-size-meta);
     line-height: 1.35;
 }
@@ -130,15 +130,15 @@
 
 .dess-nav-heading {
     margin: var(--dess-space-4) var(--dess-space-2) var(--dess-space-2);
-    color: rgb(255 255 255 / 55%);
-    font-size: var(--dess-font-size-meta);
-    font-weight: 700;
+    color: var(--dess-on-dark-muted);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
     letter-spacing: 0.02em;
 }
 
 .dess-nav-list {
     display: grid;
-    gap: 2px;
+    gap: var(--dess-space-0);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -148,40 +148,40 @@
     display: flex;
     align-items: center;
     gap: var(--dess-space-2);
-    padding: 9px var(--dess-space-3);
-    border-left: 3px solid transparent;
+    padding: var(--dess-space-2) var(--dess-space-3);
+    border-left: var(--dess-nav-indicator-width) solid transparent;
     border-radius: var(--dess-radius-sm);
-    color: rgb(255 255 255 / 82%);
+    color: var(--dess-on-dark);
     font-size: var(--dess-font-size-body);
     line-height: 1.35;
     text-decoration: none;
 }
 
 a.dess-nav-link:hover {
-    background: rgb(255 255 255 / 8%);
+    background: var(--dess-on-dark-hover);
     color: var(--dess-surface);
     text-decoration: none;
 }
 
 a.dess-nav-link[aria-current="page"] {
     border-left-color: var(--dess-accent);
-    background: rgb(255 255 255 / 12%);
+    background: var(--dess-on-dark-active);
     color: var(--dess-surface);
     font-weight: 600;
 }
 
 .dess-nav-link.is-disabled {
-    color: rgb(255 255 255 / 55%);
+    color: var(--dess-on-dark-muted);
     cursor: default;
 }
 
 .dess-nav-soon {
     margin-left: auto;
-    padding: 1px 5px;
-    border: var(--dess-border-width) solid rgb(255 255 255 / 24%);
+    padding: 1px var(--dess-space-1);
+    border: var(--dess-border-width) solid var(--dess-border-on-dark);
     border-radius: var(--dess-radius-sm);
-    color: rgb(255 255 255 / 62%);
-    font-size: 0.625rem;
+    color: var(--dess-on-dark-muted);
+    font-size: var(--dess-font-size-label);
     font-weight: 600;
     letter-spacing: 0.01em;
     line-height: 1.4;
@@ -190,8 +190,8 @@ a.dess-nav-link[aria-current="page"] {
 .dess-sidebar-footer {
     margin-top: auto;
     padding: var(--dess-space-4);
-    border-top: var(--dess-border-width) solid rgb(255 255 255 / 14%);
-    color: rgb(255 255 255 / 58%);
+    border-top: var(--dess-border-width) solid var(--dess-border-on-dark);
+    color: var(--dess-on-dark-muted);
     font-size: var(--dess-font-size-meta);
     line-height: 1.5;
 }
@@ -201,7 +201,7 @@ a.dess-nav-link[aria-current="page"] {
 }
 
 .dess-sidebar-footer p + p {
-    margin-top: 2px;
+    margin-top: var(--dess-space-0);
 }
 
 .dess-main {
@@ -262,8 +262,8 @@ a.dess-nav-link[aria-current="page"] {
     display: none;
     align-items: center;
     justify-content: center;
-    min-height: 36px;
-    padding: 4px var(--dess-space-3);
+    min-height: var(--dess-control-height);
+    padding: var(--dess-space-1) var(--dess-space-3);
     border: var(--dess-border-width) solid var(--dess-border);
     border-radius: var(--dess-radius-sm);
     background: var(--dess-surface);
@@ -281,13 +281,13 @@ a.dess-nav-link[aria-current="page"] {
     display: none;
     padding: 0;
     border: 0;
-    background: rgb(23 44 67 / 45%);
+    background: var(--dess-overlay);
 }
 
 .dess-content {
     flex: 1;
     width: 100%;
-    max-width: 1440px;
+    max-width: var(--dess-content-max);
     margin: 0 auto;
     padding: var(--dess-space-6);
 }
@@ -313,6 +313,14 @@ a.dess-nav-link[aria-current="page"] {
     margin-top: var(--dess-space-1);
 }
 
+/* The global ring uses the accent, which does not separate from the navy
+   sidebar. Use a white ring on dark surfaces instead. */
+.dess-sidebar a:focus-visible,
+.dess-sidebar button:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring-on-dark);
+}
+
 @media (max-width: 960px) {
     .dess-shell {
         grid-template-columns: minmax(0, 1fr);
@@ -322,17 +330,18 @@ a.dess-nav-link[aria-current="page"] {
         position: fixed;
         inset: 0 auto 0 0;
         z-index: 50;
-        width: min(86vw, 300px);
+        width: var(--dess-sidebar-drawer-width);
         height: 100vh;
         visibility: hidden;
         transform: translateX(-100%);
-        transition: transform 180ms ease, visibility 0s linear 180ms;
+        transition: transform var(--dess-transition-drawer),
+            visibility 0s linear var(--dess-transition-drawer);
     }
 
     .js .dess-sidebar.is-open {
         visibility: visible;
         transform: translateX(0);
-        transition: transform 180ms ease;
+        transition: transform var(--dess-transition-drawer);
     }
 
     .js body.nav-open {

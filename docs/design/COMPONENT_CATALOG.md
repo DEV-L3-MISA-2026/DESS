@@ -5,15 +5,41 @@ This catalog defines the shared UI building blocks. Implement shared components 
 ## 1. Application shell
 
 ### Sidebar
-Contains the DESS identity and primary navigation. Shows active location and permission-appropriate links. On small screens, becomes a drawer.
+Contains the DESS identity and primary navigation. Shows active location and permission-appropriate links. On small screens, becomes a drawer. Links and buttons in the sidebar use the light focus ring from `--dess-focus-ring-on-dark`.
 
 ### Top navbar
 Contains page-level global controls such as current institution/context, user menu, and optional notifications. Avoid placing every page action in the global navbar.
 
 ### Breadcrumb
-Shows the current location in the information hierarchy. Use links for navigable ancestors and plain text for the current page.
+Shows the current location in the information hierarchy. Use links for navigable ancestors and plain text for the current page. Breadcrumb links are muted and underline on hover.
 
-## 2. Page components
+## 2. Interaction states
+
+Every interactive component defines the same states. Do not ship a component with only a hover state.
+
+| State | Requirement |
+|---|---|
+| Default | Token colours, visible border or background |
+| Hover | Small colour change, never a layout shift, `--dess-transition-fast` |
+| Active/pressed | Clearly darker or tinted; buttons keep their own colour family |
+| Focus-visible | Two-layer ring; light ring on dark surfaces |
+| Disabled | Reduced opacity, `cursor: not-allowed`, no hover effect |
+| Invalid | `--dess-danger` border plus a message; never colour alone |
+| Selected/current | Accent border or `--dess-accent-soft` background plus `aria-current` or `aria-pressed` |
+
+Controls are 40px high on a mouse and at least 44px on a coarse pointer.
+
+## 3. Buttons and actions
+
+### Button hierarchy
+- Primary: accent background, one per region.
+- Secondary: white surface with a border.
+- Destructive: danger fill, separated from frequent actions, always confirmed.
+- Quiet: text or icon-only action in toolbars and table rows.
+
+Icon-only buttons need an accessible name. Prefer an icon with text when the meaning is not universal.
+
+## 4. Page components
 
 ### Page header
 - Breadcrumb (optional)
@@ -28,20 +54,20 @@ A small heading and optional supporting action used to organize long pages.
 ### Panel
 A restrained white surface with a subtle border. Use for grouping related content, not as a wrapper around every element.
 
-## 3. Data components
+## 5. Data components
 
 ### Data table
 Required capabilities depend on the page:
 - Clear column labels.
-- Consistent row spacing.
-- Optional sorting.
+- Consistent row spacing and left-aligned text.
+- Optional sorting, with `aria-sort` on the header cell.
 - Optional search and filters.
 - Row-level action menu where appropriate.
 - Pagination for large datasets.
 - Empty state.
 - Loading and error state when data is fetched asynchronously.
 
-Do not add a checkbox column unless bulk actions are actually supported.
+Wrap the table in `.table-wrap`. Give the wrapper `tabindex="0"` and an accessible name so keyboard users can scroll it horizontally on narrow screens. Do not use a checkbox column unless bulk actions are actually supported.
 
 ### Pagination
 Show current page, total pages or result count, previous/next controls, and page size only when useful.
@@ -52,10 +78,10 @@ Explain what data is absent and provide a relevant next action when the user has
 ### Filter bar
 Keep frequently used filters visible. Put infrequent/advanced filters behind a clearly labeled control. Make active filters apparent and easy to clear.
 
-## 4. Form components
+## 6. Form components
 
 ### Text field
-Label, optional required indicator, input, hint, and field-level error.
+Label, optional required indicator, input, hint, and field-level error. Use `.hint` for guidance and `.field-error` for the message. Native `:user-invalid` and `aria-invalid="true"` both show a danger border; always render the message in text as well.
 
 ### Select field
 Use for a bounded set of known choices. For large datasets, use searchable selection rather than a very long native select.
@@ -69,21 +95,21 @@ Group related fields under a meaningful heading. Avoid one giant undifferentiate
 ### Form actions
 Primary submit action, secondary cancel/back action, and destructive action separated visually.
 
-## 5. Feedback components
+## 7. Feedback components
 
 ### Alert
-Variants: success, info, warning, danger. Each alert has a concise title or message and actionable guidance when relevant.
+Variants: success, info, warning, danger. Each alert has a concise title or message and actionable guidance when relevant. Success, info and warning use a soft background with a 4px left border; danger uses the same structure with `--dess-danger-soft`. Include the outcome in the text so the colour is not the only signal.
 
 ### Status badge
-Variants: draft, pending, confirmed, conflict, inactive, cancelled. Always include text.
+Variants: draft, pending, confirmed, conflict, inactive, cancelled. Always include text. The inactive state uses a hollow dot so it differs by shape as well as colour.
 
 ### Confirmation dialog
-Used for irreversible or consequential actions. State the object and consequence explicitly. Destructive action must not be the default focused action.
+Used for irreversible or consequential actions. State the object and consequence explicitly. Destructive action must not be the default focused action. Use a native `<dialog>`: it traps focus, closes on Escape, and returns focus to the control that opened it. Use the shared head, body and foot parts.
 
 ### Validation summary
 Summarizes form errors and links/focuses the corresponding fields where practical.
 
-## 6. Scheduling components
+## 8. Scheduling components
 
 ### Timetable toolbar
 Shows the selected view (group, teacher, room), date range, navigation controls, and relevant filters.
@@ -101,7 +127,7 @@ Must state:
 ### Mobile schedule list
 Chronological list grouped by day, preserving the same information as the calendar.
 
-## 7. Naming and implementation
+## 9. Naming and implementation
 
 Suggested JSP fragments/tag files:
 ```text

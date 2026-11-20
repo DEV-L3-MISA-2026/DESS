@@ -164,6 +164,40 @@ hr {
     color: var(--dess-text-muted);
 }
 
+/* Content links must not fall back to the browser default blue. :where()
+   keeps zero specificity so button-styled links keep their own colors. */
+.dess-content :where(a) {
+    color: var(--dess-accent-strong);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.dess-content :where(a:hover) {
+    color: var(--dess-primary);
+    text-decoration-thickness: 2px;
+}
+
+.dess-content :where(a:visited) {
+    color: var(--dess-primary);
+}
+
+.dess-content :where(a:focus-visible) {
+    outline: none;
+    border-radius: var(--dess-radius-sm);
+    box-shadow: var(--dess-focus-ring);
+}
+
+.dess-breadcrumb a {
+    color: var(--dess-text-muted);
+    text-decoration: none;
+}
+
+.dess-breadcrumb a:hover {
+    color: var(--dess-text);
+    text-decoration: underline;
+}
+
 .mono {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.9em;
@@ -200,7 +234,7 @@ hr {
     align-items: center;
     justify-content: center;
     gap: var(--dess-space-1);
-    min-height: 40px;
+    min-height: var(--dess-control-height);
     padding: 8px 14px;
     border: var(--dess-border-width) solid var(--dess-accent);
     border-radius: var(--dess-radius-sm);
@@ -212,11 +246,22 @@ hr {
     text-align: center;
     text-decoration: none;
     cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color var(--dess-transition-fast),
+        border-color var(--dess-transition-fast),
+        color var(--dess-transition-fast);
 }
 
 .btn:hover {
-    filter: brightness(0.92);
+    border-color: var(--dess-accent-strong);
+    background: var(--dess-accent-strong);
+    color: var(--dess-surface);
     text-decoration: none;
+}
+
+.btn:active {
+    background: var(--dess-primary);
+    border-color: var(--dess-primary);
 }
 
 .btn:focus-visible {
@@ -231,7 +276,7 @@ hr {
 }
 
 .btn-sm {
-    min-height: 32px;
+    min-height: var(--dess-control-height-sm);
     padding: 4px 10px;
     font-size: var(--dess-font-size-label);
 }
@@ -243,8 +288,15 @@ hr {
 }
 
 .btn-ghost:hover {
+    border-color: var(--dess-border-strong);
     background: var(--dess-background);
-    filter: none;
+    color: var(--dess-text);
+}
+
+.btn-ghost:active {
+    border-color: var(--dess-accent);
+    background: var(--dess-accent-soft);
+    color: var(--dess-text);
 }
 
 .btn-danger {
@@ -253,12 +305,22 @@ hr {
     color: var(--dess-surface);
 }
 
+.btn-danger:hover {
+    border-color: var(--dess-danger-strong);
+    background: var(--dess-danger-strong);
+}
+
+.btn-danger:active {
+    border-color: var(--dess-danger-strong);
+    background: var(--dess-danger-strong);
+}
+
 .icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     border: var(--dess-border-width) solid transparent;
     border-radius: var(--dess-radius-sm);
@@ -267,11 +329,35 @@ hr {
     font-size: 1.25rem;
     line-height: 1;
     cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color var(--dess-transition-fast),
+        color var(--dess-transition-fast);
 }
 
 .icon-btn:hover {
     background: var(--dess-background);
     color: var(--dess-text);
+}
+
+.icon-btn:active {
+    background: var(--dess-accent-soft);
+}
+
+/* Touch screens need a larger target than a mouse pointer. */
+@media (pointer: coarse) {
+    .btn,
+    .btn-sm,
+    .icon-btn,
+    .dess-content input,
+    .dess-content select,
+    .dess-content textarea {
+        min-height: var(--dess-touch-target);
+    }
+
+    .icon-btn {
+        width: var(--dess-touch-target);
+        height: var(--dess-touch-target);
+    }
 }
 
 /* Badges */
@@ -285,8 +371,8 @@ hr {
     border-radius: var(--dess-radius-sm);
     background: var(--dess-surface);
     color: var(--dess-text);
-    font-size: var(--dess-font-size-meta);
-    font-weight: 700;
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
     letter-spacing: 0.01em;
     line-height: 1.5;
     white-space: nowrap;
@@ -294,14 +380,15 @@ hr {
 
 .badge::before {
     content: "";
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--dess-text-muted);
 }
 
 .badge.ok {
-    border-color: var(--dess-success);
+    border-left-color: var(--dess-success);
+    background: var(--dess-success-soft);
     color: var(--dess-success);
 }
 
@@ -310,22 +397,45 @@ hr {
 }
 
 .badge.off {
-    border-color: var(--dess-border);
+    border-color: var(--dess-border-strong);
     background: var(--dess-background);
     color: var(--dess-text-muted);
 }
 
+/* A hollow dot marks the inactive state by shape as well as by color. */
 .badge.off::before {
-    background: var(--dess-text-muted);
+    border: var(--dess-border-width) solid var(--dess-text-muted);
+    background: transparent;
 }
 
 .badge.warn {
-    border-color: var(--dess-warning);
+    border-left-color: var(--dess-warning);
+    background: var(--dess-warning-soft);
     color: var(--dess-text);
 }
 
 .badge.warn::before {
-    background: var(--dess-warning);
+    background: var(--dess-warning-strong);
+}
+
+.badge.info {
+    border-left-color: var(--dess-info);
+    background: var(--dess-info-soft);
+    color: var(--dess-info);
+}
+
+.badge.info::before {
+    background: var(--dess-info);
+}
+
+.badge.danger {
+    border-left-color: var(--dess-danger);
+    background: var(--dess-danger-soft);
+    color: var(--dess-danger-strong);
+}
+
+.badge.danger::before {
+    background: var(--dess-danger);
 }
 
 /* Alerts */
@@ -339,18 +449,43 @@ hr {
     background: var(--dess-surface);
     color: var(--dess-text);
     font-size: var(--dess-font-size-body);
+    line-height: 1.5;
 }
 
 .flash.ok {
     border-left-color: var(--dess-success);
+    background: var(--dess-success-soft);
+}
+
+.flash.ok strong {
+    color: var(--dess-success);
 }
 
 .flash.error {
     border-left-color: var(--dess-danger);
+    background: var(--dess-danger-soft);
 }
 
 .flash.error strong {
-    color: var(--dess-danger);
+    color: var(--dess-danger-strong);
+}
+
+.flash.warn {
+    border-left-color: var(--dess-warning);
+    background: var(--dess-warning-soft);
+}
+
+.flash.warn strong {
+    color: var(--dess-warning-strong);
+}
+
+.flash.info {
+    border-left-color: var(--dess-info);
+    background: var(--dess-info-soft);
+}
+
+.flash.info strong {
+    color: var(--dess-info);
 }
 
 .flash ul {
@@ -365,6 +500,11 @@ hr {
     overflow-x: auto;
     border: var(--dess-border-width) solid var(--dess-border);
     border-radius: var(--dess-radius-sm);
+}
+
+.table-wrap:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
 }
 
 .dess-content table {
@@ -423,7 +563,7 @@ hr {
 .dess-content .row select {
     display: block;
     width: 100%;
-    min-height: 40px;
+    min-height: var(--dess-control-height);
     margin-top: var(--dess-space-1);
     padding: 8px 10px;
     border: var(--dess-border-width) solid var(--dess-border);
@@ -442,7 +582,7 @@ hr {
 .dess-content input:hover,
 .dess-content select:hover,
 .dess-content textarea:hover {
-    border-color: var(--dess-text-muted);
+    border-color: var(--dess-border-strong);
 }
 
 .dess-content input:focus-visible,
@@ -451,6 +591,31 @@ hr {
     border-color: var(--dess-accent);
     outline: none;
     box-shadow: var(--dess-focus-ring);
+}
+
+/* Native validation may fire before a submit; use it only as a hint and keep
+   the visible message next to the field for screen readers and sighted users. */
+.dess-content input:user-invalid,
+.dess-content select:user-invalid,
+.dess-content textarea:user-invalid,
+.dess-content [aria-invalid="true"] {
+    border-color: var(--dess-danger);
+}
+
+.dess-content input:user-invalid:focus-visible,
+.dess-content select:user-invalid:focus-visible,
+.dess-content textarea:user-invalid:focus-visible,
+.dess-content [aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 2px var(--dess-surface), 0 0 0 4px var(--dess-danger);
+}
+
+.field-error {
+    display: block;
+    margin-top: var(--dess-space-1);
+    color: var(--dess-danger-strong);
+    font-size: var(--dess-font-size-label);
+    font-weight: 400;
+    line-height: 1.45;
 }
 
 .dess-content label.checkbox {
@@ -521,7 +686,7 @@ form.row > label {
     display: block;
     margin-top: var(--dess-space-1);
     color: var(--dess-text-muted);
-    font-size: var(--dess-font-size-meta);
+    font-size: var(--dess-font-size-label);
     font-weight: 400;
     line-height: 1.45;
 }
@@ -645,7 +810,7 @@ details.subdetails > summary:focus-visible {
 /* Dialogs */
 
 dialog {
-    width: min(720px, 94vw);
+    width: min(var(--dess-dialog-width), 94vw);
     max-height: 88vh;
     margin: auto;
     padding: 0;
@@ -653,11 +818,17 @@ dialog {
     border-radius: var(--dess-radius-lg);
     background: var(--dess-surface);
     color: var(--dess-text);
-    box-shadow: var(--dess-shadow-panel);
+    box-shadow: var(--dess-shadow-dialog);
+}
+
+/* The dialog receives focus when it opens; the panel edge already shows where
+   focus went, so a ring around the whole surface would only add noise. */
+dialog:focus-visible {
+    outline: none;
 }
 
 dialog::backdrop {
-    background: rgb(23 44 67 / 45%);
+    background: var(--dess-overlay);
 }
 
 .dialog-form {

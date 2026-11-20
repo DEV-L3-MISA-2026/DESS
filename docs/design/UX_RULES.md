@@ -15,9 +15,12 @@
 - Maintain a logical heading hierarchy.
 - Associate every form control with a label.
 - Ensure keyboard access to all actions.
-- Show a visible focus indicator.
+- Show a visible focus indicator: a 2px solid edge with a 2px surface gap, at least 3:1 against the surrounding colours. Use the light ring on the sidebar.
 - Provide accessible names for icon-only controls.
-- Use sufficient text/background contrast.
+- Use text/background contrast of at least 4.5:1 for normal text and 3:1 for large text and interface boundaries.
+- Do not use colour as the only signal for a status, an error or a selection; add text, a shape or an icon.
+- Keep interactive targets at least 44px on touch screens where practical.
+- Respect `prefers-reduced-motion`; do not animate for decoration.
 - Announce important asynchronous status changes to assistive technology where applicable.
 - Do not trap keyboard focus outside a modal while it is open.
 
@@ -50,6 +53,8 @@ Check that:
 - [ ] Uses shared components where available.
 - [ ] Has page title and clear context.
 - [ ] Primary action is obvious.
+- [ ] Every interactive element has default, hover, active, focus-visible and disabled states.
+- [ ] Text contrast is at least 4.5:1; focus indicators are visible on light and dark surfaces.
 - [ ] Forms have labels and useful validation.
 - [ ] Empty state is meaningful.
 - [ ] Error and success feedback are clear.

@@ -1,7 +1,7 @@
 # DESS UI/UX Design System
 
-**Version:** 1.0  
-**Status:** Initial project baseline  
+**Version:** 1.1  
+**Status:** Baseline  
 **Product:** Department Exam and Schedule System
 
 ## 1. Product experience
@@ -93,6 +93,8 @@ Typography should be compact and readable:
 - Metadata: 11px, regular.
 
 Use sentence case. Avoid all-caps labels except for short conventional abbreviations.
+
+Badges, hints, navigation group headings and interface labels use 12px. Reserve 11px metadata for dense secondary information such as a timestamp inside a table row; never use it for an action, a status or a validation message.
 
 ## 6. Core interaction patterns
 
@@ -204,10 +206,21 @@ A page is not complete until:
 - It follows the design tokens and shared components.
 - It has a clear title and navigation context.
 - Its main task and primary action are obvious.
+- Every interactive element has hover, active, focus-visible and disabled states.
 - Forms have labels, validation, and useful error messages.
 - Empty, loading (if applicable), and error states are handled.
 - It works at desktop and narrow viewport widths.
-- Keyboard focus and interaction are usable.
+- Keyboard focus and interaction are usable, including a visible ring on light and dark surfaces.
 - User-controlled content is safely encoded.
 - Server-side authorization and validation are implemented.
 - Relevant tests/build checks pass.
+
+## 10. Changes in v1.1
+
+- Raised `--dess-text-muted` to 5.1:1 on white and 4.7:1 on the canvas.
+- Replaced the translucent focus halo with a solid two-layer ring that reaches 4.5:1, plus a light ring for the sidebar.
+- Added semantic hover, active and soft status tokens, so components no longer use filters or raw colours.
+- Standardised control height and added a 44px touch target on coarse pointers.
+- Added alert backgrounds and badge variants; inactive badges now use a hollow dot.
+- Extracted shell sizes and colours into tokens, and gave table wrappers a keyboard focus ring.
+- Added content link styles so links no longer use the browser default blue.

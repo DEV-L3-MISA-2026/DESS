@@ -1501,7 +1501,7 @@
             <a class="btn btn-sm" href="#create-type-form">Create the first type</a>
         </div>
         <% } else { %>
-        <div class="table-wrap">
+        <div class="table-wrap" role="region" aria-label="Unit types table" tabindex="0">
         <table>
             <caption class="visually-hidden">Unit types</caption>
             <thead>
@@ -1590,7 +1590,8 @@
             a child unit.
         </p>
         <% } else { %>
-        <div class="table-wrap">
+        <div class="table-wrap" role="region" aria-label="Allowed parent-child relations table"
+             tabindex="0">
         <table>
             <caption class="visually-hidden">Allowed parent-child relations</caption>
             <thead>
