@@ -21,3 +21,10 @@ frontend/dist/
 .vscode/
 .DS_Store
 *.log
+
+# agent context
+AGENTS.md
+.agents/skills/
+.opencode/agents/
+
+.run/

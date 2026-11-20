@@ -7,11 +7,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * @brief Administers accounts and their role assignments.
+ * Creates and manages user accounts.
  *
- * <p>Scaffold only: the interface declares the user-management use cases. An implementation will
- * validate uniqueness, hash passwords through the password adapter and persist changes through the
- * account repository.</p>
+ * <p>The implementation keeps usernames unique, hashes every password and saves changes
+ * through the account repository. Plain passwords never leave the service.</p>
  */
 public interface UserManagementService
 {
@@ -26,7 +25,7 @@ public interface UserManagementService
      * Finds an account by identifier.
      *
      * @param id account identifier
-     * @return the account, or an empty optional when it does not exist
+     * @return the account, or an empty result when it does not exist
      */
     Optional<UserAccount> findById(String id);
 
@@ -34,25 +33,25 @@ public interface UserManagementService
      * Finds an account by login name.
      *
      * @param username login name
-     * @return the account, or an empty optional when it does not exist
+     * @return the account, or an empty result when it does not exist
      */
     Optional<UserAccount> findByUsername(String username);
 
     /**
      * Creates an account.
      *
-     * @param username    unique login name
-     * @param rawPassword plain-text initial password; implementations must not retain it
+     * @param username unique login name
+     * @param rawPassword plain initial password; it must not be stored
      * @param displayName name shown in the interface
-     * @param roleCodes   codes of the roles to grant
-     * @return the created account
+     * @param roleCodes codes of the roles to grant
+     * @return the new account
      */
     UserAccount create(String username, String rawPassword, String displayName, Set<String> roleCodes);
 
     /**
-     * Updates the display name of an account.
+     * Changes the display name of an account.
      *
-     * @param id          account identifier
+     * @param id account identifier
      * @param displayName new name shown in the interface
      * @return the updated account
      */
@@ -61,7 +60,7 @@ public interface UserManagementService
     /**
      * Replaces the roles granted to an account.
      *
-     * @param id        account identifier
+     * @param id account identifier
      * @param roleCodes codes of the roles to grant
      * @return the updated account
      */
@@ -70,15 +69,15 @@ public interface UserManagementService
     /**
      * Replaces the password of an account.
      *
-     * @param id          account identifier
-     * @param rawPassword new plain-text password; implementations must not retain it
+     * @param id account identifier
+     * @param rawPassword new plain password; it must not be stored
      */
     void changePassword(String id, String rawPassword);
 
     /**
      * Activates or deactivates an account.
      *
-     * @param id     account identifier
+     * @param id account identifier
      * @param active new activation state
      */
     void setActive(String id, boolean active);

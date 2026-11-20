@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
+             version="3.2">
+    <persistence-unit name="peopleTestPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>com.dess.people.infrastructure.AppUserEntity</class>
+        <class>com.dess.people.infrastructure.StudentEntity</class>
+        <class>com.dess.people.infrastructure.TeacherEntity</class>
+    </persistence-unit>
+    <persistence-unit name="courseTestPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>com.dess.academic.infrastructure.CourseEntity</class>
+    </persistence-unit>
+    <persistence-unit name="academicTestPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>com.dess.academic.infrastructure.PeriodEntity</class>
+        <class>com.dess.academic.infrastructure.AcademicProgramEntity</class>
+        <class>com.dess.academic.infrastructure.ProgramVersionEntity</class>
+    </persistence-unit>
+</persistence>

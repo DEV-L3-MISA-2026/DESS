@@ -1,7 +1,6 @@
 /**
- * @brief Request handlers backing the security views.
+ * Prepares data for the security pages and handles form actions.
  *
- * <p>Controllers translate HTTP input into application-service calls, expose view data and
- * select the next page. They contain no authentication or authorization logic of their own.</p>
+ * <p>Controllers call the application services. They do not contain business rules.</p>
  */
 package com.dess.security.web.controller;

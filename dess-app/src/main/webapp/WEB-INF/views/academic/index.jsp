@@ -1,0 +1,249 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="pageTitle" value="Academic"/>
+<c:set var="topbarContext" value="Catalogue and calendar"/>
+<%@ include file="/WEB-INF/views/components/head.jspf" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+
+<div class="dess-page-header">
+    <div class="dess-page-heading">
+        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="${ctx}/app">Overview</a></li>
+                <li aria-current="page">Academic</li>
+            </ol>
+        </nav>
+        <h1 class="dess-page-title">Academic</h1>
+        <p class="dess-page-description">
+            Periods set the calendar; programs describe credentials; courses form the catalogue.
+            A course is not yet an offering.
+        </p>
+    </div>
+</div>
+
+<section class="panel" aria-labelledby="periods-title">
+    <div class="panel-head">
+        <div>
+            <h2 class="section-title" id="periods-title">Academic periods</h2>
+            <p class="panel-note"><c:out value="${fn:length(periods)}"/> period(s).</p>
+        </div>
+    </div>
+
+    <c:choose>
+        <c:when test="${empty periods}">
+            <div class="empty">
+                <strong>No academic period yet.</strong>
+                <p>A period is the year and term that academic operations refer to.</p>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Academic periods">
+                <table>
+                    <thead>
+                    <tr>
+                        <th scope="col">Academic year</th>
+                        <th scope="col">Term</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="period" items="${periods}">
+                        <tr>
+                            <td class="mono"><c:out value="${period.academicYear}"/></td>
+                            <td>Term <c:out value="${period.term}"/></td>
+                        </tr>
+                    </c:forEach>
+                    </tbody>
+                </table>
+            </div>
+        </c:otherwise>
+    </c:choose>
+
+    <c:if test="${canWrite}">
+        <h3 class="form-section-title">Add a period</h3>
+        <c:if test="${not empty periodErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${periodErrors.form}"/></div>
+        </c:if>
+        <form method="post" action="${ctx}/app/academic" class="form-row">
+            <input type="hidden" name="csrfToken" value="${csrfToken}">
+            <input type="hidden" name="action" value="createPeriod">
+            <div class="field">
+                <label for="academicYear">Academic year <span class="req" aria-hidden="true">*</span></label>
+                <input id="academicYear" name="academicYear" type="text" required
+                       placeholder="2026-2027"
+                       value="<c:out value='${periodForm.academicYear}'/>"
+                       <c:if test="${not empty periodErrors.academicYear}">aria-invalid="true" aria-describedby="academicYear-error"</c:if>>
+                <c:if test="${not empty periodErrors.academicYear}">
+                    <p class="field-error" id="academicYear-error"><c:out value="${periodErrors.academicYear}"/></p>
+                </c:if>
+            </div>
+            <div class="field">
+                <label for="term">Term <span class="req" aria-hidden="true">*</span></label>
+                <select id="term" name="term" required
+                        <c:if test="${not empty periodErrors.term}">aria-invalid="true" aria-describedby="term-error"</c:if>>
+                    <option value="1" ${periodForm.term == '1' ? 'selected' : ''}>1</option>
+                    <option value="2" ${periodForm.term == '2' ? 'selected' : ''}>2</option>
+                    <option value="3" ${periodForm.term == '3' ? 'selected' : ''}>3</option>
+                </select>
+                <c:if test="${not empty periodErrors.term}">
+                    <p class="field-error" id="term-error"><c:out value="${periodErrors.term}"/></p>
+                </c:if>
+            </div>
+            <div class="form-actions compact">
+                <button class="btn" type="submit">Add period</button>
+            </div>
+        </form>
+    </c:if>
+</section>
+
+<section class="panel" aria-labelledby="programs-title">
+    <div class="panel-head">
+        <div>
+            <h2 class="section-title" id="programs-title">Programs</h2>
+            <p class="panel-note"><c:out value="${fn:length(programs)}"/> program(s).</p>
+        </div>
+    </div>
+
+    <c:choose>
+        <c:when test="${empty programs}">
+            <div class="empty">
+                <strong>No program yet.</strong>
+                <p>Create a program before adding its versions and enrollments.</p>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Academic programs">
+                <table>
+                    <thead>
+                    <tr>
+                        <th scope="col">Code</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="program" items="${programs}">
+                        <tr>
+                            <td class="mono"><c:out value="${program.code}"/></td>
+                            <td><c:out value="${program.name}"/></td>
+                            <td>
+                                <span class="badge ${program.status == 'ACTIVE' ? 'ok' : 'off'}">
+                                    <c:out value="${program.status == 'ACTIVE' ? 'Active' : 'Inactive'}"/>
+                                </span>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                    </tbody>
+                </table>
+            </div>
+        </c:otherwise>
+    </c:choose>
+
+    <c:if test="${canWrite}">
+        <h3 class="form-section-title">Add a program</h3>
+        <c:if test="${not empty programErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${programErrors.form}"/></div>
+        </c:if>
+        <form method="post" action="${ctx}/app/academic" class="form-row">
+            <input type="hidden" name="csrfToken" value="${csrfToken}">
+            <input type="hidden" name="action" value="createProgram">
+            <div class="field">
+                <label for="programCode">Code <span class="req" aria-hidden="true">*</span></label>
+                <input id="programCode" name="code" type="text" required
+                       value="<c:out value='${programForm.code}'/>"
+                       <c:if test="${not empty programErrors.code}">aria-invalid="true" aria-describedby="programCode-error"</c:if>>
+                <c:if test="${not empty programErrors.code}">
+                    <p class="field-error" id="programCode-error"><c:out value="${programErrors.code}"/></p>
+                </c:if>
+            </div>
+            <div class="field grow">
+                <label for="programName">Name <span class="req" aria-hidden="true">*</span></label>
+                <input id="programName" name="name" type="text" required
+                       value="<c:out value='${programForm.name}'/>"
+                       <c:if test="${not empty programErrors.name}">aria-invalid="true" aria-describedby="programName-error"</c:if>>
+                <c:if test="${not empty programErrors.name}">
+                    <p class="field-error" id="programName-error"><c:out value="${programErrors.name}"/></p>
+                </c:if>
+            </div>
+            <div class="form-actions compact">
+                <button class="btn" type="submit">Add program</button>
+            </div>
+        </form>
+    </c:if>
+</section>
+
+<section class="panel" aria-labelledby="courses-title">
+    <div class="panel-head">
+        <div>
+            <h2 class="section-title" id="courses-title">Courses</h2>
+            <p class="panel-note"><c:out value="${fn:length(courses)}"/> course(s) in the catalogue.</p>
+        </div>
+    </div>
+
+    <c:choose>
+        <c:when test="${empty courses}">
+            <div class="empty">
+                <strong>No course yet.</strong>
+                <p>Add the first course to the catalogue.</p>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Course catalogue">
+                <table>
+                    <thead>
+                    <tr>
+                        <th scope="col">Code</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="course" items="${courses}">
+                        <tr>
+                            <td class="mono"><c:out value="${course.code}"/></td>
+                            <td><c:out value="${course.title}"/></td>
+                            <td>
+                                <span class="badge ${course.active ? 'ok' : 'off'}">
+                                    <c:out value="${course.active ? 'Active' : 'Inactive'}"/>
+                                </span>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                    </tbody>
+                </table>
+            </div>
+        </c:otherwise>
+    </c:choose>
+
+    <c:if test="${canWrite}">
+        <h3 class="form-section-title">Add a course</h3>
+        <c:if test="${not empty courseErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${courseErrors.form}"/></div>
+        </c:if>
+        <form method="post" action="${ctx}/app/academic" class="form-row">
+            <input type="hidden" name="csrfToken" value="${csrfToken}">
+            <input type="hidden" name="action" value="createCourse">
+            <div class="field">
+                <label for="courseCode">Code <span class="req" aria-hidden="true">*</span></label>
+                <input id="courseCode" name="code" type="text" required
+                       value="<c:out value='${courseForm.code}'/>"
+                       <c:if test="${not empty courseErrors.code}">aria-invalid="true" aria-describedby="courseCode-error"</c:if>>
+                <c:if test="${not empty courseErrors.code}">
+                    <p class="field-error" id="courseCode-error"><c:out value="${courseErrors.code}"/></p>
+                </c:if>
+            </div>
+            <div class="field grow">
+                <label for="courseTitle">Title <span class="req" aria-hidden="true">*</span></label>
+                <input id="courseTitle" name="title" type="text" required
+                       value="<c:out value='${courseForm.title}'/>"
+                       <c:if test="${not empty courseErrors.title}">aria-invalid="true" aria-describedby="courseTitle-error"</c:if>>
+                <c:if test="${not empty courseErrors.title}">
+                    <p class="field-error" id="courseTitle-error"><c:out value="${courseErrors.title}"/></p>
+                </c:if>
+            </div>
+            <div class="form-actions compact">
+                <button class="btn" type="submit">Add course</button>
+            </div>
+        </form>
+    </c:if>
+</section>
+
+<%@ include file="/WEB-INF/views/components/foot.jspf" %>
