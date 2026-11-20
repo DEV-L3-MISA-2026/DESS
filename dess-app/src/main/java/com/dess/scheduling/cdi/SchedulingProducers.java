@@ -34,7 +34,8 @@ public class SchedulingProducers
     {
         return new BookingServiceImpl(
                 new JpaBookingRepository(entityManager),
-                new JpaBookingSlotRepository(entityManager));
+                new JpaBookingSlotRepository(entityManager),
+                new JpaRoomRepository(entityManager));
     }
 
     @Produces

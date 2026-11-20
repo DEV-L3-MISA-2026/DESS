@@ -24,5 +24,5 @@ public interface BookingService
     boolean isAvailable(String resourceType, UUID resourceId,
                         OffsetDateTime startsAt, OffsetDateTime endsAt);
 
-    record ResourceRequest(String resourceType, UUID resourceId) {}
+    record ResourceRequest(String resourceType, UUID resourceId, int requiredCapacity) {}
 }
