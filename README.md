@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="dess-app/src/main/webapp/assets/img/app-icon-192.png" alt="DESS app icon" width="96" height="96">
+</p>
+
 # DESS - academic management app
 
 DESS manages the academic activities of one institution. It is a Jakarta EE application that

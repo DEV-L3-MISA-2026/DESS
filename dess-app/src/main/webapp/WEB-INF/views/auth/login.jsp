@@ -7,6 +7,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sign in · DESS</title>
+    <link rel="icon" href="${ctx}/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="${ctx}/assets/img/app-icon-192.png">
+    <link rel="apple-touch-icon" href="${ctx}/assets/img/app-icon-192.png">
     <link rel="stylesheet" href="${ctx}/assets/css/tokens.css">
     <link rel="stylesheet" href="${ctx}/assets/css/layout.css">
     <link rel="stylesheet" href="${ctx}/assets/css/components.css">

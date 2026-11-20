@@ -459,6 +459,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Institution unavailable · DESS</title>
+    <link rel="icon" href="<%= request.getContextPath() %>/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
+    <link rel="apple-touch-icon" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
     <script>document.documentElement.classList.add('js');</script>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/tokens.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/layout.css">
@@ -852,6 +855,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Institution structure · DESS</title>
+    <link rel="icon" href="<%= request.getContextPath() %>/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
+    <link rel="apple-touch-icon" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
     <script>document.documentElement.classList.add('js');</script>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/tokens.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/layout.css">
