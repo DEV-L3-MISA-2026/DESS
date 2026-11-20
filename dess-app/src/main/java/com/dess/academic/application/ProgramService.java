@@ -3,6 +3,7 @@ package com.dess.academic.application;
 import com.dess.academic.domain.AcademicProgram;
 import com.dess.academic.domain.ProgramVersion;
 import java.util.List;
+import java.util.Optional;
 
 /** API applicative des programmes et de leurs versions. */
 public interface ProgramService {
@@ -10,7 +11,10 @@ public interface ProgramService {
     AcademicProgram activate(long programId);
     AcademicProgram deactivate(long programId);
     List<AcademicProgram> listAll();
+
     ProgramVersion createVersion(CreateProgramVersionCommand command);
+    ProgramVersion activateVersion(long programVersionId);
     ProgramVersion archiveVersion(long programVersionId);
     List<ProgramVersion> listVersions(long programId);
+    Optional<ProgramVersion> findVersion(long programVersionId);
 }

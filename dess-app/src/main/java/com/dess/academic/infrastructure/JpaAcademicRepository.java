@@ -7,14 +7,20 @@ import com.dess.academic.application.EnrollStudentCommand;
 import com.dess.academic.domain.*;
 import com.dess.academic.exception.AcademicException;
 import com.dess.academic.exception.DuplicatePeriodException;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import java.util.List;
 import java.util.Optional;
 
-/** Repository JPA du module academic. */
+/** Repository JPA du module academic conservé pour les inscriptions. */
+@ApplicationScoped
 public class JpaAcademicRepository implements AcademicRepository {
-    private final EntityManager entityManager;
+    @PersistenceContext(unitName = "dessPU")
+    private EntityManager entityManager;
+
+    public JpaAcademicRepository() {}
 
     public JpaAcademicRepository(EntityManager entityManager) { this.entityManager = entityManager; }
 
