@@ -159,23 +159,50 @@ class ArchitectureTest
     void pomDeclaresNoPersistenceRestOrSiblingModuleDependency() throws IOException
     {
         // Only Maven coordinates (groupId / artifactId) are inspected, not comments.
+        // Test-scope dependencies never enter the shipped WAR, so the persistence
+        // and REST bans apply to every scope except test: integration tests
+        // against a real database need a JPA provider and a JDBC driver in test
+        // scope. Sibling-module dependencies stay banned in every scope.
+        String pom = Files.readString(Path.of("pom.xml"));
+        Pattern dependencyBlock = Pattern.compile("<dependency>(.*?)</dependency>", Pattern.DOTALL);
         Pattern coordinate = Pattern.compile("<(groupId|artifactId)>([^<]+)</\\1>");
-        Matcher matcher = coordinate.matcher(Files.readString(Path.of("pom.xml")));
-        List<String> coordinates = new java.util.ArrayList<>();
+        Pattern scopePattern = Pattern.compile("<scope>([^<]+)</scope>");
 
-        while (matcher.find())
+        List<String> shippedCoordinates = new java.util.ArrayList<>();
+        List<String> allCoordinates = new java.util.ArrayList<>();
+
+        Matcher blocks = dependencyBlock.matcher(pom);
+        while (blocks.find())
         {
-            coordinates.add(matcher.group(2).toLowerCase());
+            String block = blocks.group(1);
+            Matcher scopeMatcher = scopePattern.matcher(block);
+            String dependencyScope = scopeMatcher.find() ? scopeMatcher.group(1).trim() : "compile";
+
+            Matcher coordinates = coordinate.matcher(block);
+            while (coordinates.find())
+            {
+                String value = coordinates.group(2).toLowerCase();
+                allCoordinates.add(value);
+                if (!dependencyScope.equals("test"))
+                {
+                    shippedCoordinates.add(value);
+                }
+            }
         }
 
-        for (String banned : List.of("postgresql", "hibernate", "flyway", "persistence", "ws.rs", "resteasy",
-                                     "dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
+        for (String banned : List.of("postgresql", "hibernate", "flyway", "persistence", "ws.rs", "resteasy"))
         {
-            assertTrue(coordinates.stream().noneMatch(c -> c.contains(banned)),
+            assertTrue(shippedCoordinates.stream().noneMatch(c -> c.contains(banned)),
                        "pom.xml declares a forbidden dependency: " + banned);
         }
 
-        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")
+        for (String banned : List.of("dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
+        {
+            assertTrue(allCoordinates.stream().noneMatch(c -> c.contains(banned)),
+                       "pom.xml declares a forbidden dependency: " + banned);
+        }
+
+        assertTrue(allCoordinates.stream().anyMatch(c -> c.contains("cdi-api")
                                              || c.contains("jakartaee-api")),
                    "CDI or Jakarta EE API is the expected Jakarta API");
     }
