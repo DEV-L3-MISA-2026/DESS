@@ -8,6 +8,12 @@
     <artifactId>dess-app</artifactId>
     <packaging>war</packaging>
     <dependencies>
+        <!-- Fourni par le serveur WildFly pour l'application (REST, JPA, etc.) -->
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
@@ -16,6 +22,12 @@
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Fourni par WildFly pour la documentation automatique OpenAPI -->
+        <dependency>
+            <groupId>org.eclipse.microprofile.openapi</groupId>
+            <artifactId>microprofile-openapi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
