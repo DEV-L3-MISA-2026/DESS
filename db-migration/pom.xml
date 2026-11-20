@@ -7,20 +7,12 @@
     </parent>
     <artifactId>db-migration</artifactId>
     <packaging>pom</packaging>
-
-    <!--
-        Flyway reads the database settings from the environment. The helper
-        ops/db/migrate.sh loads the repository .env file and validates the
-        password before invoking this module.
-    -->
     <properties>
         <flyway.version>11.8.2</flyway.version>
-        <postgresql.jdbc.version>42.7.7</postgresql.jdbc.version>
-        <flyway.url>jdbc:postgresql://${env.DESS_DB_HOST}:${env.DESS_DB_PORT}/${env.DESS_DB_NAME}</flyway.url>
-        <flyway.user>${env.DESS_DB_USER}</flyway.user>
-        <flyway.password>${env.DESS_DB_PASSWORD}</flyway.password>
+        <flyway.url>${env.DB_URL}</flyway.url>
+        <flyway.user>${env.DB_USER}</flyway.user>
+        <flyway.password>${env.DB_PASSWORD}</flyway.password>
     </properties>
-
     <build>
         <plugins>
             <plugin>
@@ -32,7 +24,7 @@
                     <user>${flyway.user}</user>
                     <password>${flyway.password}</password>
                     <locations>
-                        <location>filesystem:${project.basedir}/src/main/resources/db/migration</location>
+                        <location>filesystem:src/main/resources/db/migration</location>
                     </locations>
                     <cleanDisabled>true</cleanDisabled>
                 </configuration>
@@ -45,7 +37,7 @@
                     <dependency>
                         <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
-                        <version>${postgresql.jdbc.version}</version>
+                        <version>42.7.7</version>
                     </dependency>
                 </dependencies>
             </plugin>

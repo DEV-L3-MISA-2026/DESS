@@ -22,4 +22,7 @@ frontend/dist/
 .DS_Store
 *.log
 
+# agent context
+AGENTS.md
+
 .run/

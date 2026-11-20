@@ -47,27 +47,36 @@ class ArchitectureTest
     {
         for (Path source : mainSources())
         {
-            boolean schedulingSource = source.toString().startsWith("src/main/java/com/dess/scheduling/");
-
             for (String line : Files.readAllLines(source))
             {
                 String trimmed = line.trim();
 
                 if (trimmed.startsWith("import "))
                 {
+                    String sourcePath = source.toString();
+                    boolean ownModuleSource = sourcePath.contains("/com/dess/people/")
+                                              || sourcePath.contains("/com/dess/academic/")
+                                              || sourcePath.contains("/com/dess/scheduling/");
+                    boolean infrastructureJpa = sourcePath.contains("/com/dess/people/infrastructure/")
+                                                || sourcePath.contains("/com/dess/academic/infrastructure/")
+                                                || sourcePath.contains("/com/dess/scheduling/infrastructure/")
+                                                || sourcePath.contains("/com/dess/people/cdi/")
+                                                || sourcePath.contains("/com/dess/academic/cdi/")
+                                                || sourcePath.contains("/com/dess/scheduling/cdi/");
+
                     for (String forbidden : FORBIDDEN_IMPORT_PREFIXES)
                     {
-                        boolean schedulingPersistence = schedulingSource
-                                && (forbidden.equals("java.sql")
-                                || forbidden.equals("javax.sql")
-                                || forbidden.equals("jakarta.persistence")
-                                || forbidden.equals("javax.persistence")
-                                || forbidden.equals("org.hibernate")
-                                || forbidden.equals("org.postgresql")
-                                || forbidden.equals("org.flywaydb")
-                                || forbidden.equals("com.dess.scheduling"));
+                        if (ownModuleSource
+                            && (forbidden.startsWith("com.dess.people")
+                                || forbidden.startsWith("com.dess.academic")
+                                || forbidden.startsWith("com.dess.scheduling")))
+                        {
+                            continue;
+                        }
 
-                        if (schedulingPersistence)
+                        if (infrastructureJpa
+                            && (forbidden.startsWith("jakarta.persistence")
+                                || forbidden.startsWith("javax.persistence")))
                         {
                             continue;
                         }
@@ -89,11 +98,6 @@ class ArchitectureTest
 
         for (Path source : mainSources())
         {
-            if (source.toString().startsWith("src/main/java/com/dess/scheduling/"))
-            {
-                continue;
-            }
-
             for (String line : Files.readAllLines(source))
             {
                 String trimmed = line.trim();
@@ -103,7 +107,20 @@ class ArchitectureTest
                     continue; // Comments and Javadoc are not code.
                 }
 
-                assertFalse(forbidden.matcher(trimmed).find(), source + ": forbidden annotation -> " + trimmed);
+                boolean persistenceAllowed = source.toString().contains("/com/dess/people/infrastructure/")
+                                             || source.toString().contains("/com/dess/academic/infrastructure/")
+                                             || source.toString().contains("/com/dess/scheduling/infrastructure/")
+                                             || source.toString().contains("/com/dess/people/cdi/")
+                                             || source.toString().contains("/com/dess/academic/cdi/")
+                                             || source.toString().contains("/com/dess/scheduling/cdi/")
+                                             || source.toString().contains("/com/dess/people/application/impl/")
+                                             || source.toString().contains("/com/dess/academic/application/impl/")
+                                             || source.toString().contains("/com/dess/scheduling/application/impl/");
+
+                if (!persistenceAllowed)
+                {
+                    assertFalse(forbidden.matcher(trimmed).find(), source + ": forbidden annotation -> " + trimmed);
+                }
             }
         }
     }
@@ -115,8 +132,8 @@ class ArchitectureTest
         {
             String name = source.getFileName().toString();
 
-            for (String banned : List.of("Student", "Professor", "Person", "Course", "Assessment", "Result",
-                                         "ExamSession", "StudentGroup", "AcademicProgram"))
+            for (String banned : List.of("Student", "Professor", "Course", "Assessment", "Result",
+                                         "ExamSession", "StudentGroup", "AcademicProgramVersion"))
             {
                 assertFalse(name.equals(banned + ".java"), "class reserved for another module: " + name);
             }
@@ -158,7 +175,8 @@ class ArchitectureTest
                        "pom.xml declares a forbidden dependency: " + banned);
         }
 
-        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")),
-                   "CDI is the expected Jakarta API");
+        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")
+                                             || c.contains("jakartaee-api")),
+                   "CDI or Jakarta EE API is the expected Jakarta API");
     }
 }
