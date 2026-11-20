@@ -56,7 +56,7 @@ com.dess.security/
 | Area | Behaviour |
 | --- | --- |
 | Passwords | PBKDF2-HMAC-SHA256, 210 000 iterations, 16-byte random salt per account, 256-bit hash, constant-time comparison. Encoded as `pbkdf2-sha256$iterations$salt$hash`. |
-| Accounts | Stored in memory. `admin` and `professor` are seeded only when `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` are set. No password ships in the code. |
+| Accounts | Stored in memory. `admin` and `professor` are seeded only when `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` are set. No password ships in the code. `ops/dev/seed-accounts.sh` writes local test values to `.env` for both roles. |
 | Login | `POST /login` with a CSRF token. Success sends the browser to `next` when that path is local, otherwise to `/app`. |
 | Session | Stores `SessionUser` (id, username, display name, roles). The session id changes after sign-in. The cookie is HTTP-only and the session expires after 30 minutes. |
 | Logout | `POST /logout` with a CSRF token; it invalidates the session. |

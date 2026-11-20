@@ -210,7 +210,8 @@ Small documentation changes may go directly to `dev`. Code changes should use a 
 
 - The module implements login, logout, sessions, roles, CSRF checks and request filtering.
 - Passwords use PBKDF2-HMAC-SHA256 with a per-account salt. No password ships in the code.
-  Accounts are seeded from `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` only.
+  Accounts are seeded from `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` only. For local
+  testing, `ops/dev/seed-accounts.sh` writes those variables to `.env`.
 - Accounts live in memory and reset on restart. Persisting them needs a Flyway migration, a JPA
   entity and an explicit decision from Sergio.
 - `CsrfFilter` runs before `SecurityFilter`. Every POST form must carry `csrfToken`.

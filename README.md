@@ -129,6 +129,17 @@ cp .env.example .env
 Initial accounts live in memory. They are recreated on every restart, and accounts created from
 the security page are lost when the application restarts.
 
+For local testing, seed one account per role with:
+
+```bash
+./ops/dev/seed-accounts.sh                  # generate two passwords
+./ops/dev/seed-accounts.sh admin123 prof123  # use known passwords
+```
+
+The helper writes `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` to `.env` only. It does
+not commit passwords and does not create accounts by itself: restart WildFly so the application
+reads the new values.
+
 The scripts load `.env` from the repository root. Variables already exported in the shell are
 used when `.env` does not define them.
 
