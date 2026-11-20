@@ -28,8 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AttributeServiceTest {
-
+/**
+ * @brief Tests for attribute definitions and custom attribute values.
+ *
+ * <p>Every test starts from the university example loaded into a temporary file, so the existing
+ * configuration, its types and its units act as fixtures.</p>
+ */
+class AttributeServiceTest
+{
     @TempDir
     Path tmp;
 
@@ -39,206 +45,285 @@ class AttributeServiceTest {
     UnitTypeService types;
 
     @BeforeEach
-    void setUp() {
+    void setUp()
+    {
         module = TestSupport.openUniversity(tmp);
         attributes = module.attributeService();
         hierarchy = module.hierarchyService();
         types = module.unitTypeService();
     }
 
-    private Path subDir(String name) {
-        try {
+    private Path subDir(String name)
+    {
+        try
+        {
             return Files.createDirectories(tmp.resolve(name));
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             throw new UncheckedIOException(e);
         }
     }
 
-    private Map<String, String> mentionValues(String chef) {
+    private Map<String, String> mentionValues(String head)
+    {
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("chefMention", chef);
+        values.put("chefMention", head);
+
         return values;
     }
 
-    // ---------------------------------------------------------------- définitions
+    // ------------------------------------------------------------------ definitions
 
     @Test
-    void definesTextNumberDateAndEmailAttributesOnABrandNewType() {
-        types.create(UnitTypeDefinition.of("LABORATOIRE", "Laboratoire"));
-        attributes.addDefinition("LABORATOIRE", AttributeDefinition.of("responsable", "Responsable", AttributeType.TEXT, true));
-        attributes.addDefinition("LABORATOIRE", AttributeDefinition.of("effectif", "Effectif", AttributeType.NUMBER, false));
-        attributes.addDefinition("LABORATOIRE", AttributeDefinition.of("ouverture", "Ouverture", AttributeType.DATE, false));
-        attributes.addDefinition("LABORATOIRE", AttributeDefinition.of("contact", "Contact", AttributeType.EMAIL, false));
+    void definesTextNumberDateAndEmailAttributesOnABrandNewType()
+    {
+        types.create(UnitTypeDefinition.of("LABORATORY", "Laboratory"));
+        attributes.addDefinition("LABORATORY",
+                                 AttributeDefinition.of("manager", "Manager", AttributeType.TEXT, true));
+        attributes.addDefinition("LABORATORY",
+                                 AttributeDefinition.of("headcount", "Headcount", AttributeType.NUMBER, false));
+        attributes.addDefinition("LABORATORY",
+                                 AttributeDefinition.of("opening", "Opening", AttributeType.DATE, false));
+        attributes.addDefinition("LABORATORY",
+                                 AttributeDefinition.of("contact", "Contact", AttributeType.EMAIL, false));
 
-        List<AttributeDefinition> defs = attributes.getDefinitions("LABORATOIRE");
-        assertEquals(List.of("responsable", "effectif", "ouverture", "contact"),
-                defs.stream().map(AttributeDefinition::key).toList());
+        List<AttributeDefinition> definitions = attributes.getDefinitions("LABORATORY");
+
+        assertEquals(List.of("manager", "headcount", "opening", "contact"),
+                     definitions.stream().map(AttributeDefinition::key).toList());
         assertEquals(List.of(AttributeType.TEXT, AttributeType.NUMBER, AttributeType.DATE, AttributeType.EMAIL),
-                defs.stream().map(AttributeDefinition::type).toList());
+                     definitions.stream().map(AttributeDefinition::type).toList());
     }
 
     @Test
-    void refusesDuplicateAttributeKeyInAType() {
-        assertThrows(ValidationException.class, () -> attributes.addDefinition("MENTION",
-                AttributeDefinition.of("chefMention", "Doublon", AttributeType.TEXT, false)));
+    void refusesDuplicateAttributeKeyInAType()
+    {
+        assertThrows(ValidationException.class, () -> attributes.addDefinition(
+            "MENTION",
+            AttributeDefinition.of("chefMention", "Duplicate", AttributeType.TEXT, false)
+        ));
+
         assertEquals(4, attributes.getDefinitions("MENTION").size());
     }
 
     @Test
-    void refusesInvalidKeyAndInvalidDefaultValue() {
-        assertThrows(ValidationException.class, () -> attributes.addDefinition("MENTION",
-                AttributeDefinition.of("1 clé invalide", "X", AttributeType.TEXT, false)));
-        assertThrows(ValidationException.class, () -> attributes.addDefinition("MENTION",
-                AttributeDefinition.of("capacite", "Capacité", AttributeType.NUMBER, false, "beaucoup")));
+    void refusesInvalidKeyAndInvalidDefaultValue()
+    {
+        assertThrows(ValidationException.class, () -> attributes.addDefinition(
+            "MENTION",
+            AttributeDefinition.of("1 invalid key", "X", AttributeType.TEXT, false)
+        ));
+
+        assertThrows(ValidationException.class, () -> attributes.addDefinition(
+            "MENTION",
+            AttributeDefinition.of("capacity", "Capacity", AttributeType.NUMBER, false, "a lot")
+        ));
+
         assertEquals(4, attributes.getDefinitions("MENTION").size());
     }
 
     @Test
-    void addingAnOptionalAttributeToAUsedTypeKeepsExistingUnitsValid() {
-        attributes.addDefinition("MENTION", AttributeDefinition.of("telephone", "Téléphone", AttributeType.TEXT, false));
+    void addingAnOptionalAttributeToAUsedTypeKeepsExistingUnitsValid()
+    {
+        attributes.addDefinition("MENTION",
+                                 AttributeDefinition.of("phone", "Phone", AttributeType.TEXT, false));
+
         assertEquals(5, attributes.getDefinitions("MENTION").size());
         assertTrue(module.institutionService().check().valid());
-        assertTrue(attributes.getValue("mention-droit", "telephone").isEmpty());
+        assertTrue(attributes.getValue("mention-droit", "phone").isEmpty());
     }
 
     @Test
-    void addingARequiredAttributeWithoutDefaultToAUsedTypeIsRefused() {
-        ValidationException e = assertThrows(ValidationException.class, () -> attributes.addDefinition("MENTION",
-                AttributeDefinition.of("budget", "Budget", AttributeType.DECIMAL, true)));
+    void addingARequiredAttributeWithoutDefaultToAUsedTypeIsRefused()
+    {
+        ValidationException e = assertThrows(ValidationException.class, () -> attributes.addDefinition(
+            "MENTION",
+            AttributeDefinition.of("budget", "Budget", AttributeType.DECIMAL, true)
+        ));
+
         assertTrue(e.getMessage().contains("budget"));
         assertEquals(4, attributes.getDefinitions("MENTION").size());
         assertTrue(module.institutionService().check().valid());
     }
 
     @Test
-    void addingARequiredAttributeWithDefaultBackfillsExistingUnits() {
+    void addingARequiredAttributeWithDefaultBackfillsExistingUnits()
+    {
         attributes.addDefinition("MENTION",
-                AttributeDefinition.of("ouverte", "Ouverte", AttributeType.BOOLEAN, true, "true"));
-        assertEquals(Boolean.TRUE, attributes.getTypedValue("mention-droit", "ouverte").orElseThrow());
-        assertEquals(Boolean.TRUE, attributes.getTypedValue("mention-informatique", "ouverte").orElseThrow());
+                                 AttributeDefinition.of("open", "Open", AttributeType.BOOLEAN, true, "true"));
+
+        assertEquals(Boolean.TRUE, attributes.getTypedValue("mention-droit", "open").orElseThrow());
+        assertEquals(Boolean.TRUE, attributes.getTypedValue("mention-informatique", "open").orElseThrow());
         assertTrue(module.institutionService().check().valid());
     }
 
     @Test
-    void changingTheDataTypeIsRefusedWhenExistingValuesWouldBecomeInvalid() {
-        // effectifMaximum vaut 500 dans Mention Informatique : 500 n'est pas une date
-        assertThrows(ValidationException.class, () -> attributes.updateDefinition("MENTION",
-                AttributeDefinition.of("effectifMaximum", "Effectif maximum", AttributeType.DATE, false)));
-        assertEquals(AttributeType.NUMBER, attributes.getDefinitions("MENTION").stream()
-                .filter(d -> d.key().equals("effectifMaximum")).findFirst().orElseThrow().type());
+    void changingTheDataTypeIsRefusedWhenExistingValuesWouldBecomeInvalid()
+    {
+        // effectifMaximum is 500 in the Computer Science Department: 500 is not a date.
+        assertThrows(ValidationException.class, () -> attributes.updateDefinition(
+            "MENTION",
+            AttributeDefinition.of("effectifMaximum", "Effectif maximum", AttributeType.DATE, false)
+        ));
+
+        assertEquals(AttributeType.NUMBER,
+                     attributes.getDefinitions("MENTION")
+                               .stream()
+                               .filter(definition -> definition.key().equals("effectifMaximum"))
+                               .findFirst()
+                               .orElseThrow()
+                               .type());
     }
 
     @Test
-    void relaxingADefinitionIsAllowed() {
+    void relaxingADefinitionIsAllowed()
+    {
         attributes.updateDefinition("MENTION",
-                AttributeDefinition.of("email", "Courriel", AttributeType.TEXT, false));
-        assertEquals("Courriel", attributes.getDefinitions("MENTION").stream()
-                .filter(d -> d.key().equals("email")).findFirst().orElseThrow().label());
-        assertThrows(NotFoundException.class, () -> attributes.updateDefinition("MENTION",
-                AttributeDefinition.of("inconnu", "x", AttributeType.TEXT, false)));
+                                    AttributeDefinition.of("email", "E-mail", AttributeType.TEXT, false));
+
+        assertEquals("E-mail",
+                     attributes.getDefinitions("MENTION")
+                               .stream()
+                               .filter(definition -> definition.key().equals("email"))
+                               .findFirst()
+                               .orElseThrow()
+                               .label());
+
+        assertThrows(NotFoundException.class, () -> attributes.updateDefinition(
+            "MENTION",
+            AttributeDefinition.of("unknown", "x", AttributeType.TEXT, false)
+        ));
     }
 
     @Test
-    void makingAnAttributeRequiredIsRefusedWhenSomeUnitsLackAValue() {
-        // « email » n'est renseigné que pour Mention Informatique : Mention Droit deviendrait invalide
-        assertThrows(ValidationException.class, () -> attributes.updateDefinition("MENTION",
-                AttributeDefinition.of("email", "Adresse e-mail", AttributeType.EMAIL, true)));
+    void makingAnAttributeRequiredIsRefusedWhenSomeUnitsLackAValue()
+    {
+        // email is only set for the Computer Science Department: the Law Department would become invalid.
+        assertThrows(ValidationException.class, () -> attributes.updateDefinition(
+            "MENTION",
+            AttributeDefinition.of("email", "E-mail address", AttributeType.EMAIL, true)
+        ));
     }
 
     @Test
-    void removesAnUnusedDefinitionButNotOneThatHoldsValues() {
-        attributes.addDefinition("MENTION", AttributeDefinition.of("telephone", "Téléphone", AttributeType.TEXT, false));
-        attributes.removeDefinition("MENTION", "telephone");
+    void removesAnUnusedDefinitionButNotOneThatHoldsValues()
+    {
+        attributes.addDefinition("MENTION",
+                                 AttributeDefinition.of("phone", "Phone", AttributeType.TEXT, false));
+        attributes.removeDefinition("MENTION", "phone");
+
         assertEquals(4, attributes.getDefinitions("MENTION").size());
-
         assertThrows(ValidationException.class, () -> attributes.removeDefinition("MENTION", "chefMention"));
-        assertThrows(NotFoundException.class, () -> attributes.removeDefinition("MENTION", "inconnu"));
+        assertThrows(NotFoundException.class, () -> attributes.removeDefinition("MENTION", "unknown"));
     }
 
-    // ---------------------------------------------------------------- valeurs à la création
+    // ------------------------------------------------------------------ values at creation
 
     @Test
-    void createsAUnitWithItsOwnValuesForTheSameDefinitions() {
+    void createsAUnitWithItsOwnValuesForTheSameDefinitions()
+    {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("chefMention", "Rakoto Jean");
-        values.put("email", "mathematiques@universite.mg");
+        values.put("email", "mathematics@university.mg");
         values.put("dateCreation", "2021-09-01");
         values.put("effectifMaximum", "250");
+
         OrganizationalUnit math = hierarchy.createUnit(CreateUnitCommand.of(
-                "MENTION_MATHS", "Mention Mathématiques", "MENTION", "faculte-sciences", values));
+            "DEPT_MATH", "Mathematics Department", "MENTION", "faculte-sciences", values));
 
         assertEquals("Rakoto Jean", attributes.getValue(math.id(), "chefMention").orElseThrow());
         assertEquals(250L, attributes.getTypedValue(math.id(), "effectifMaximum").orElseThrow());
         assertEquals(LocalDate.of(2021, 9, 1), attributes.getTypedValue(math.id(), "dateCreation").orElseThrow());
-        // les valeurs d'une autre unité du même type ne sont pas affectées
+
+        // Values of another unit of the same type are not affected.
         assertEquals("Rabe Marie", attributes.getValue("mention-droit", "chefMention").orElseThrow());
     }
 
     @Test
-    void refusesAnIncompatibleValueOnCreation() {
+    void refusesAnIncompatibleValueOnCreation()
+    {
         Map<String, String> values = mentionValues("Rabe");
-        values.put("effectifMaximum", "Bonjour");
+        values.put("effectifMaximum", "Hello");
+
         ValidationException e = assertThrows(ValidationException.class, () -> hierarchy.createUnit(
-                CreateUnitCommand.of("MENTION_X", "Mention X", "MENTION", "faculte-sciences", values)));
-        assertTrue(e.getMessage().contains("Bonjour"));
-        assertTrue(hierarchy.getByCode("MENTION_X").isEmpty());
+            CreateUnitCommand.of("DEPT_X", "Department X", "MENTION", "faculte-sciences", values)));
+
+        assertTrue(e.getMessage().contains("Hello"));
+        assertTrue(hierarchy.getByCode("DEPT_X").isEmpty());
     }
 
     @Test
-    void refusesAMissingRequiredAttributeOnCreation() {
+    void refusesAMissingRequiredAttributeOnCreation()
+    {
         ValidationException e = assertThrows(ValidationException.class, () -> hierarchy.createUnit(
-                CreateUnitCommand.of("MENTION_X", "Mention X", "MENTION", "faculte-sciences", Map.of())));
+            CreateUnitCommand.of("DEPT_X", "Department X", "MENTION", "faculte-sciences", Map.of())));
+
         assertTrue(e.getMessage().contains("chefMention"));
-        // une valeur blanche équivaut à une valeur absente
+
+        // A blank value is equivalent to an absent value.
         assertThrows(ValidationException.class, () -> hierarchy.createUnit(
-                CreateUnitCommand.of("MENTION_X", "Mention X", "MENTION", "faculte-sciences", mentionValues("   "))));
+            CreateUnitCommand.of("DEPT_X", "Department X", "MENTION", "faculte-sciences", mentionValues("   "))));
     }
 
     @Test
-    void refusesAnAttributeNotDefinedForTheType() {
+    void refusesAnAttributeNotDefinedForTheType()
+    {
         Map<String, String> values = mentionValues("Rabe");
-        values.put("inconnu", "x");
+        values.put("unknown", "x");
+
         assertThrows(ValidationException.class, () -> hierarchy.createUnit(
-                CreateUnitCommand.of("MENTION_X", "Mention X", "MENTION", "faculte-sciences", values)));
+            CreateUnitCommand.of("DEPT_X", "Department X", "MENTION", "faculte-sciences", values)));
     }
 
     @Test
-    void appliesDefaultValuesOnCreation() {
+    void appliesDefaultValuesOnCreation()
+    {
         InstitutionModule school = TestSupport.openCopy(subDir("hs"), "valid/high-school.xml");
         OrganizationalUnit serie = school.hierarchyService().createUnit(CreateUnitCommand.of(
-                "SERIE_A", "Série A", "SERIE", "enseignement-general", Map.of()));
+            "SERIES_A", "Series A", "SERIE", "enseignement-general", Map.of()));
+
         assertEquals(Boolean.FALSE, school.attributeService().getTypedValue(serie.id(), "selective").orElseThrow());
     }
 
-    // ---------------------------------------------------------------- valeurs existantes
+    // ------------------------------------------------------------------ existing values
 
     @Test
-    void modifiesAValue() {
-        AttributeValue v = attributes.setValue("mention-droit", "chefMention", "Randria Paul");
-        assertEquals("Randria Paul", v.value());
+    void modifiesAValue()
+    {
+        AttributeValue value = attributes.setValue("mention-droit", "chefMention", "Randria Paul");
+
+        assertEquals("Randria Paul", value.value());
         assertEquals("Randria Paul", attributes.getValue("mention-droit", "chefMention").orElseThrow());
     }
 
     @Test
-    void definesANewValueOnAnExistingUnit() {
+    void definesANewValueOnAnExistingUnit()
+    {
         attributes.setValue("mention-droit", "effectifMaximum", "120");
+
         assertEquals(120L, attributes.getTypedValue("mention-droit", "effectifMaximum").orElseThrow());
-        // chefMention et dateCreation existaient déjà : trois valeurs au total
+
+        // chefMention and dateCreation already existed: three values in total.
         assertEquals(3, attributes.getValues("mention-droit").size());
     }
 
     @Test
-    void refusesInvalidAndUndefinedValuesWhenSetting() {
-        assertThrows(ValidationException.class, () -> attributes.setValue("mention-droit", "email", "pas-un-email"));
-        assertThrows(ValidationException.class, () -> attributes.setValue("mention-droit", "inconnu", "x"));
+    void refusesInvalidAndUndefinedValuesWhenSetting()
+    {
+        assertThrows(ValidationException.class,
+                     () -> attributes.setValue("mention-droit", "email", "not-an-email"));
+        assertThrows(ValidationException.class, () -> attributes.setValue("mention-droit", "unknown", "x"));
         assertThrows(ValidationException.class, () -> attributes.setValue("mention-droit", "chefMention", "  "));
         assertThrows(NotFoundException.class, () -> attributes.setValue("nope", "chefMention", "x"));
         assertEquals("Rabe Marie", attributes.getValue("mention-droit", "chefMention").orElseThrow());
     }
 
     @Test
-    void removesAnOptionalValueButNotARequiredOne() {
+    void removesAnOptionalValueButNotARequiredOne()
+    {
         attributes.removeValue("mention-droit", "dateCreation");
+
         assertTrue(attributes.getValue("mention-droit", "dateCreation").isEmpty());
         assertThrows(ValidationException.class, () -> attributes.removeValue("mention-droit", "chefMention"));
         assertEquals("Rabe Marie", attributes.getValue("mention-droit", "chefMention").orElseThrow());
@@ -246,31 +331,39 @@ class AttributeServiceTest {
     }
 
     @Test
-    void replacingAllValuesThroughUpdateUnitIsValidated() {
-        hierarchy.updateUnit("mention-droit", new UpdateUnitCommand(null, null, null, mentionValues("Nouveau Chef")));
-        assertEquals("Nouveau Chef", attributes.getValue("mention-droit", "chefMention").orElseThrow());
+    void replacingAllValuesThroughUpdateUnitIsValidated()
+    {
+        hierarchy.updateUnit("mention-droit", new UpdateUnitCommand(null, null, null, mentionValues("New Head")));
+
+        assertEquals("New Head", attributes.getValue("mention-droit", "chefMention").orElseThrow());
         assertTrue(attributes.getValue("mention-droit", "dateCreation").isEmpty());
-        assertThrows(ValidationException.class, () -> hierarchy.updateUnit("mention-droit",
-                new UpdateUnitCommand(null, null, null, Map.of("email", "a@b.mg"))));
+        assertThrows(ValidationException.class, () -> hierarchy.updateUnit(
+            "mention-droit",
+            new UpdateUnitCommand(null, null, null, Map.of("email", "a@b.mg"))));
     }
 
     @Test
-    void convertsDecimalValues() {
+    void convertsDecimalValues()
+    {
         InstitutionModule custom = TestSupport.openCopy(subDir("custom"), "valid/custom-school.xml");
+
         assertEquals(new BigDecimal("12500000.50"),
-                custom.attributeService().getTypedValue("pole-cordes", "budgetAnnuel").orElseThrow());
+                     custom.attributeService().getTypedValue("pole-cordes", "budgetAnnuel").orElseThrow());
     }
 
-    // ---------------------------------------------------------------- vérifications sans effet de bord
+    // ------------------------------------------------------------------ side-effect-free checks
 
     @Test
-    void validatesWithoutPersistingAnything() {
+    void validatesWithoutPersistingAnything()
+    {
         assertTrue(attributes.validateValue("MENTION", "effectifMaximum", "500").valid());
-        assertFalse(attributes.validateValue("MENTION", "effectifMaximum", "Bonjour").valid());
-        assertFalse(attributes.validateValue("MENTION", "inconnu", "x").valid());
+        assertFalse(attributes.validateValue("MENTION", "effectifMaximum", "Hello").valid());
+        assertFalse(attributes.validateValue("MENTION", "unknown", "x").valid());
 
         assertTrue(attributes.validateValues("MENTION", mentionValues("Rabe")).valid());
+
         ValidationReport missing = attributes.validateValues("MENTION", Map.of("email", "x@y.mg"));
+
         assertFalse(missing.valid());
         assertTrue(missing.errors().get(0).contains("chefMention"));
         assertEquals(11, hierarchy.getSubtree("univ-x").size());

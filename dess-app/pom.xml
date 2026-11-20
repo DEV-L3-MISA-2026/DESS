@@ -14,20 +14,23 @@
         <hibernate.version>7.1.0.Final</hibernate.version>
     </properties>
     <dependencies>
+        <!-- Fourni par le serveur WildFly pour l'application (REST, JPA, etc.) -->
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
-        
-        
+        <!-- Fourni par WildFly pour la documentation automatique OpenAPI -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.36</version>
+            <groupId>org.eclipse.microprofile.openapi</groupId>
+            <artifactId>microprofile-openapi-api</artifactId>
+            <scope>provided</scope>
         </dependency>
-        
-        
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -68,11 +71,6 @@
             <artifactId>flyway-database-postgresql</artifactId>
             <version>${flyway.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.platform</groupId>
-            <artifactId>jakarta.jakartaee-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

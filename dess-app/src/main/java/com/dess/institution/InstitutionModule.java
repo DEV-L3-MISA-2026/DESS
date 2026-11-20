@@ -15,61 +15,110 @@ import com.dess.institution.infrastructure.xml.InstitutionConfigRepository;
 import java.nio.file.Path;
 
 /**
- * Point d'assemblage du module : construit la persistance XML, charge la configuration et expose les
- * quatre services applicatifs. Utilisable sans CDI (tests, scripts) ; en production les services sont
- * exposés par injection via {@code com.dess.institution.cdi.InstitutionProducers}.
+ * @brief Composition root of the institution module.
+ *
+ * <p>The module builds the XML persistence, loads the configuration and exposes the four
+ * application services. It can be used without CDI (tests, scripts); in a Jakarta EE runtime the
+ * services are produced by {@link com.dess.institution.cdi.InstitutionProducers}.</p>
+ *
+ * @see InstitutionSettings
  */
-public final class InstitutionModule {
-
-    private final ConfigurationHolder holder;
+public final class InstitutionModule
+{
     private final InstitutionService institutionService;
     private final UnitTypeService unitTypeService;
     private final HierarchyService hierarchyService;
     private final AttributeService attributeService;
 
-    private InstitutionModule(ConfigurationHolder holder) {
-        this.holder = holder;
+    private InstitutionModule(ConfigurationHolder holder)
+    {
         this.institutionService = new InstitutionServiceImpl(holder);
         this.unitTypeService = new UnitTypeServiceImpl(holder);
         this.hierarchyService = new HierarchyServiceImpl(holder);
         this.attributeService = new AttributeServiceImpl(holder);
     }
 
-    /** Ouvre le module sur un fichier XML. Si le fichier n'existe pas, le module démarre non initialisé. */
-    public static InstitutionModule open(Path xmlFile) {
+    /**
+     * Opens the module on an XML file. When the file does not exist yet, the module starts in the
+     * not-initialized state.
+     *
+     * @param xmlFile configuration file path
+     * @return an initialized module
+     * @throws com.dess.institution.exception.ConfigurationLoadException if the file exists but cannot be read
+     * @throws com.dess.institution.exception.ValidationException if the stored configuration is invalid
+     */
+    public static InstitutionModule open(Path xmlFile)
+    {
         return open(new InstitutionConfigRepository(xmlFile));
     }
 
-    public static InstitutionModule open(InstitutionSettings settings) {
+    /**
+     * Opens the module using the file configured in the supplied settings.
+     *
+     * @param settings module settings
+     * @return an initialized module
+     * @throws com.dess.institution.exception.ConfigurationLoadException if the file exists but cannot be read
+     * @throws com.dess.institution.exception.ValidationException if the stored configuration is invalid
+     */
+    public static InstitutionModule open(InstitutionSettings settings)
+    {
         return open(settings.configFile());
     }
 
     /**
-     * Ouvre le module sur une persistance quelconque.
+     * Opens the module on an arbitrary persistence implementation.
      *
-     * @throws com.dess.institution.exception.ConfigurationLoadException si le fichier existe mais est
-     *                                                                   invalide (jamais écrasé)
-     * @throws com.dess.institution.exception.ValidationException        si la configuration viole une règle métier
+     * @param persistence persistence port to use
+     * @return an initialized module
+     * @throws com.dess.institution.exception.ConfigurationLoadException if the stored configuration cannot be read;
+     *                                                                   the existing data is never overwritten
+     * @throws com.dess.institution.exception.ValidationException if the stored configuration violates a business rule
      */
-    public static InstitutionModule open(ConfigPersistence persistence) {
+    public static InstitutionModule open(ConfigPersistence persistence)
+    {
         ConfigurationHolder holder = new ConfigurationHolder(persistence);
         holder.load();
+
         return new InstitutionModule(holder);
     }
 
-    public InstitutionService institutionService() {
+    /**
+     * Returns the institution service.
+     *
+     * @return the institution information and configuration lifecycle service
+     */
+    public InstitutionService institutionService()
+    {
         return institutionService;
     }
 
-    public UnitTypeService unitTypeService() {
+    /**
+     * Returns the unit type service.
+     *
+     * @return the unit type and allowed relation service
+     */
+    public UnitTypeService unitTypeService()
+    {
         return unitTypeService;
     }
 
-    public HierarchyService hierarchyService() {
+    /**
+     * Returns the hierarchy service.
+     *
+     * @return the organizational unit tree service
+     */
+    public HierarchyService hierarchyService()
+    {
         return hierarchyService;
     }
 
-    public AttributeService attributeService() {
+    /**
+     * Returns the attribute service.
+     *
+     * @return the custom attribute definition and value service
+     */
+    public AttributeService attributeService()
+    {
         return attributeService;
     }
 }

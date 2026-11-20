@@ -3,26 +3,51 @@ package com.dess.institution;
 import java.nio.file.Path;
 
 /**
- * Paramètres du module. Le chemin du fichier XML n'est jamais codé en dur : il est lu, dans cet ordre,
- * depuis la propriété système {@value #PROPERTY}, la variable d'environnement {@value #ENV},
- * puis par défaut {@code config/institution.xml} relatif au répertoire de travail.
+ * @brief Configuration settings of the institution module.
  *
- * @param configFile chemin du fichier XML de configuration de l'établissement
+ * <p>The XML file path is never hard-coded. It is resolved, in this order, from the system property
+ * {@value #PROPERTY}, the environment variable {@value #ENV}, and finally from the default relative
+ * path {@value #DEFAULT_RELATIVE_PATH} resolved against the working directory.</p>
+ *
+ * @param configFile path of the institution configuration XML file
  */
-public record InstitutionSettings(Path configFile) {
-
+public record InstitutionSettings(Path configFile)
+{
+    /**
+     * System property used to configure the XML file path.
+     */
     public static final String PROPERTY = "dess.institution.config";
+
+    /**
+     * Environment variable used to configure the XML file path.
+     */
     public static final String ENV = "DESS_INSTITUTION_CONFIG";
+
+    /**
+     * Default path, relative to the working directory.
+     */
     public static final String DEFAULT_RELATIVE_PATH = "config/institution.xml";
 
-    public static InstitutionSettings fromEnvironment() {
+    /**
+     * Resolves the module settings from the system property, the environment variable or the
+     * default path.
+     *
+     * @return the resolved settings
+     */
+    public static InstitutionSettings fromEnvironment()
+    {
         String value = System.getProperty(PROPERTY);
-        if (value == null || value.isBlank()) {
+
+        if (value == null || value.isBlank())
+        {
             value = System.getenv(ENV);
         }
-        if (value == null || value.isBlank()) {
+
+        if (value == null || value.isBlank())
+        {
             value = DEFAULT_RELATIVE_PATH;
         }
+
         return new InstitutionSettings(Path.of(value));
     }
 }

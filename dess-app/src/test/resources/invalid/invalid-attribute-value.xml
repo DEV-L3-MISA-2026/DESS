@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Valeur "Bonjour" pour un attribut de type NUMBER -->
+<!-- Value "Hello" for an attribute of type NUMBER -->
 <institution id="i1" code="TEST" name="Test">
     <unitTypes>
         <type code="A" label="A">
             <attributes>
-                <attribute key="effectif" label="Effectif" type="NUMBER" required="false"/>
+                <attribute key="headcount" label="Headcount" type="NUMBER" required="false"/>
             </attributes>
         </type>
     </unitTypes>
     <units>
-        <unit id="u1" code="U1" name="Unité 1" type="A">
+        <unit id="u1" code="U1" name="Unit 1" type="A">
             <values>
-                <value key="effectif">Bonjour</value>
+                <value key="headcount">Hello</value>
             </values>
         </unit>
     </units>

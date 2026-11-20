@@ -11,164 +11,246 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Sérialisation d'une {@link InstitutionConfig} en XML (UTF-8, indenté). Aucune règle métier :
- * la configuration doit avoir été validée avant l'écriture.
+ * @brief Serializes an {@link InstitutionConfig} to indented UTF-8 XML.
+ *
+ * <p>The writer contains no business rule: the configuration must have been validated before it is
+ * written. The document is produced with the hardened factories of {@link SecureXml}.</p>
  */
-public final class XmlConfigWriter {
-
-    public byte[] toBytes(InstitutionConfig config) {
-        try {
+public final class XmlConfigWriter
+{
+    /**
+     * Serializes a configuration.
+     *
+     * @param config configuration to serialize
+     * @return the UTF-8 XML document
+     * @throws ConfigurationSaveException if the DOM cannot be built or serialized
+     */
+    public byte[] toBytes(InstitutionConfig config)
+    {
+        try
+        {
             DocumentBuilderFactory factory = SecureXml.documentBuilderFactory();
-            Document doc = factory.newDocumentBuilder().newDocument();
-            doc.setXmlStandalone(true);
+            Document document = factory.newDocumentBuilder().newDocument();
+            document.setXmlStandalone(true);
 
-            Element root = doc.createElement("institution");
-            doc.appendChild(root);
+            Element root = document.createElement("institution");
+            document.appendChild(root);
             root.setAttribute("id", config.id());
             root.setAttribute("code", config.code());
             root.setAttribute("name", config.name());
-            if (config.description() != null) {
+
+            if (config.description() != null)
+            {
                 root.setAttribute("description", config.description());
             }
 
-            Element typesEl = doc.createElement("unitTypes");
-            root.appendChild(typesEl);
-            for (UnitTypeDefinition type : config.unitTypes()) {
-                typesEl.appendChild(typeElement(doc, type));
+            Element typesElement = document.createElement("unitTypes");
+            root.appendChild(typesElement);
+
+            for (UnitTypeDefinition type : config.unitTypes())
+            {
+                typesElement.appendChild(typeElement(document, type));
             }
 
-            Element pairsEl = doc.createElement("allowedParentChildPairs");
-            root.appendChild(pairsEl);
-            for (AllowedParentChildPair pair : config.allowedPairs()) {
-                Element allow = doc.createElement("allow");
-                allow.setAttribute("parent", pair.parent());
-                allow.setAttribute("child", pair.child());
-                pairsEl.appendChild(allow);
+            Element pairsElement = document.createElement("allowedParentChildPairs");
+            root.appendChild(pairsElement);
+
+            for (AllowedParentChildPair pair : config.allowedPairs())
+            {
+                Element allowElement = document.createElement("allow");
+                allowElement.setAttribute("parent", pair.parent());
+                allowElement.setAttribute("child", pair.child());
+                pairsElement.appendChild(allowElement);
             }
 
-            Element unitsEl = doc.createElement("units");
-            root.appendChild(unitsEl);
-            writeUnits(doc, unitsEl, config);
+            Element unitsElement = document.createElement("units");
+            root.appendChild(unitsElement);
+            writeUnits(document, unitsElement, config);
 
-            return serialize(doc);
-        } catch (ConfigurationSaveException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ConfigurationSaveException("Sérialisation XML impossible : " + e.getMessage(), e);
+            return serialize(document);
+        }
+        catch (ParserConfigurationException | TransformerException e)
+        {
+            throw new ConfigurationSaveException("XML serialization failed: " + e.getMessage(), e);
         }
     }
 
-    private Element typeElement(Document doc, UnitTypeDefinition type) {
-        Element el = doc.createElement("type");
-        el.setAttribute("code", type.code());
-        el.setAttribute("label", type.label());
-        if (type.description() != null) {
-            el.setAttribute("description", type.description());
+    /**
+     * Builds the {@code type} element of a unit type.
+     *
+     * @param document owning document
+     * @param type     unit type to serialize
+     * @return the {@code type} element
+     */
+    private Element typeElement(Document document, UnitTypeDefinition type)
+    {
+        Element typeElement = document.createElement("type");
+        typeElement.setAttribute("code", type.code());
+        typeElement.setAttribute("label", type.label());
+
+        if (type.description() != null)
+        {
+            typeElement.setAttribute("description", type.description());
         }
-        if (!type.active()) {
-            el.setAttribute("active", "false");
+
+        if (!type.active())
+        {
+            typeElement.setAttribute("active", "false");
         }
-        if (!type.attributes().isEmpty()) {
-            Element attrsEl = doc.createElement("attributes");
-            el.appendChild(attrsEl);
-            for (AttributeDefinition def : type.attributes()) {
-                Element a = doc.createElement("attribute");
-                a.setAttribute("key", def.key());
-                a.setAttribute("label", def.label());
-                a.setAttribute("type", def.type().name());
-                a.setAttribute("required", Boolean.toString(def.required()));
-                if (def.description() != null) {
-                    a.setAttribute("description", def.description());
+
+        if (!type.attributes().isEmpty())
+        {
+            Element attributesElement = document.createElement("attributes");
+            typeElement.appendChild(attributesElement);
+
+            for (AttributeDefinition definition : type.attributes())
+            {
+                Element attributeElement = document.createElement("attribute");
+                attributeElement.setAttribute("key", definition.key());
+                attributeElement.setAttribute("label", definition.label());
+                attributeElement.setAttribute("type", definition.type().name());
+                attributeElement.setAttribute("required", Boolean.toString(definition.required()));
+
+                if (definition.description() != null)
+                {
+                    attributeElement.setAttribute("description", definition.description());
                 }
-                if (def.defaultValue() != null) {
-                    a.setAttribute("default", def.defaultValue());
+
+                if (definition.defaultValue() != null)
+                {
+                    attributeElement.setAttribute("default", definition.defaultValue());
                 }
-                attrsEl.appendChild(a);
+
+                attributesElement.appendChild(attributeElement);
             }
         }
-        return el;
+
+        return typeElement;
     }
 
-    private void writeUnits(Document doc, Element unitsEl, InstitutionConfig config) {
-        Map<String, List<OrganizationalUnit>> byParent = new HashMap<>();
-        List<OrganizationalUnit> roots = new ArrayList<>();
-        for (OrganizationalUnit u : config.units()) {
-            if (u.parentId() == null) {
-                roots.add(u);
-            } else {
-                byParent.computeIfAbsent(u.parentId(), k -> new ArrayList<>()).add(u);
-            }
-        }
+    /**
+     * Writes the unit tree in document order.
+     *
+     * @param document     owning document
+     * @param unitsElement {@code units} container
+     * @param config       configuration being serialized
+     * @throws ConfigurationSaveException if a unit is unreachable or encountered twice
+     */
+    private void writeUnits(Document document, Element unitsElement, InstitutionConfig config)
+    {
+        Map<String, List<OrganizationalUnit>> childrenByParent = config.childrenIndex();
+        List<OrganizationalUnit> roots = config.units()
+                                                .stream()
+                                                .filter(OrganizationalUnit::isRoot)
+                                                .toList();
         Set<String> written = new HashSet<>();
-        for (OrganizationalUnit root : roots) {
-            unitsEl.appendChild(unitElement(doc, root, byParent, written));
+
+        for (OrganizationalUnit root : roots)
+        {
+            unitsElement.appendChild(unitElement(document, root, childrenByParent, written));
         }
-        // Garde-fou : ne jamais perdre silencieusement une unité (parent inconnu ou cycle).
-        if (written.size() != config.units().size()) {
-            throw new ConfigurationSaveException("Configuration incohérente : " + (config.units().size() - written.size())
-                    + " unité(s) inaccessible(s) depuis les racines ne pourraient pas être sauvegardées");
+
+        // Safety net: never silently lose a unit because of an unknown parent or a cycle.
+        if (written.size() != config.units().size())
+        {
+            int missing = config.units().size() - written.size();
+            throw new ConfigurationSaveException("Inconsistent configuration: " + missing
+                                                 + " unit(s) unreachable from the roots "
+                                                 + "could not be saved");
         }
     }
 
-    private Element unitElement(Document doc, OrganizationalUnit unit,
-                                Map<String, List<OrganizationalUnit>> byParent, Set<String> written) {
-        if (!written.add(unit.id())) {
-            throw new ConfigurationSaveException("Unité « " + unit.id() + " » rencontrée deux fois (cycle ?)");
+    /**
+     * Builds a {@code unit} element and recursively appends its children.
+     *
+     * @param document         owning document
+     * @param unit             unit to serialize
+     * @param childrenByParent index from parent identifier to children
+     * @param written          identifiers already serialized
+     * @return the {@code unit} element
+     * @throws ConfigurationSaveException if the unit is encountered twice
+     */
+    private Element unitElement(Document document, OrganizationalUnit unit,
+                                Map<String, List<OrganizationalUnit>> childrenByParent, Set<String> written)
+    {
+        if (!written.add(unit.id()))
+        {
+            throw new ConfigurationSaveException("Unit '" + unit.id() + "' encountered twice (cycle?)");
         }
-        Element el = doc.createElement("unit");
-        el.setAttribute("id", unit.id());
-        el.setAttribute("code", unit.code());
-        el.setAttribute("name", unit.name());
-        el.setAttribute("type", unit.typeCode());
-        if (unit.description() != null) {
-            el.setAttribute("description", unit.description());
-        }
-        el.setAttribute("active", Boolean.toString(unit.active()));
 
-        if (!unit.values().isEmpty()) {
-            Element valuesEl = doc.createElement("values");
-            el.appendChild(valuesEl);
-            for (AttributeValue v : unit.values().values()) {
-                Element ve = doc.createElement("value");
-                ve.setAttribute("key", v.key());
-                ve.setTextContent(v.value());
-                valuesEl.appendChild(ve);
+        Element unitElement = document.createElement("unit");
+        unitElement.setAttribute("id", unit.id());
+        unitElement.setAttribute("code", unit.code());
+        unitElement.setAttribute("name", unit.name());
+        unitElement.setAttribute("type", unit.typeCode());
+
+        if (unit.description() != null)
+        {
+            unitElement.setAttribute("description", unit.description());
+        }
+
+        unitElement.setAttribute("active", Boolean.toString(unit.active()));
+
+        if (!unit.values().isEmpty())
+        {
+            Element valuesElement = document.createElement("values");
+            unitElement.appendChild(valuesElement);
+
+            for (AttributeValue value : unit.values().values())
+            {
+                Element valueElement = document.createElement("value");
+                valueElement.setAttribute("key", value.key());
+                valueElement.setTextContent(value.value());
+                valuesElement.appendChild(valueElement);
             }
         }
 
-        List<OrganizationalUnit> kids = byParent.getOrDefault(unit.id(), List.of());
-        if (!kids.isEmpty()) {
-            Element childrenEl = doc.createElement("children");
-            el.appendChild(childrenEl);
-            for (OrganizationalUnit kid : kids) {
-                childrenEl.appendChild(unitElement(doc, kid, byParent, written));
+        List<OrganizationalUnit> children = childrenByParent.getOrDefault(unit.id(), List.of());
+
+        if (!children.isEmpty())
+        {
+            Element childrenElement = document.createElement("children");
+            unitElement.appendChild(childrenElement);
+
+            for (OrganizationalUnit child : children)
+            {
+                childrenElement.appendChild(unitElement(document, child, childrenByParent, written));
             }
         }
-        return el;
+
+        return unitElement;
     }
 
-    private byte[] serialize(Document doc) throws Exception {
+    /**
+     * Serializes a DOM document to UTF-8 bytes.
+     *
+     * @param document document to serialize
+     * @return the serialized bytes
+     * @throws TransformerException if serialization fails
+     */
+    private byte[] serialize(Document document) throws TransformerException
+    {
         Transformer transformer = SecureXml.transformerFactory().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        transformer.transform(new DOMSource(doc), new StreamResult(out));
-        String xml = out.toString(StandardCharsets.UTF_8);
-        return xml.getBytes(StandardCharsets.UTF_8);
+        transformer.transform(new DOMSource(document), new StreamResult(out));
+
+        return out.toByteArray();
     }
 }

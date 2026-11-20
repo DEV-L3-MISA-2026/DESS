@@ -14,63 +14,80 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Simule ce que feraient les modules academic / assessment et la couche web : ils ne reçoivent que
- * les interfaces applicatives et ne connaissent ni le XML, ni le dépôt, ni l'infrastructure.
+ * @brief Simulates a consumer of the module, such as the academic or assessment modules and the web
+ * layer.
+ *
+ * <p>Such a consumer only receives the application interfaces and knows neither the XML format, nor
+ * the repository, nor any infrastructure class.</p>
  */
-class ModuleIntegrationTest {
-
+class ModuleIntegrationTest
+{
     @TempDir
     Path tmp;
 
-    /** Code « client » : n'importe que des interfaces et des objets de domaine. */
-    static final class AcademicLikeConsumer {
+    /**
+     * Minimal client code that imports only application interfaces and domain objects.
+     */
+    static final class AcademicLikeConsumer
+    {
         private final HierarchyService hierarchy;
         private final AttributeService attributes;
 
-        AcademicLikeConsumer(HierarchyService hierarchy, AttributeService attributes) {
+        AcademicLikeConsumer(HierarchyService hierarchy, AttributeService attributes)
+        {
             this.hierarchy = hierarchy;
             this.attributes = attributes;
         }
 
-        List<OrganizationalUnit> unitsBelow(String mentionId) {
-            return hierarchy.getDescendants(mentionId);
+        List<OrganizationalUnit> unitsBelow(String departmentId)
+        {
+            return hierarchy.getDescendants(departmentId);
         }
 
-        Optional<OrganizationalUnit> find(String unitId) {
+        Optional<OrganizationalUnit> find(String unitId)
+        {
             return hierarchy.getById(unitId);
         }
 
-        List<OrganizationalUnit> allOfType(String typeCode) {
+        List<OrganizationalUnit> allOfType(String typeCode)
+        {
             return hierarchy.getByType(typeCode);
         }
 
-        String breadcrumb(String unitId) {
-            return hierarchy.getPath(unitId).stream().map(OrganizationalUnit::name)
-                    .reduce((a, b) -> a + " > " + b).orElse("");
+        String breadcrumb(String unitId)
+        {
+            return hierarchy.getPath(unitId)
+                            .stream()
+                            .map(OrganizationalUnit::name)
+                            .reduce((a, b) -> a + " > " + b)
+                            .orElse("");
         }
 
-        Optional<Object> typedAttribute(String unitId, String key) {
+        Optional<Object> typedAttribute(String unitId, String key)
+        {
             return attributes.getTypedValue(unitId, key);
         }
     }
 
     @Test
-    void otherModulesUseOnlyTheApplicationInterfaces() {
+    void otherModulesUseOnlyTheApplicationInterfaces()
+    {
         InstitutionModule module = TestSupport.openUniversity(tmp);
         AcademicLikeConsumer academic = new AcademicLikeConsumer(module.hierarchyService(), module.attributeService());
 
         assertEquals(3, academic.unitsBelow("mention-informatique").size());
-        assertEquals("Mention Droit", academic.find("mention-droit").orElseThrow().name());
+        assertEquals("Law Department", academic.find("mention-droit").orElseThrow().name());
         assertEquals(2, academic.allOfType("MENTION").size());
-        assertEquals("Université X > Faculté des Sciences > Mention Informatique > Développement > Licence 3",
-                academic.breadcrumb("dev-l3"));
+        assertEquals("University X > Faculty of Sciences > Computer Science Department > Software Development > Bachelor 3",
+                     academic.breadcrumb("dev-l3"));
         assertEquals(500L, academic.typedAttribute("mention-informatique", "effectifMaximum").orElseThrow());
     }
 
     @Test
-    void anotherModuleCanStoreAnUnitIdAsItsOwnForeignKey() {
+    void anotherModuleCanStoreAUnitIdAsItsOwnForeignKey()
+    {
         InstitutionModule module = TestSupport.openUniversity(tmp);
-        // le module Academic conserverait simplement cet identifiant stable dans sa table PostgreSQL
+        // The academic module would simply store this stable identifier in its own PostgreSQL table.
         String foreignKey = module.hierarchyService().getByCode("DEV_L3").orElseThrow().id();
 
         module.hierarchyService().moveUnit("parcours-dev", "mention-droit");
@@ -81,16 +98,17 @@ class ModuleIntegrationTest {
     }
 
     @Test
-    void returnedStructuresCannotBeUsedToCorruptTheConfiguration() {
+    void returnedStructuresCannotBeUsedToCorruptTheConfiguration()
+    {
         InstitutionModule module = TestSupport.openUniversity(tmp);
         List<OrganizationalUnit> roots = module.hierarchyService().getRoots();
         OrganizationalUnit unit = module.hierarchyService().getById("mention-droit").orElseThrow();
 
         org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class, () -> roots.clear());
         org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
-                () -> unit.values().clear());
+                                                      () -> unit.values().clear());
         org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
-                () -> module.institutionService().getConfig().units().clear());
+                                                      () -> module.institutionService().getConfig().units().clear());
         assertTrue(module.institutionService().check().valid());
     }
 }

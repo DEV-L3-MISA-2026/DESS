@@ -4,11 +4,15 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
              version="3.2">
 
-    <!-- Hibernate est fourni par WildFly ; Flyway possède le schéma. -->
+    <!--
+        Hibernate is supplied by WildFly. Flyway owns the schema, so every
+        schema-generation action is disabled here.
+    -->
     <persistence-unit name="dessPU" transaction-type="JTA">
-        <description>Unité de persistance JTA de l'application DESS.</description>
+        <description>DESS persistence unit backed by the WildFly DessDS datasource.</description>
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>java:/jdbc/DessDS</jta-data-source>
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <class>com.dess.people.infrastructure.AppUserEntity</class>
         <class>com.dess.people.infrastructure.StudentEntity</class>
         <class>com.dess.people.infrastructure.TeacherEntity</class>
@@ -16,7 +20,6 @@
         <class>com.dess.academic.infrastructure.AcademicProgramEntity</class>
         <class>com.dess.academic.infrastructure.ProgramVersionEntity</class>
         <class>com.dess.academic.infrastructure.ProgramEnrollmentEntity</class>
-        <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>

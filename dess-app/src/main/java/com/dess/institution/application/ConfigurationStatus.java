@@ -1,9 +1,17 @@
 package com.dess.institution.application;
 
-/** État de la configuration de l'établissement. */
-public enum ConfigurationStatus {
-    /** Aucune configuration chargée : un fichier XML initial (ou une initialisation explicite) est nécessaire. */
+/**
+ * @brief Lifecycle state of the institution configuration.
+ */
+public enum ConfigurationStatus
+{
+    /**
+     * No configuration is loaded. An initial XML file or an explicit initialization is required.
+     */
     NOT_INITIALIZED,
-    /** Configuration chargée et valide. */
+
+    /**
+     * A valid configuration is loaded and ready to use.
+     */
     READY
 }

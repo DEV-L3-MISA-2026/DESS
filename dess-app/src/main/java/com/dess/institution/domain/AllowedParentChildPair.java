@@ -1,15 +1,23 @@
 package com.dess.institution.domain;
 
 /**
- * Relation hiérarchique autorisée entre deux types d'unités : une unité de type {@code child}
- * peut avoir pour parent une unité de type {@code parent}.
+ * @brief Allowed hierarchical relation between two unit types.
  *
- * @param parent code du type parent
- * @param child  code du type enfant
+ * <p>An instance means that a unit of type {@code child} may have a parent of type {@code parent}.</p>
+ *
+ * @param parent parent type code
+ * @param child  child type code
  */
-public record AllowedParentChildPair(String parent, String child) {
-
-    public AllowedParentChildPair {
+public record AllowedParentChildPair(String parent, String child)
+{
+    /**
+     * Normalizes {@code null} codes to empty strings so that validation can report them consistently.
+     *
+     * @param parent parent type code
+     * @param child  child type code
+     */
+    public AllowedParentChildPair
+    {
         parent = Texts.orEmpty(parent);
         child = Texts.orEmpty(child);
     }

@@ -3,9 +3,13 @@ target/
 *.war
 *.jar
 
-# Local configuration and data (never commit credentials)
+# Local configuration, runtime state and data (never commit credentials)
 .env
+.run/
 backups/
+config/institution.xml
+config/institution.xml.bak
+config/institution.xml*.tmp
 
 # Frontend
 frontend/node_modules/
@@ -17,3 +21,8 @@ frontend/dist/
 .vscode/
 .DS_Store
 *.log
+
+# agent context
+AGENTS.md
+
+.run/
