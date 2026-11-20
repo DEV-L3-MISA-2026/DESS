@@ -47,6 +47,55 @@ class ArchitectureTest
         assertFalse(mainSources().isEmpty());
     }
 
+    /**
+     * @brief Sources of one module, for guards that must look beyond institution.
+     */
+    private static List<Path> moduleSources(String module) throws IOException
+    {
+        try (Stream<Path> files = Files.walk(Path.of("src", "main", "java", "com", "dess", module)))
+        {
+            return files.filter(path -> path.toString().endsWith(".java")).collect(Collectors.toList());
+        }
+    }
+
+    @Test
+    void peopleDoesNotImportAcademic() throws IOException
+    {
+        for (Path source : moduleSources("people"))
+        {
+            for (String line : Files.readAllLines(source))
+            {
+                assertFalse(line.trim().startsWith("import com.dess.academic"),
+                        source + " imports the academic module");
+            }
+        }
+    }
+
+    @Test
+    void domainPackagesHaveNoTechnicalDependencies() throws IOException
+    {
+        for (String module : List.of("institution", "people"))
+        {
+            for (Path source : moduleSources(module))
+            {
+                if (!source.toString().contains("/domain/"))
+                {
+                    continue;
+                }
+
+                for (String line : Files.readAllLines(source))
+                {
+                    String trimmed = line.trim();
+                    assertFalse(trimmed.startsWith("import jakarta.persistence"), source + " imports JPA");
+                    assertFalse(trimmed.startsWith("import jakarta.ws.rs"), source + " imports REST");
+                    assertFalse(trimmed.startsWith("import jakarta.servlet"), source + " imports Servlet");
+                    assertFalse(trimmed.contains("com.dess." + module + ".infrastructure"),
+                            source + " depends on infrastructure");
+                }
+            }
+        }
+    }
+
     @Test
     void noImportOfSqlJpaRestServletOrOtherBusinessModules() throws IOException
     {
