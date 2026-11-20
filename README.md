@@ -6,7 +6,8 @@ frontend is a JSP graph editor used for local development.
 
 The team plan targets a REST API and a React frontend. This repository does not have them yet.
 The plan is in [docs/PMP.md](docs/PMP.md); the architecture summary is in
-[docs/architecture_farany.md](docs/architecture_farany.md).
+[docs/architecture_farany.md](docs/architecture_farany.md). The UI/UX baseline is in
+[docs/design/](docs/design/).
 
 ## Current status
 
@@ -17,6 +18,7 @@ The plan is in [docs/PMP.md](docs/PMP.md); the architecture summary is in
 | People, academic, scheduling, assessment | Package placeholders. |
 | REST API and JPA entities | Not implemented. |
 | Frontend | JSP editor only. React is a target, not current code. |
+| Design system | Baseline in `docs/design/`; implemented on the institution structure page. |
 
 ## Documentation
 
@@ -28,6 +30,7 @@ The plan is in [docs/PMP.md](docs/PMP.md); the architecture summary is in
 | [docs/institution-dependency-graph.md](docs/institution-dependency-graph.md) | Institution module dependencies. |
 | [docs/PMP.md](docs/PMP.md) | Two-week MVP plan. |
 | [docs/architecture_farany.md](docs/architecture_farany.md) | Architecture summary. |
+| [docs/design/](docs/design/) | UI/UX design system, tokens, components, page specifications and UX rules. |
 
 ## Repository layout
 
@@ -47,12 +50,15 @@ DESS/
 │   │   └── shared/
 │   └── src/main/webapp/       # index.jsp, export.jsp
 ├── db-migration/              # Flyway migrations
-├── docs/                      # Architecture and module notes
+├── docs/                      # Architecture, module notes and design system
+│   └── design/                # UI/UX baseline
 ├── ops/
 │   ├── db/                    # Flyway helper
 │   ├── lib/                   # Shared shell helpers
 │   ├── postgres/              # Local PostgreSQL Compose file
 │   └── wildfly/               # WildFly run and stop scripts
+├── .opencode/
+│   └── agents/                # Frontend and UI review subagents
 └── .env.example               # Local configuration template
 ```
 
@@ -61,7 +67,8 @@ DESS/
 - Java 21 and Jakarta EE 11.
 - WildFly 42.
 - CDI for dependency injection.
-- JSP for the current frontend.
+- JSP for the current frontend. Jakarta JSTL is the target for new pages.
+- Bootstrap 5, custom CSS and vanilla JavaScript for the design baseline.
 - PostgreSQL for operational data.
 - Flyway for database migrations.
 - JUnit 5 for tests.
@@ -205,6 +212,33 @@ The frontend is a JSP on purpose: the architecture guard forbids servlet and JPA
 and never uses the XML infrastructure directly. `export.jsp` streams the saved configuration as
 an attachment and uses the tree code as the file name.
 
+## Design system
+
+The UI/UX baseline is in [`docs/design/`](docs/design/). Read all five files before any frontend
+work.
+
+| File | What it covers |
+| --- | --- |
+| [UI_UX_DESIGN_SYSTEM.md](docs/design/UI_UX_DESIGN_SYSTEM.md) | Product experience, visual direction and design principles. |
+| [DESIGN_TOKENS.md](docs/design/DESIGN_TOKENS.md) | Color, typography, spacing, radius, shadow and layout tokens. |
+| [COMPONENT_CATALOG.md](docs/design/COMPONENT_CATALOG.md) | Shared components and their states. |
+| [PAGE_SPECIFICATIONS.md](docs/design/PAGE_SPECIFICATIONS.md) | Page layouts and required content. |
+| [UX_RULES.md](docs/design/UX_RULES.md) | UX rules and the acceptance checklist. |
+
+The baseline targets Bootstrap 5, custom CSS and vanilla JavaScript. The institution structure
+page is the first page implemented with it. Other pages do not exist yet. Authentication is not
+implemented.
+
+Two OpenCode subagents support the work:
+
+- `.opencode/agents/frontend-developer.md` implements pages with the design system.
+- `.opencode/agents/ui-reviewer.md` reviews JSP, CSS and JavaScript changes against it.
+
+Use the named tokens and shared components. Do not invent a palette, type scale, spacing scale,
+radius or shadow convention. Frontend changes must keep keyboard access, visible focus, contrast,
+responsive behavior and loading, empty, error and success states. Do not claim that visual
+behavior was verified unless the application was run and the page was inspected.
+
 ## Database migrations
 
 Run Flyway at any time:
@@ -290,6 +324,9 @@ full workflow.
 
 ## Boundaries
 
+- JSP is presentation only. New pages use JSTL and Expression Language under `WEB-INF/views/`.
+- Frontend changes follow `docs/design/`. Do not add a framework or build tool without an
+  explicit architecture decision.
 - Modules call each other through their `application` layer, not through repositories.
 - `academic` owns teaching sessions; `assessment` owns exam sessions; `scheduling` owns rooms,
   bookings and conflict checks. Assessment and academic call scheduling to reserve resources.

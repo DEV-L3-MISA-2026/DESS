@@ -1,0 +1,145 @@
+# DESS Page Specifications
+
+These are functional UI specifications for the first release. They define expected user-facing behavior, not database schemas or final backend contracts.
+
+## 1. Overview dashboard
+
+### Purpose
+Give staff a concise view of the current academic context and actions requiring attention.
+
+### Content
+- Current academic year/period.
+- Upcoming teaching sessions or examinations.
+- Pending tasks relevant to the current user's permissions.
+- Scheduling conflicts requiring attention.
+- Useful counts only when they help a decision.
+
+### Behavior
+- Each summary links to the corresponding filtered list.
+- Do not show fabricated metrics or placeholder charts in production.
+- Empty states explain when no upcoming events or pending actions exist.
+
+## 2. Institution structure
+
+### Purpose
+Browse and maintain the institution's organizational hierarchy.
+
+### Main view
+- Tree or hierarchical list of organizational units.
+- Unit name and type.
+- Parent relationship.
+- Active/inactive state.
+- Create, edit, view, and deactivate actions according to permissions.
+
+### XML configuration
+- Provide an import action.
+- Show validation results before applying changes.
+- Distinguish XML/schema errors from semantic/business validation errors.
+- Show the affected units and explain invalid parent-child relationships.
+- Require confirmation before applying a valid import.
+
+## 3. People
+
+### Purpose
+Find and manage students, professors, and staff.
+
+### Main view
+- Search by name or institutional identifier.
+- Filters appropriate to the selected person type.
+- Table columns should include identifier, name, relevant academic/organizational context, and status.
+- Profile/detail page for a selected person.
+
+### Behavior
+- Make the distinction between a Person record and a login UserAccount clear.
+- Do not imply that every person has a login account.
+- Account management actions belong to authorized security workflows.
+
+## 4. Academic
+
+### Purpose
+Manage academic periods, groups, courses, programs, program versions, and enrollments.
+
+### Main pages
+- Academic periods.
+- Student groups.
+- Courses.
+- Course offerings.
+- Academic programs and program versions.
+- Program enrollments.
+
+### Behavior
+- Clearly distinguish a Course (catalog concept) from a CourseOffering (a course delivered in a particular academic context).
+- Show relationships and status without requiring users to infer them from IDs.
+- Avoid presenting future roadmap features as available in the MVP.
+
+## 5. Scheduling — teaching timetable
+
+### Purpose
+Schedule regular teaching sessions and detect resource conflicts.
+
+### Main view
+- Weekly or daily calendar on desktop.
+- Group, teacher, and room perspectives.
+- Filters for academic period, course, group, teacher, and room as applicable.
+- List alternative on mobile.
+
+### Create/edit session
+Fields:
+- Course offering.
+- Group.
+- Teacher.
+- Room.
+- Date.
+- Start time.
+- End time.
+
+### Validation
+Check room, teacher, and group overlap. Explain each conflict clearly. A failed validation must not create a confirmed booking.
+
+## 6. Examinations
+
+### Purpose
+Create assessments, manage exam sessions, and identify eligible candidates.
+
+### Main pages
+- Assessment list.
+- Assessment detail.
+- Exam session list/calendar.
+- Candidate/eligibility view.
+
+### Exam session
+Capture the assessment, date, start/end time, room, supervisors, and candidate scope as required by the domain model.
+
+### Behavior
+- Reuse the same scheduling concepts and conflict feedback used by teaching timetable.
+- Make candidate eligibility visible before finalizing the session.
+- Do not silently include ineligible candidates.
+
+## 7. Results
+
+### Purpose
+Record, validate, and consult assessment results.
+
+### Main view
+- Assessment and session context.
+- Candidate list.
+- Mark/result entry where permitted.
+- Draft/submitted/validated state as supported by backend workflow.
+
+### Behavior
+- Clearly identify the assessment, course, period, and candidate.
+- Validate input on the server.
+- Make the difference between saving a draft and validating/publishing results explicit.
+- Do not introduce averages, weighting, ranking, or retake workflows unless they are explicitly included in the release scope.
+
+## 8. Security
+
+### Purpose
+Manage login accounts, roles, and permissions.
+
+### Behavior
+- Separate person identity from login account.
+- Show role assignments and account status.
+- Never display password values or password hashes.
+- Enforce all authorization on the server.
+- Navigation visibility is only a usability aid, not a security boundary.
