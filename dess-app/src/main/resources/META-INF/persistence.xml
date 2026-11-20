@@ -13,6 +13,14 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>java:/jdbc/DessDS</jta-data-source>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <class>com.dess.people.infrastructure.AppUserEntity</class>
+        <class>com.dess.people.infrastructure.StudentEntity</class>
+        <class>com.dess.people.infrastructure.TeacherEntity</class>
+        <class>com.dess.academic.infrastructure.PeriodEntity</class>
+        <class>com.dess.academic.infrastructure.AcademicProgramEntity</class>
+        <class>com.dess.academic.infrastructure.ProgramVersionEntity</class>
+        <class>com.dess.academic.infrastructure.ProgramEnrollmentEntity</class>
+        <class>com.dess.academic.infrastructure.CourseEntity</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>

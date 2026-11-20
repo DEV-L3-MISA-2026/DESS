@@ -1,9 +1,7 @@
-# Security module — package structure
+# Security module
 
-Status: **scaffold only**. The packages below exist together with the three domain records and
-the three application service interfaces. They declare data and method signatures only; no
-behavior is implemented and no infrastructure or web adapters exist yet. Each directory also
-contains a `package-info.java` file that records its planned responsibility.
+Status: **skeleton**. The packages and six main types exist. There is no behavior yet: no login,
+no password hashing, no storage and no web filter.
 
 ## Layout
 
@@ -27,54 +25,65 @@ com.dess.security/
     └── config/
 ```
 
-## Scaffolded types
+## What each package does
+
+| Package | Job |
+| --- | --- |
+| `security.domain` | Holds accounts, roles and permissions. It has no database or web code. |
+| `security.application` | Defines the use cases: login, access checks and user management. |
+| `security.infrastructure.persistence` | Will store accounts, roles and permissions. |
+| `security.infrastructure.password` | Will hash and check passwords. |
+| `security.infrastructure.session` | Will create and end login sessions. |
+| `security.web.controller` | Will prepare data for the security pages. |
+| `security.web.filter` | Will block requests that are not allowed. |
+| `security.web.config` | Will wire the web layer for WildFly. |
+
+## What exists
 
 | Type | Kind | Purpose |
 | --- | --- | --- |
-| `UserAccount` | record | Account identity, login name, encoded password, activation state and roles. |
-| `Role` | record | Named group of permissions. |
-| `Permission` | record | Unit of authorization identified by a code. |
-| `AuthenticationService` | interface | Verifies credentials and returns the authenticated account. |
-| `AuthorizationService` | interface | Answers permission and role questions for an account. |
-| `UserManagementService` | interface | Creates, updates, deactivates and deletes accounts and role assignments. |
+| `UserAccount` | record | Login name, display name, password hash, active flag and roles. |
+| `Role` | record | A named group of permissions. |
+| `Permission` | record | One allowed action, identified by a code. |
+| `AuthenticationService` | interface | Checks a username and password. |
+| `AuthorizationService` | interface | Answers what an account may do. |
+| `UserManagementService` | interface | Creates and manages accounts. |
 
-The records currently expose their components without validation, normalization or defensive
-copying, and the interfaces have no implementations. Both are intentional for this scaffold.
+The records have no validation or defensive copying yet. The interfaces have no
+implementations. This is on purpose for the skeleton.
 
-## Responsibilities
+## Rules
 
-| Package | Responsibility |
-| --- | --- |
-| `security` | Module root; defines the public surface and dependency rules. |
-| `security.domain` | User account aggregate plus role and permission value objects. Framework-independent. |
-| `security.application` | Authentication, authorization and user-management use cases. Orchestrates the domain and calls infrastructure through ports. |
-| `security.infrastructure.persistence` | Repository adapters for accounts, roles and permissions. |
-| `security.infrastructure.password` | Password hashing and verification. Plain-text passwords never leave this package. |
-| `security.infrastructure.session` | Authenticated session or token lifecycle. Stores no business data. |
-| `security.web` | Delivery layer for the JSP frontend. |
-| `security.web.controller` | Translates HTTP input into application calls and prepares view data. |
-| `security.web.filter` | Establishes the current user and rejects unauthenticated or unauthorized requests. |
-| `security.web.config` | Wires filters, controllers and view resources for WildFly. |
+- The domain does not depend on the database, CDI or the web layer.
+- The application layer uses the domain and small interfaces. It does not use servlets or JPA.
+- Infrastructure implements those interfaces.
+- The web layer calls the application services. It does not contain business rules.
+- Other modules use `security.application` only.
 
-## Dependency rules
+## What is missing
 
-- `domain` depends on the JDK only.
-- `application` depends on `domain` and on port interfaces; it does not depend on
-  `infrastructure` or `web`.
-- `infrastructure` implements the ports and may depend on `application` and `domain`.
-- `web` depends on `application` (and on the session adapter); it contains no business rules.
-- Other modules call `security.application` only and never reach into `domain` or
-  `infrastructure`.
+- Implementations of the three services.
+- A storage choice and repository code.
+- Password hashing and a password policy.
+- Session handling.
+- Login and user-management pages.
+- A filter that protects the JSP pages.
+- Tests for success and failure paths.
 
-## Constraints to resolve before implementation
+## Decisions needed before implementation
 
-1. `ArchitectureTest` currently rejects `jakarta.persistence`, `jakarta.servlet` and
-   `jakarta.ws.rs` imports, plus `@Entity`, `@Transactional` and similar annotations, in every
-   source under `src/main/java`. Implementing JPA repositories in
-   `infrastructure.persistence` or servlet filters in `web.filter` therefore requires either an
-   explicit exception for the security module or a different adapter technology.
-2. `dess-app/pom.xml` declares only the CDI API. Servlet and persistence APIs are managed by the
-   parent POM but are not yet dependencies of the WAR.
-3. The frontend is intentionally JSP-only and has no authentication or CSRF protection. Any
-   security filter must stay compatible with that local-development constraint or the
-   constraint must be revisited explicitly.
+1. `ArchitectureTest` blocks `jakarta.persistence`, `jakarta.servlet` and `jakarta.ws.rs`
+   imports in every file under `src/main/java`. It also blocks `@Entity`, `@Transactional` and
+   similar annotations. Security storage and filters must use another approach, or the rule
+   must be changed on purpose.
+2. `dess-app/pom.xml` declares only the CDI API. Servlet and persistence APIs are not
+   dependencies of the WAR yet.
+3. The JSP page has no authentication or CSRF protection and is meant for localhost. A security
+   filter must respect that, or the local-development rule must change.
+4. The team plan gives `security` a dependency on `people`. That dependency is not in the code
+   yet.
+
+## Next step
+
+Pick the storage and filter approach first. Then implement one use case end to end, starting
+with `AuthenticationService`, and add tests.

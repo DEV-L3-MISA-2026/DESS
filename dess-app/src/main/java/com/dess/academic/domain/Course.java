@@ -1,93 +1,42 @@
 package com.dess.academic.domain;
 
-import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-@Entity
-@Table(name = "course")
-public class Course 
-{
-
-    @Id
-    private UUID id;
-
-    @Column(nullable = false, length = 30, unique = true)
-    private String code;
-
-    @Column(nullable = false, length = 200)
-    private String title;
-
-    @Column(nullable = false)
-    private boolean active = true;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
-
-    protected Course() 
-    { 
-
+/** Cours immuable du catalogue académique. */
+public record Course(UUID id, String code, String title, boolean active, Instant createdAt) {
+    public Course {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(createdAt, "createdAt");
+        code = normalizeCode(code);
+        title = requireText(title, "Le titre du cours est obligatoire");
     }
 
-    public Course(String code, String title) 
-    {
-        this.id = UUID.randomUUID();
-        this.code = normalizeCode(code);
-        this.title = requireText(title, "title");
-        this.createdAt = Instant.now();
+    /** Crée un cours actif avec un identifiant et une date de création neufs. */
+    public static Course create(String code, String title) {
+        return new Course(UUID.randomUUID(), code, title, true, Instant.now());
     }
 
-    public void rename(String newTitle)
-    { 
-        this.title = requireText(newTitle, "title"); 
-    }
-    public void deactivate() 
-    { 
-        this.active = false; 
+    /** Renomme le cours sans modifier son identité ni son état. */
+    public Course renamed(String newTitle) {
+        return new Course(id, code, newTitle, active, createdAt);
     }
 
-    public static String normalizeCode(String code) 
-    {
-        return requireText(code, "code").toUpperCase();
+    /** Désactive le cours sans le supprimer du catalogue. */
+    public Course deactivated() {
+        return new Course(id, code, title, false, createdAt);
     }
 
-    private static String requireText(String value, String field) 
-    {
-        if (value == null || value.isBlank()) 
-        {
-            throw new IllegalArgumentException(field + " must not be blank");
+    /** Normalise le code : texte obligatoire, sans espaces superflus, en majuscules. */
+    public static String normalizeCode(String code) {
+        return requireText(code, "Le code du cours est obligatoire").toUpperCase();
+    }
+
+    private static String requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
         }
         return value.trim();
-    }
-
-    public UUID getId() 
-    { 
-        return id; 
-    }
-    public String getCode() 
-    { 
-        return code; 
-    }
-    public String getTitle() 
-    { 
-        return title; 
-    }
-    public boolean isActive() 
-    { 
-        return active; 
-    }
-    public Instant getCreatedAt() 
-    { 
-        return createdAt; 
-    }
-
-    @Override public boolean equals(Object o) 
-    {
-        return o instanceof Course c && Objects.equals(id, c.id);
-    }
-    @Override public int hashCode() 
-    { 
-        return Objects.hash(id); 
     }
 }
