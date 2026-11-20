@@ -1,6 +1,14 @@
 -- scheduling: rooms and bookings, with database-enforced conflict prevention (ADR-003).
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
+-- V1 carries a placeholder room table with bigint identity keys. Scheduling owns rooms and
+-- identifies them with UUIDs, so replace the placeholder instead of creating a second table.
+-- time_slot will reserve rooms through booking_slot, so its direct room column goes away.
+ALTER TABLE time_slot DROP CONSTRAINT fk_time_slot_room;
+DROP INDEX ix_time_slot_room_day;
+ALTER TABLE time_slot DROP COLUMN room_id;
+DROP TABLE room;
+
 CREATE TABLE room (
     id        UUID         PRIMARY KEY,
     code      VARCHAR(50)  NOT NULL UNIQUE,
