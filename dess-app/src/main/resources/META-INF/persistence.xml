@@ -24,6 +24,7 @@
         <class>com.dess.assessment.infrastructure.AssessmentEntity</class>
         <class>com.dess.assessment.infrastructure.ResultEntity</class>
         <class>com.dess.assessment.infrastructure.persistence.entity.ExamSessionEntity</class>
+        <class>com.dess.academic.domain.StudentGroup</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>
