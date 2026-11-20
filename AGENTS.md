@@ -60,12 +60,13 @@ application without an explicit architecture decision from Sergio.
 | Area | State |
 | --- | --- |
 | `institution` | Working: XML config, validation, graph editor and export. |
-| `security` | Scaffold only: records and interfaces, no behavior. |
-| `people`, `academic`, `scheduling`, `assessment` | Package placeholders. |
-| Platform and REST | Not implemented. |
-| JPA entities | None yet. |
-| Frontend | JSP editor only. React is a target, not current code. |
-| Design system | Baseline in `docs/design/`; implemented on the institution structure page. |
+| `security` | Working for local use: PBKDF2 passwords, login, roles, CSRF and request filters. Accounts are in memory. |
+| `people`, `academic`, `scheduling` | Working through JSP pages and JPA. |
+| `assessment` | Package placeholder. |
+| Platform and REST | Health and login endpoints only; domain endpoints are not implemented. |
+| JPA entities | People, academic and scheduling. Flyway owns the schema. |
+| Frontend | JSP application pages plus the institution editor. React is a target, not current code. |
+| Design system | Baseline in `docs/design/`; implemented on the application pages and the institution structure page. |
 
 ## Module map
 
@@ -166,8 +167,8 @@ documents and report the conflict.
    accessibility.
 6. Report the files changed, decisions made, tests run and anything not verified.
 
-Two OpenCode subagents support this work:
-`.opencode/agents/frontend-developer.md` implements pages and
+Two OpenCode subagents support this work locally. They are ignored by Git and do not ship with
+the repository: `.opencode/agents/frontend-developer.md` implements pages and
 `.opencode/agents/ui-reviewer.md` reviews JSP, CSS and JavaScript changes.
 
 ## How to make a change
@@ -207,11 +208,16 @@ Small documentation changes may go directly to `dev`. Code changes should use a 
 
 ## Security module
 
-- The module has three domain records and three service interfaces. There is no behavior yet.
-- `ArchitectureTest` blocks JPA and servlet imports in `src/main/java`. Decide how security
-  storage and filters will work before implementing them.
-- `dess-app/pom.xml` currently declares only the CDI API.
-- The JSP page has no authentication or CSRF protection. It is for localhost development only.
+- The module implements login, logout, sessions, roles, CSRF checks and request filtering.
+- Passwords use PBKDF2-HMAC-SHA256 with a per-account salt. No password ships in the code.
+  Accounts are seeded from `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` only.
+- Accounts live in memory and reset on restart. Persisting them needs a Flyway migration, a JPA
+  entity and an explicit decision from Sergio.
+- `CsrfFilter` runs before `SecurityFilter`. Every POST form must carry `csrfToken`.
+- Pages require a session except `/login`, `/api/auth/login`, `/api/health`, `/assets/` and
+  `/favicon.ico`. `/app/security` also requires the `ADMIN` role.
+- The application is for localhost development. It has no TLS, no credential store and no
+  production hardening.
 
 ## When to ask
 

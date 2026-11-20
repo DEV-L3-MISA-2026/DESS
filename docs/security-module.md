@@ -1,27 +1,43 @@
 # Security module
 
-Status: **skeleton**. The packages and six main types exist. There is no behavior yet: no login,
-no password hashing, no storage and no web filter.
+Status: **working for local development**. Accounts, login, roles, CSRF checks and request
+filtering are implemented. Accounts are held in memory; database persistence still needs an
+architecture decision.
 
 ## Layout
 
 ```text
 com.dess.security/
 ├── domain/
-│   ├── UserAccount.java
+│   ├── UserAccount.java            # account record
+│   ├── UserAccountRepository.java  # storage port
 │   ├── Role.java
-│   └── Permission.java
+│   ├── Permission.java
+│   └── RoleCatalog.java            # ADMIN and PROFESSOR definitions
 ├── application/
 │   ├── AuthenticationService.java
 │   ├── AuthorizationService.java
-│   └── UserManagementService.java
+│   ├── UserManagementService.java
+│   ├── spi/PasswordEncoder.java
+│   └── impl/
+│       ├── AuthenticationServiceImpl.java
+│       ├── AuthorizationServiceImpl.java
+│       ├── LoginThrottle.java
+│       └── UserManagementServiceImpl.java
 ├── infrastructure/
-│   ├── persistence/
-│   ├── password/
+│   ├── password/Pbkdf2PasswordEncoder.java
+│   ├── persistence/InMemoryUserAccountRepository.java
 │   └── session/
 └── web/
-    ├── controller/
+    ├── SessionUser.java            # what the session stores
+    ├── CsrfTokens.java
     ├── filter/
+    │   ├── CsrfFilter.java
+    │   └── SecurityFilter.java
+    ├── servlet/
+    │   ├── LoginServlet.java
+    │   └── LogoutServlet.java
+    ├── controller/AuthResource.java
     └── config/
 ```
 
@@ -30,27 +46,29 @@ com.dess.security/
 | Package | Job |
 | --- | --- |
 | `security.domain` | Holds accounts, roles and permissions. It has no database or web code. |
-| `security.application` | Defines the use cases: login, access checks and user management. |
-| `security.infrastructure.persistence` | Will store accounts, roles and permissions. |
-| `security.infrastructure.password` | Will hash and check passwords. |
-| `security.infrastructure.session` | Will create and end login sessions. |
-| `security.web.controller` | Will prepare data for the security pages. |
-| `security.web.filter` | Will block requests that are not allowed. |
-| `security.web.config` | Will wire the web layer for WildFly. |
+| `security.application` | Defines login, access checks and account management. |
+| `security.infrastructure` | Implements password hashing and account storage. |
+| `security.web` | Servlets, filters, CSRF tokens and the session user type. |
+| `security.web.controller` | JSON authentication endpoint. |
 
-## What exists
+## What works
 
-| Type | Kind | Purpose |
-| --- | --- | --- |
-| `UserAccount` | record | Login name, display name, password hash, active flag and roles. |
-| `Role` | record | A named group of permissions. |
-| `Permission` | record | One allowed action, identified by a code. |
-| `AuthenticationService` | interface | Checks a username and password. |
-| `AuthorizationService` | interface | Answers what an account may do. |
-| `UserManagementService` | interface | Creates and manages accounts. |
+| Area | Behaviour |
+| --- | --- |
+| Passwords | PBKDF2-HMAC-SHA256, 210 000 iterations, 16-byte random salt per account, 256-bit hash, constant-time comparison. Encoded as `pbkdf2-sha256$iterations$salt$hash`. |
+| Accounts | Stored in memory. `admin` and `professor` are seeded only when `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` are set. No password ships in the code. |
+| Login | `POST /login` with a CSRF token. Success sends the browser to `next` when that path is local, otherwise to `/app`. |
+| Session | Stores `SessionUser` (id, username, display name, roles). The session id changes after sign-in. The cookie is HTTP-only and the session expires after 30 minutes. |
+| Logout | `POST /logout` with a CSRF token; it invalidates the session. |
+| CSRF | One random 32-byte token per session, sent as the `csrfToken` form field or the `X-CSRF-Token` header. Any POST without a valid token gets `403` before authentication runs. |
+| Throttling | Five failed logins in five minutes lock the username and client address for five minutes. State is in memory. |
+| Authorization | `SecurityFilter` requires a session for every page except the public list. `/app/security` also requires the `ADMIN` role. API requests get a JSON `401` instead of a redirect. |
+| Roles | `ADMIN` has the `ALL` permission. `PROFESSOR` may read institution, people, academic and scheduling data. |
+| Security page | Administrators can list accounts and create one with a username, display name, role and initial password. |
 
-The records have no validation or defensive copying yet. The interfaces have no
-implementations. This is on purpose for the skeleton.
+Public paths: `/login`, `/api/auth/login`, `/api/health`, `/assets/` and `/favicon.ico`.
+Everything else requires a session. Error pages are rendered by internal forwards, not by public
+URLs.
 
 ## Rules
 
@@ -62,28 +80,28 @@ implementations. This is on purpose for the skeleton.
 
 ## What is missing
 
-- Implementations of the three services.
-- A storage choice and repository code.
-- Password hashing and a password policy.
-- Session handling.
-- Login and user-management pages.
-- A filter that protects the JSP pages.
-- Tests for success and failure paths.
+- Account persistence. Accounts are lost on restart, and the security page only creates them.
+- A Flyway migration and a JPA entity for `app_user`. The `app_user` table exists but nothing
+  maps it yet. Adding the mapping and migration needs Sergio's approval.
+- Password policy, self-service password change and password reset.
+- Editing and deactivating accounts from the page. The service supports it; the page does not.
+- Audit logging for sign-in, sign-out and account changes.
+- Concurrent-session control beyond sign-out.
+- Tests against the real container. Current tests use in-memory fakes.
 
-## Decisions needed before implementation
+## Decisions needed before further work
 
-1. `ArchitectureTest` blocks `jakarta.persistence`, `jakarta.servlet` and `jakarta.ws.rs`
-   imports in every file under `src/main/java`. It also blocks `@Entity`, `@Transactional` and
-   similar annotations. Security storage and filters must use another approach, or the rule
-   must be changed on purpose.
-2. `dess-app/pom.xml` declares only the CDI API. Servlet and persistence APIs are not
-   dependencies of the WAR yet.
-3. The JSP page has no authentication or CSRF protection and is meant for localhost. A security
-   filter must respect that, or the local-development rule must change.
-4. The team plan gives `security` a dependency on `people`. That dependency is not in the code
-   yet.
+1. **Account storage.** Choose between a JPA entity mapped to `app_user` and reading accounts
+   through a dedicated store. JPA would add a migration and entity under
+   `security.infrastructure.persistence`. `ArchitectureTest` allows JPA only in the
+   infrastructure, cdi and application/impl packages of the modules it knows; security would
+   have to be added to those allowances on purpose.
+2. **Role model.** The plan gives `security` a dependency on `people`. The code does not use it
+   yet. Decide whether accounts link to person records.
+3. **Production use.** The application is local-only: no TLS, no credential store and no
+   hardening for a public network.
 
 ## Next step
 
-Pick the storage and filter approach first. Then implement one use case end to end, starting
-with `AuthenticationService`, and add tests.
+Decide the account storage approach. Then persist accounts, keep the environment seeding for
+the first start, and extend the security page to edit, deactivate and delete accounts.
