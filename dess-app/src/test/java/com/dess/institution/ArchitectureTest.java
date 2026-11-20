@@ -251,4 +251,54 @@ class ArchitectureTest
                                              || c.contains("jakartaee-api")),
                    "CDI or Jakarta EE API is the expected Jakarta API");
     }
+
+    @Test
+    void academicDomainHasNoTechnicalDependencies() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            if (!source.toString().contains("/domain/")) continue;
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                assertFalse(trimmed.startsWith("import jakarta.persistence"), source + " imports JPA");
+                assertFalse(trimmed.startsWith("import jakarta.ws.rs"), source + " imports REST");
+                assertFalse(trimmed.startsWith("import jakarta.servlet"), source + " imports Servlet");
+                assertFalse(trimmed.contains("com.dess.academic.infrastructure"),
+                        source + " depends on infrastructure");
+            }
+        }
+    }
+
+    @Test
+    void academicPersistenceOnlyInInfrastructure() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            boolean infrastructure = source.toString().contains("/academic/infrastructure/");
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("import jakarta.persistence"))
+                {
+                    assertTrue(infrastructure, source + " uses JPA outside infrastructure");
+                }
+            }
+        }
+
+        for (Path source : moduleSources("academic"))
+        {
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*")) continue;
+                if (trimmed.contains("@Transactional"))
+                {
+                    boolean allowed = source.toString().contains("/application/impl/")
+                            || source.toString().contains("/academic/infrastructure/");
+                    assertTrue(allowed, source + " uses @Transactional outside application/impl or infrastructure");
+                }
+            }
+        }
+    }
 }

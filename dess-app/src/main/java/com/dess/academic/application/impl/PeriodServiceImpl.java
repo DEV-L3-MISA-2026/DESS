@@ -2,8 +2,8 @@ package com.dess.academic.application.impl;
 
 import com.dess.academic.application.CreatePeriodCommand;
 import com.dess.academic.application.PeriodService;
+import com.dess.academic.application.spi.PeriodRepository;
 import com.dess.academic.domain.AcademicPeriod;
-import com.dess.academic.infrastructure.AcademicRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -15,18 +15,21 @@ import java.util.List;
 @ApplicationScoped
 @Transactional
 public class PeriodServiceImpl implements PeriodService {
-    private final AcademicRepository repository;
+    private final PeriodRepository repository;
 
     @Inject
-    public PeriodServiceImpl(AcademicRepository repository) { this.repository = repository; }
+    public PeriodServiceImpl(PeriodRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public AcademicPeriod create(CreatePeriodCommand command) {
         if (command == null) throw new IllegalArgumentException("La commande est obligatoire");
-        new AcademicPeriod(null, command.academicYear(), command.term());
-        return repository.createPeriod(command);
+        return repository.create(command);
     }
 
     @Override
-    public List<AcademicPeriod> listAll() { return repository.listPeriods(); }
+    public List<AcademicPeriod> listAll() {
+        return repository.findAll();
+    }
 }

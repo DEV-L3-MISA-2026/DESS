@@ -20,6 +20,10 @@ public class ProgramVersionEntity {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Version
+    @Column(nullable = false)
+    private long version;
+
     protected ProgramVersionEntity() {}
     public ProgramVersionEntity(long programId, String code, LocalDate effectiveFrom, LocalDate effectiveTo, String status) {
         this.programId = programId; this.code = code; this.effectiveFrom = effectiveFrom; this.effectiveTo = effectiveTo; this.status = status;
