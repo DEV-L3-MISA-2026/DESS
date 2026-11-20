@@ -212,6 +212,7 @@ the JSTL core library once.
 | --- | --- | --- |
 | `/login` | Sign in | Everyone |
 | `/logout` | Ends the session (POST with a CSRF token) | Signed-in users |
+| `/` and `/index.jsp` | Institution structure editor | Signed-in users; only administrators can change it |
 | `/app` | Overview with counts | Signed-in users |
 | `/app/people` | Student and teacher lists, create form | Signed-in users; only administrators can create |
 | `/app/academic` | Periods, programs and courses | Signed-in users; only administrators can create |
@@ -233,6 +234,9 @@ Behaviour:
   30 minutes.
 - The sidebar hides the administration section from professors. That is navigation only; the
   server enforces the same rule on every request.
+- The institution editor requires `institution:write` for every non-GET request. Professors see a
+  read-only page and receive `403` for a write attempt, including paths that map to the editor
+  through a path parameter or an encoded segment.
 - A failed sign-in returns `401` and a generic message. Five failures in five minutes lock that
   username and client address for five minutes.
 

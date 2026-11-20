@@ -46,8 +46,16 @@
 <%@ page import="java.util.Set" %>
 
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="com.dess.security.domain.RoleCatalog" %>
 <%@ page import="com.dess.security.web.CsrfTokens" %>
-<% String csrfToken = CsrfTokens.ensure(session); %>
+<%@ page import="com.dess.security.web.SessionUser" %>
+<%
+    String csrfToken = CsrfTokens.ensure(session);
+    // The filter enforces this server-side; the page only uses it to choose what to render.
+    SessionUser sessionUser = (SessionUser) session.getAttribute(SessionUser.SESSION_ATTRIBUTE);
+    boolean canWrite = sessionUser != null
+            && sessionUser.isPermitted(RoleCatalog.INSTITUTION_WRITE);
+%>
 <c:set var="activeNav" value="institution"/>
 
 <%!
@@ -838,7 +846,8 @@
 
     ConfigurationStatus status = institutionService.getStatus();
     String requestedParent = trim(request.getParameter("parent"));
-    boolean openCreateDialog = status == ConfigurationStatus.READY
+    boolean openCreateDialog = canWrite
+        && status == ConfigurationStatus.READY
         && !"error".equals(flashKind)
         && (request.getParameter("create") != null || requestedParent != null);
     String openCreateAttribute = openCreateDialog
@@ -894,8 +903,13 @@
                     <h1 class="dess-page-title">Institution structure</h1>
                     <p class="dess-page-description">
                         <% if (status == ConfigurationStatus.READY) { %>
+                        <% if (canWrite) { %>
                         Browse and maintain the organizational hierarchy. Every change is validated
                         and written to the institution XML file.
+                        <% } else { %>
+                        Browse the organizational hierarchy. Your role can view the structure but
+                        cannot change it.
+                        <% } %>
                         <% } else { %>
                         Create a named tree or load an example to start the institution hierarchy.
                         <% } %>
@@ -940,7 +954,24 @@
                  role="<%= "error".equals(flashKind) ? "alert" : "status" %>"><%= esc(flashText) %></div>
             <% } %>
 
+            <% if (!canWrite) { %>
+            <div class="flash info" role="status">
+                <strong>Read-only view.</strong>
+                Your role can view the institution structure but cannot change it.
+                Ask an administrator to make changes.
+            </div>
+            <% } %>
+
             <% if (status != ConfigurationStatus.READY) { %>
+            <% if (!canWrite) { %>
+            <section class="card" id="institution" aria-labelledby="initialize-title">
+                <h2 id="initialize-title">Institution not initialized</h2>
+                <p class="muted">
+                    No configuration is loaded. An administrator must create the tree or load an
+                    example before the hierarchy can be viewed.
+                </p>
+            </section>
+            <% } else { %>
             <section class="card" id="institution" aria-labelledby="initialize-title">
                 <h2 id="initialize-title">Create a named tree</h2>
                 <p class="muted">
@@ -994,6 +1025,7 @@
                     <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
                 </form>
             </section>
+            <% } %>
             <% } else {
         InstitutionConfig institutionConfig = institutionService.getConfig();
         List<UnitTypeDefinition> allTypes = unitTypeService.getAll();
@@ -1112,6 +1144,7 @@
             </span>
         </summary>
         <div class="details-body">
+            <% if (canWrite) { %>
             <form method="post" class="grid">
                     <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="updateInfo">
@@ -1139,6 +1172,16 @@
                 </form>
                 <span class="summary-note">id <span class="mono"><%= esc(currentInfo.id()) %></span></span>
             </div>
+            <% } else { %>
+            <p class="muted flush-top">
+                <strong><%= esc(currentInfo.name()) %></strong>
+                · <span class="mono"><%= esc(currentInfo.code()) %></span>
+            </p>
+            <% if (currentInfo.description() != null && !currentInfo.description().isBlank()) { %>
+            <p><%= esc(currentInfo.description()) %></p>
+            <% } %>
+            <p class="summary-note">id <span class="mono"><%= esc(currentInfo.id()) %></span></p>
+            <% } %>
 
             <p class="hint details-note">
                 XML file: <span class="mono"><%= esc(configFile.toString()) %></span>
@@ -1193,13 +1236,20 @@
                     <% if (!graphBoxes.isEmpty()) { %>
                     <button type="button" class="btn btn-sm btn-ghost" id="tidyLayout">Tidy layout</button>
                     <% } %>
+                    <% if (canWrite) { %>
                     <button type="button" class="btn btn-sm new-root">+ New root</button>
+                    <% } %>
                 </div>
             </div>
             <% if (!graphBoxes.isEmpty()) { %>
             <p class="legend" id="graph-legend">
+                <% if (canWrite) { %>
                 Drag a node to arrange it. Drag the round handle on a node onto another node to
                 connect them. Use <strong>+</strong> to add a child. Positions are kept in this browser.
+                <% } else { %>
+                Select a node to view its details. Drag a node to arrange the canvas; positions are
+                kept in this browser.
+                <% } %>
                 <span class="graph-hint">
                     On a small screen, scroll the canvas sideways to reach every unit.
                 </span>
@@ -1209,8 +1259,12 @@
             <% if (graphBoxes.isEmpty()) { %>
             <div class="empty">
                 <p><strong>No units yet.</strong></p>
+                <% if (canWrite) { %>
                 <p>Create the first root unit to start the institution hierarchy.</p>
                 <button type="button" class="btn new-root">Create the first root unit</button>
+                <% } else { %>
+                <p>An administrator must create the first root unit.</p>
+                <% } %>
             </div>
             <% } else { %>
             <div class="graph-scroll" tabindex="0" role="region"
@@ -1274,6 +1328,7 @@
                         </g>
                         <% } %>
                     </g>
+                    <% if (canWrite) { %>
                     <g class="adds">
                         <% for (GraphBox box : graphBoxes) { %>
                         <g class="add-child" data-for="<%= esc(box.unit.id()) %>"
@@ -1299,17 +1354,20 @@
                         </g>
                         <% } %>
                     </g>
+                    <% } %>
                 </svg>
             </div>
             <p class="visually-hidden" id="graph-status" role="status" aria-live="polite"></p>
             <% } %>
 
+            <% if (canWrite) { %>
             <form id="moveForm" method="post" class="hidden-form">
                     <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="moveUnit">
                 <input type="hidden" name="id" id="moveId">
                 <input type="hidden" name="parentId" id="moveParentId">
             </form>
+            <% } %>
         </section>
 
     <aside class="card inspector" id="editor" aria-labelledby="editor-title">
@@ -1318,6 +1376,7 @@
         <div class="flash error" role="alert">This node no longer exists.</div>
         <% } else if (selectedUnit == null) { %>
         <h2 id="editor-title">Unit details</h2>
+        <% if (canWrite) { %>
         <p class="muted flush-top">
             Select a node in the graph to edit its fields, parent and status.
         </p>
@@ -1327,6 +1386,11 @@
             <em>Tidy layout</em> restores the automatic tree.
         </p>
         <button type="button" class="btn btn-sm btn-ghost new-root">+ New root unit</button>
+        <% } else { %>
+        <p class="muted flush-top">
+            Select a node in the graph to view its details, parent and status.
+        </p>
+        <% } %>
         <% } else {
             UnitTypeDefinition selectedType = unitTypeService.getByCode(selectedUnit.typeCode()).orElse(null);
             List<OrganizationalUnit> path = institutionConfig.pathOf(selectedUnit);
@@ -1359,6 +1423,7 @@
             <a href="#graph">Graph</a> / <%= esc(pathText.toString()) %>
         </p>
 
+        <% if (canWrite) { %>
         <form method="post" class="stack">
                     <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="updateUnit">
@@ -1419,6 +1484,35 @@
                 <button class="btn" type="submit">Save changes</button>
             </div>
         </form>
+        <% } else { %>
+        <p class="muted flush-top">
+            <% if (selectedUnit.description() == null || selectedUnit.description().isBlank()) { %>
+            No description.
+            <% } else { %>
+            <%= esc(selectedUnit.description()) %>
+            <% } %>
+        </p>
+        <% if (selectedType != null && !selectedType.attributes().isEmpty()) { %>
+        <details class="subdetails">
+            <summary>Attributes (<%= selectedType.attributes().size() %>)</summary>
+            <div class="stack">
+                <% for (AttributeDefinition attribute : selectedType.attributes()) {
+                    AttributeValue current = selectedUnit.values().get(attribute.key());
+                %>
+                <p class="kv">
+                    <span class="mono"><%= esc(attribute.key()) %></span> :
+                    <%= esc(attribute.label()) %>
+                    <% if (current != null) { %>
+                    — <%= esc(current.value()) %>
+                    <% } else { %>
+                    <span class="muted">— not set</span>
+                    <% } %>
+                </p>
+                <% } %>
+            </div>
+        </details>
+        <% } %>
+        <% } %>
 
         <hr>
 
@@ -1436,6 +1530,7 @@
             <% } } %>
         </p>
 
+        <% if (canWrite) { %>
         <form method="post" class="stack">
                     <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="moveUnit">
@@ -1507,6 +1602,7 @@
             </form>
         </div>
         <% } %>
+        <% } %>
     </aside>
     </div>
 
@@ -1523,7 +1619,9 @@
         <div class="empty">
             <p><strong>No unit types yet.</strong></p>
             <p>A unit type defines the attributes and the allowed parent-child relations.</p>
+            <% if (canWrite) { %>
             <a class="btn btn-sm" href="#create-type-form">Create the first type</a>
+            <% } %>
         </div>
         <% } else { %>
         <div class="table-wrap" role="region" aria-label="Unit types table" tabindex="0">
@@ -1536,7 +1634,9 @@
                 <th scope="col">State</th>
                 <th scope="col">Attributes</th>
                 <th scope="col">Allowed children</th>
+                <% if (canWrite) { %>
                 <th scope="col">Actions</th>
+                <% } %>
             </tr>
             </thead>
             <tbody>
@@ -1575,6 +1675,7 @@
                     <span class="mono"><%= esc(String.join(", ", childTypes)) %></span>
                     <% } %>
                 </td>
+                <% if (canWrite) { %>
                 <td class="actions">
                     <%= type.active()
                         ? postButton(csrfToken, "deactivateType", "code", type.code(), "Deactivate", "btn-ghost", null)
@@ -1582,6 +1683,7 @@
                     <%= postButton(csrfToken, "deleteType", "code", type.code(), "Delete", "btn-danger",
                         "Delete unit type '" + type.code() + "'? Deletion is refused while units still use it.") %>
                 </td>
+                <% } %>
             </tr>
             <% } %>
             </tbody>
@@ -1589,6 +1691,7 @@
         </div>
         <% } %>
 
+        <% if (canWrite) { %>
         <hr>
 
         <h3 id="create-type-title">Create a type</h3>
@@ -1606,6 +1709,7 @@
                 <button class="btn" type="submit">Create the type</button>
             </div>
         </form>
+        <% } %>
 
         <hr>
 
@@ -1625,7 +1729,9 @@
                 <th scope="col">Parent type</th>
                 <th scope="col"><span class="visually-hidden">Direction</span></th>
                 <th scope="col">Child type</th>
+                <% if (canWrite) { %>
                 <th scope="col">Actions</th>
+                <% } %>
             </tr>
             </thead>
             <tbody>
@@ -1634,6 +1740,7 @@
                 <td class="mono"><%= esc(pair.parent()) %></td>
                 <td aria-hidden="true">→</td>
                 <td class="mono"><%= esc(pair.child()) %></td>
+                <% if (canWrite) { %>
                 <td class="actions">
                     <form method="post" class="inline"
                           data-confirm="Remove the allowed relation <%= esc(pair.parent()) %> → <%= esc(pair.child()) %>?">
@@ -1644,6 +1751,7 @@
                         <button class="btn btn-sm btn-danger" type="submit">Remove</button>
                     </form>
                 </td>
+                <% } %>
             </tr>
             <% } %>
             </tbody>
@@ -1651,6 +1759,7 @@
         </div>
         <% } %>
 
+        <% if (canWrite) { %>
         <form method="post" class="row form-row-spaced">
                     <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="addPair">
@@ -1674,9 +1783,11 @@
                 <button class="btn" type="submit">Allow the relation</button>
             </div>
         </form>
+        <% } %>
         </div>
     </details>
 
+    <% if (canWrite) { %>
     <dialog id="createDialog" aria-labelledby="createTitle"
             <%= activeTypes.isEmpty() ? "" : "aria-describedby=\"createParentLine\"" %>>
         <% if (activeTypes.isEmpty()) { %>
@@ -1841,8 +1952,14 @@
         </div>
     </dialog>
 
+    <% } %>
+
     <footer class="dess-footer">
+        <% if (canWrite) { %>
         <p>Changes are validated by the institution module and then written atomically to the XML file.</p>
+        <% } else { %>
+        <p>Read-only view. Changes are validated by the institution module before they are written to the XML file.</p>
+        <% } %>
         <p>This page is only for local development.</p>
     </footer>
 

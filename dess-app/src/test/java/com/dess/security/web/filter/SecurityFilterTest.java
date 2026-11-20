@@ -57,4 +57,33 @@ class SecurityFilterTest
         assertTrue(filter.construireJson401().contains("UNAUTHORIZED"));
         assertTrue(filter.construireJson403().contains("FORBIDDEN"));
     }
+
+    @Test
+    void institutionWritesAreDetectedOnRootEditorAndAliases()
+    {
+        assertTrue(filter.estEcritureInstitution("/", "POST"));
+        assertTrue(filter.estEcritureInstitution("", "POST"));
+        assertTrue(filter.estEcritureInstitution("/index.jsp", "POST"));
+        assertTrue(filter.estEcritureInstitution("/", "post"));
+        assertTrue(filter.estEcritureInstitution("/index.jsp;foo", "POST"));
+        assertTrue(filter.estEcritureInstitution("/%69ndex.jsp", "POST"));
+        assertTrue(filter.estEcritureInstitution("//index.jsp", "POST"));
+        assertTrue(filter.estEcritureInstitution("/;x", "POST"));
+    }
+
+    @Test
+    void institutionReadsAndKnownWriteAreasAreNotInstitutionWrites()
+    {
+        assertFalse(filter.estEcritureInstitution("/", "GET"));
+        assertFalse(filter.estEcritureInstitution("/index.jsp", "HEAD"));
+        assertFalse(filter.estEcritureInstitution("/", "OPTIONS"));
+        assertFalse(filter.estEcritureInstitution("/app/people", "POST"));
+        assertFalse(filter.estEcritureInstitution("/api/users", "POST"));
+        assertFalse(filter.estEcritureInstitution("/login", "POST"));
+        assertFalse(filter.estEcritureInstitution("/logout", "POST"));
+        assertFalse(filter.estEcritureInstitution("/assets/css/tokens.css", "POST"));
+        assertFalse(filter.estEcritureInstitution("/favicon.ico", "POST"));
+        assertFalse(filter.estEcritureInstitution(null, "POST"));
+        assertFalse(filter.estEcritureInstitution("/", null));
+    }
 }
