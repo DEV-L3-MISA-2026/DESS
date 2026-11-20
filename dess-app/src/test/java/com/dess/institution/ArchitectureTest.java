@@ -222,11 +222,26 @@ class ArchitectureTest
             coordinates.add(matcher.group(2).toLowerCase());
         }
 
-        for (String banned : List.of("postgresql", "hibernate", "flyway", "persistence", "ws.rs", "resteasy",
+        for (String banned : List.of("persistence", "ws.rs", "resteasy",
                                      "dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
         {
             assertTrue(coordinates.stream().noneMatch(c -> c.contains(banned)),
                        "pom.xml declares a forbidden dependency: " + banned);
+        }
+
+        // The JDBC driver and the ORM may appear only as test dependencies; WildFly supplies
+        // them at runtime and Hibernate must never manage the schema.
+        Pattern dependency = Pattern.compile(
+                "<dependency>(.*?)</dependency>", Pattern.DOTALL);
+
+        for (Matcher block = dependency.matcher(Files.readString(Path.of("pom.xml"))); block.find(); )
+        {
+            String body = block.group(1).toLowerCase();
+            if (body.contains("postgresql") || body.contains("hibernate") || body.contains("flyway"))
+            {
+                assertTrue(body.contains("<scope>test</scope>"),
+                           "database drivers and ORM must stay test-scoped");
+            }
         }
 
         // Note pour l'équipe (Iavo / Platform) :

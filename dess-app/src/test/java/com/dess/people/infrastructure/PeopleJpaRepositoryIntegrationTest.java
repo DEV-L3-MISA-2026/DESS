@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Tests d’intégration des repositories JPA people avec PostgreSQL réel. */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class PeopleJpaRepositoryIntegrationTest {
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
