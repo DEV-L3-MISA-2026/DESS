@@ -1,14 +1,16 @@
 <%--
     Shared application sidebar.
 
-    The fragment is included statically by server-rendered pages. Only the
-    Institution structure page exists today; the other sections are marked
-    "Soon" and are intentionally not links.
+    The links are permission-aware for navigation only. The server still guards every
+    request; hiding a link is not a security boundary. The current item is marked with
+    an EL expression inside the attribute so the markup stays valid HTML.
 --%>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="active" value="${empty activeNav ? 'institution' : activeNav}"/>
 <aside class="dess-sidebar" id="dess-sidebar" aria-label="Application sidebar">
     <div class="dess-sidebar-header">
         <div class="dess-sidebar-header-row">
-            <a class="dess-brand" href="${pageContext.request.contextPath}/">
+            <a class="dess-brand" href="${ctx}/app">
                 <span class="dess-brand-mark" aria-hidden="true">D</span>
                 <span class="dess-brand-copy">
                     <span class="dess-brand-name">DESS</span>
@@ -24,52 +26,56 @@
         <p class="dess-nav-heading">Workspace</p>
         <ul class="dess-nav-list">
             <li>
-                <a class="dess-nav-link" href="${pageContext.request.contextPath}/"
-                   aria-current="page">Institution structure</a>
+                <a class="dess-nav-link" href="${ctx}/app"
+                   ${active == 'overview' ? 'aria-current="page"' : ''}>Overview</a>
             </li>
             <li>
-                <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    People
-                    <span class="dess-nav-soon">Soon</span>
-                </span>
+                <a class="dess-nav-link" href="${ctx}/"
+                   ${active == 'institution' ? 'aria-current="page"' : ''}>Institution structure</a>
             </li>
         </ul>
 
         <p class="dess-nav-heading">Academic operations</p>
         <ul class="dess-nav-list">
             <li>
+                <a class="dess-nav-link" href="${ctx}/app/people"
+                   ${active == 'people' ? 'aria-current="page"' : ''}>People</a>
+            </li>
+            <li>
+                <a class="dess-nav-link" href="${ctx}/app/academic"
+                   ${active == 'academic' ? 'aria-current="page"' : ''}>Academic</a>
+            </li>
+            <li>
+                <a class="dess-nav-link" href="${ctx}/app/scheduling"
+                   ${active == 'scheduling' ? 'aria-current="page"' : ''}>Scheduling</a>
+            </li>
+            <li>
                 <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    Academic
+                    Examinations
                     <span class="dess-nav-soon">Soon</span>
                 </span>
             </li>
             <li>
                 <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    Scheduling
-                    <span class="dess-nav-soon">Soon</span>
-                </span>
-            </li>
-            <li>
-                <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    Assessment
+                    Results
                     <span class="dess-nav-soon">Soon</span>
                 </span>
             </li>
         </ul>
 
-        <p class="dess-nav-heading">Administration</p>
-        <ul class="dess-nav-list">
-            <li>
-                <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    Security
-                    <span class="dess-nav-soon">Soon</span>
-                </span>
-            </li>
-        </ul>
+        <c:if test="${sessionUser.admin}">
+            <p class="dess-nav-heading">Administration</p>
+            <ul class="dess-nav-list">
+                <li>
+                    <a class="dess-nav-link" href="${ctx}/app/security"
+                       ${active == 'security' ? 'aria-current="page"' : ''}>Security</a>
+                </li>
+            </ul>
+        </c:if>
     </nav>
 
     <div class="dess-sidebar-footer">
-        <p>Institution module</p>
+        <p>DESS</p>
         <p>Local development only</p>
     </div>
 </aside>

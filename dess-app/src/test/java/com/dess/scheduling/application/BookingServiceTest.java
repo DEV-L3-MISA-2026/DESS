@@ -172,6 +172,12 @@ class BookingServiceTest
         }
 
         @Override
+        public List<Booking> findAll()
+        {
+            return List.copyOf(values);
+        }
+
+        @Override
         public List<Booking> findByOwner(String ownerType, UUID ownerId)
         {
             return values.stream()

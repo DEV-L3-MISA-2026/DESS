@@ -45,6 +45,11 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="com.dess.security.web.CsrfTokens" %>
+<% String csrfToken = CsrfTokens.ensure(session); %>
+<c:set var="activeNav" value="institution"/>
+
 <%!
     private static final List<String> EXAMPLES = List.of("university", "high-school", "custom-school");
 
@@ -289,7 +294,7 @@
      * @param confirmMessage confirmation message, or {@code null} when no confirmation is needed
      * @return the HTML form
      */
-    static String postButton(String action, String field, String value, String label, String css,
+    static String postButton(String csrfToken, String action, String field, String value, String label, String css,
                              String confirmMessage)
     {
         StringBuilder html = new StringBuilder("<form method=\"post\" class=\"inline\"");
@@ -300,6 +305,7 @@
         }
 
         html.append('>');
+        appendHidden(html, "csrfToken", csrfToken);
         appendHidden(html, "action", action);
         appendHidden(html, field, value);
         html.append("<button type=\"submit\" class=\"btn btn-sm ").append(esc(css)).append("\">")
@@ -474,7 +480,7 @@
                 <span>Configuration</span>
             </div>
             <div class="dess-topbar-right">
-                <span class="dess-env-label">Local development</span>
+                <%@ include file="/WEB-INF/views/components/user-menu.jspf" %>
             </div>
         </header>
         <main id="main-content" class="dess-content" tabindex="-1">
@@ -867,7 +873,7 @@
                 <span><%= status == ConfigurationStatus.READY ? "Structure" : "Setup" %></span>
             </div>
             <div class="dess-topbar-right">
-                <span class="dess-env-label">Local development</span>
+                <%@ include file="/WEB-INF/views/components/user-menu.jspf" %>
             </div>
         </header>
         <main id="main-content" class="dess-content" tabindex="-1">
@@ -937,6 +943,7 @@
                 </p>
 
                 <form method="post" class="grid">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                     <input type="hidden" name="action" value="initialize">
                     <label>Tree code
                         <input name="code" required maxlength="64"
@@ -961,6 +968,7 @@
                     hard-coded in the application: everything comes from the XML.
                 </p>
                 <form method="post" class="row">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                     <input type="hidden" name="action" value="loadExample">
                     <label>Example
                         <select name="example">
@@ -975,6 +983,7 @@
                 <hr>
 
                 <form method="post" class="inline">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                     <input type="hidden" name="action" value="reload">
                     <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
                 </form>
@@ -1098,6 +1107,7 @@
         </summary>
         <div class="details-body">
             <form method="post" class="grid">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="updateInfo">
                 <label>Tree code
                     <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
@@ -1117,6 +1127,7 @@
 
             <div class="form-actions details-actions">
                 <form method="post" class="inline">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                     <input type="hidden" name="action" value="reload">
                     <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
                 </form>
@@ -1288,6 +1299,7 @@
             <% } %>
 
             <form id="moveForm" method="post" class="hidden-form">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="moveUnit">
                 <input type="hidden" name="id" id="moveId">
                 <input type="hidden" name="parentId" id="moveParentId">
@@ -1342,6 +1354,7 @@
         </p>
 
         <form method="post" class="stack">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="updateUnit">
             <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
             <label>Name
@@ -1418,6 +1431,7 @@
         </p>
 
         <form method="post" class="stack">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="moveUnit">
             <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
             <label>New parent
@@ -1463,13 +1477,14 @@
             <% if (selectedUnit.active()) { %>
             <form method="post" class="inline"
                   data-confirm="Deactivate '<%= esc(selectedUnit.name()) %>' and its descendants? They will also be deactivated.">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="deactivateUnit">
                 <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
                 <input type="hidden" name="cascade" value="true">
                 <button type="submit" class="btn btn-sm btn-ghost">Deactivate</button>
             </form>
             <% } else { %>
-            <%= postButton("activateUnit", "id", selectedUnit.id(), "Activate", "btn-ghost", null) %>
+            <%= postButton(csrfToken, "activateUnit", "id", selectedUnit.id(), "Activate", "btn-ghost", null) %>
             <% } %>
         </div>
 
@@ -1479,6 +1494,7 @@
             </p>
             <form method="post" class="inline"
                   data-confirm="Delete '<%= esc(selectedUnit.name()) %>'? This cannot be undone. Deletion is refused while the unit has children.">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="deleteUnit">
                 <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -1555,9 +1571,9 @@
                 </td>
                 <td class="actions">
                     <%= type.active()
-                        ? postButton("deactivateType", "code", type.code(), "Deactivate", "btn-ghost", null)
-                        : postButton("activateType", "code", type.code(), "Activate", "btn-ghost", null) %>
-                    <%= postButton("deleteType", "code", type.code(), "Delete", "btn-danger",
+                        ? postButton(csrfToken, "deactivateType", "code", type.code(), "Deactivate", "btn-ghost", null)
+                        : postButton(csrfToken, "activateType", "code", type.code(), "Activate", "btn-ghost", null) %>
+                    <%= postButton(csrfToken, "deleteType", "code", type.code(), "Delete", "btn-danger",
                         "Delete unit type '" + type.code() + "'? Deletion is refused while units still use it.") %>
                 </td>
             </tr>
@@ -1571,6 +1587,7 @@
 
         <h3 id="create-type-title">Create a type</h3>
         <form method="post" class="grid" id="create-type-form">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="createType">
             <label>Code
                 <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
@@ -1614,6 +1631,7 @@
                 <td class="actions">
                     <form method="post" class="inline"
                           data-confirm="Remove the allowed relation <%= esc(pair.parent()) %> → <%= esc(pair.child()) %>?">
+                        <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                         <input type="hidden" name="action" value="removePair">
                         <input type="hidden" name="parentType" value="<%= esc(pair.parent()) %>">
                         <input type="hidden" name="childType" value="<%= esc(pair.child()) %>">
@@ -1628,6 +1646,7 @@
         <% } %>
 
         <form method="post" class="row form-row-spaced">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="addPair">
             <label>Parent type
                 <select name="parentType" required>
@@ -1672,6 +1691,7 @@
         </div>
         <% } else { %>
         <form method="post" class="dialog-form">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="createUnit">
             <input type="hidden" name="parentId" id="createParentId" value="">
             <div class="dialog-head">

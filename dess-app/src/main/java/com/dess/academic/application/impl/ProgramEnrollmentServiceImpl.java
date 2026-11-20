@@ -1,21 +1,27 @@
 package com.dess.academic.application.impl;
 
-import com.dess.people.application.PeopleService;
 import com.dess.academic.application.EnrollStudentCommand;
 import com.dess.academic.application.ProgramEnrollmentService;
 import com.dess.academic.domain.*;
 import com.dess.academic.exception.*;
 import com.dess.academic.infrastructure.AcademicRepository;
+import com.dess.people.application.PeopleService;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
 import java.time.LocalDate;
 import java.util.List;
 
 /** Implémentation des règles d'inscription aux versions de programmes. */
+@ApplicationScoped
 @Transactional
 public class ProgramEnrollmentServiceImpl implements ProgramEnrollmentService {
     private final AcademicRepository academicRepository;
     private final PeopleService peopleService;
 
+    @Inject
     public ProgramEnrollmentServiceImpl(AcademicRepository academicRepository, PeopleService peopleService) {
         this.academicRepository = academicRepository;
         this.peopleService = peopleService;

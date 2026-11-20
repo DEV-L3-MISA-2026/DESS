@@ -17,6 +17,8 @@ public interface BookingService
 
     Optional<Booking> findById(UUID id);
 
+    List<Booking> findAll();
+
     List<Booking> findByOwner(String ownerType, UUID ownerId);
 
     List<BookingSlot> findSlotsByBookingId(UUID bookingId);

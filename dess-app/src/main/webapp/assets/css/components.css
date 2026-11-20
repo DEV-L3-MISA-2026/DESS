@@ -1022,3 +1022,52 @@ dialog::backdrop {
         height: 20px;
     }
 }
+
+/* ---------- Account chip (shared top bar) ---------- */
+
+.dess-user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dess-space-2);
+    min-width: 0;
+}
+
+.dess-user-avatar {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--dess-accent-soft);
+    color: var(--dess-accent-strong);
+    font-size: var(--dess-font-size-label);
+    font-weight: 700;
+}
+
+.dess-user-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.dess-user-name {
+    overflow: hidden;
+    max-width: 180px;
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dess-user-role {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+}
+
+@media (max-width: 560px) {
+    .dess-user-copy {
+        display: none;
+    }
+}

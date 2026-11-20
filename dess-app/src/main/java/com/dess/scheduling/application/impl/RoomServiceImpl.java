@@ -4,17 +4,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import com.dess.scheduling.application.RoomService;
 import com.dess.scheduling.application.spi.RoomRepository;
 import com.dess.scheduling.domain.Room;
 
+@ApplicationScoped
 @Transactional
 public class RoomServiceImpl implements RoomService
 {
     private final RoomRepository rooms;
 
+    @Inject
     public RoomServiceImpl(RoomRepository rooms)
     {
         this.rooms = rooms;

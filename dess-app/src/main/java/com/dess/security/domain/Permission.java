@@ -1,13 +1,22 @@
 package com.dess.security.domain;
 
+import java.util.Objects;
+
 /**
  * A permission is one allowed action, identified by a code.
- *
- * <p>This is a skeleton. The final code format and validation will be decided later.</p>
  *
  * @param code unique permission code
  * @param description short description of the action
  */
 public record Permission(String code, String description)
 {
+    public Permission
+    {
+        Objects.requireNonNull(code, "code");
+        Objects.requireNonNull(description, "description");
+        if (code.isBlank())
+        {
+            throw new IllegalArgumentException("A permission code is required");
+        }
+    }
 }

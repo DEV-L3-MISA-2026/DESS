@@ -8,8 +8,8 @@ import java.util.Set;
 /**
  * Answers what an account may do.
  *
- * <p>This is a skeleton. The implementation will read the account's roles and permissions and
- * apply the rules of the module.</p>
+ * <p>The implementation reads the account's roles and permissions. The permission
+ * {@code ALL} grants every action.</p>
  */
 public interface AuthorizationService
 {

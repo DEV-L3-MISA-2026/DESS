@@ -1,22 +1,42 @@
 package com.dess.security.domain;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
- * Interface pour la persistance des comptes utilisateurs.
+ * Persistence port for user accounts.
  *
- * Utilité : Permet à AuthenticationService de charger un compte par son username
- * sans dépendre directement d'une base de données SQL ou d'une technologie particulière.
+ * <p>The application layer depends on this interface. The current adapter keeps accounts
+ * in memory; a database adapter can replace it without changing the services.</p>
  */
-public interface UserAccountRepository {
-
+public interface UserAccountRepository
+{
     /**
-     * Recherche un compte utilisateur par son identifiant de connexion (username).
+     * Finds an account by its login name.
+     *
+     * @param username login name
+     * @return the account, or an empty result when it does not exist
      */
     Optional<UserAccount> findByUsername(String username);
 
     /**
-     * Sauvegarde ou met à jour un compte utilisateur.
+     * Returns every account.
+     *
+     * @return all accounts, including inactive ones
+     */
+    List<UserAccount> findAll();
+
+    /**
+     * Saves or updates an account.
+     *
+     * @param account account to save
      */
     void save(UserAccount account);
+
+    /**
+     * Deletes an account.
+     *
+     * @param id account identifier
+     */
+    void delete(String id);
 }

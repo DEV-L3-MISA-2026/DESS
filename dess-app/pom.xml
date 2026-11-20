@@ -25,6 +25,17 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!--
+            JSTL is the view standard named in docs/design. WildFly supplies the
+            implementation and the API at runtime; this dependency is only needed
+            so the new JSP views compile with jakarta.tags.core.
+        -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+            <version>3.0.2</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- Fourni par WildFly pour la documentation automatique OpenAPI -->
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>

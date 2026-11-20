@@ -6,15 +6,21 @@ import com.dess.academic.domain.Course;
 import com.dess.academic.exception.CourseNotFoundException;
 import com.dess.academic.exception.DuplicateCourseCodeException;
 import com.dess.academic.infrastructure.CourseRepository;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
 import java.util.List;
 import java.util.UUID;
 
 /** Implémentation applicative du catalogue des cours. */
+@ApplicationScoped
 @Transactional
 public class CourseServiceImpl implements CourseService {
     private final CourseRepository repository;
 
+    @Inject
     public CourseServiceImpl(CourseRepository repository) {
         this.repository = repository;
     }

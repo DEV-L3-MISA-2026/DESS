@@ -1,85 +1,168 @@
 package com.dess.security.web.filter;
 
+import com.dess.security.domain.RoleCatalog;
+import com.dess.security.web.SessionUser;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Filtre de sécurité qui protège toutes les routes /api/*.
+ * Requires a signed-in user for application pages and the REST API.
  *
- * Utilité : Empêche les utilisateurs non connectés d'accéder aux données.
- * Sans ce filtre, n'importe qui pourrait appeler n'importe quel endpoint.
- *
- * Fonctionnement :
- *  - Les routes publiques (/health, /auth/login) sont toujours accessibles
- *  - Pour le reste, on vérifie si la session HTTP contient un utilisateur connecté
- *  - Si non connecté → réponse 401 JSON avec un message d'erreur
+ * <p>API callers receive JSON errors; browser requests are redirected to the login page
+ * with a safe return path. The security area also requires the administrator role.</p>
  */
-@WebFilter("/api/*")
-public class SecurityFilter implements Filter {
-
-    // Routes accessibles sans être connecté
-    private static final String[] ROUTES_PUBLIQUES = {
-        "/api/health",
-        "/api/auth/login"
-    };
+public class SecurityFilter implements Filter
+{
+    private static final String LOGIN_PATH = "/login";
+    private static final String LOGIN_API_PATH = "/api/auth/login";
+    private static final String HEALTH_PATH = "/api/health";
+    private static final String SECURITY_AREA = "/app/security";
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
-
-        HttpServletRequest  request  = (HttpServletRequest)  req;
+            throws IOException, ServletException
+    {
+        HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
+        String path = path(request);
 
-        String chemin = request.getRequestURI();
+        addSecurityHeaders(response);
 
-        // Vérifier si la route est publique (pas besoin d'être connecté)
-        if (estRoutePublique(chemin)) {
-            chain.doFilter(req, res); // laisser passer
+        if (estRoutePublique(path))
+        {
+            chain.doFilter(req, res);
             return;
         }
 
-        // Vérifier si l'utilisateur est connecté via sa session
-        HttpSession session = request.getSession(false); // false = ne pas créer de nouvelle session
-        boolean connecte = session != null && session.getAttribute("currentUser") != null;
+        HttpSession session = request.getSession(false);
+        SessionUser user = session == null
+                ? null
+                : (SessionUser) session.getAttribute(SessionUser.SESSION_ATTRIBUTE);
 
-        if (connecte) {
-            chain.doFilter(req, res); // laisser passer
-        } else {
-            // Bloquer avec une erreur 401 en JSON
-            envoyerErreur401(response);
+        if (user == null)
+        {
+            denyUnauthenticated(request, response);
+            return;
         }
-    }
 
-    // Vérifie si l'URL correspond à une route publique
-    // Extrait pour faciliter les tests unitaires
-    public boolean estRoutePublique(String chemin) {
-        for (String route : ROUTES_PUBLIQUES) {
-            if (chemin != null && chemin.endsWith(route)) {
-                return true;
-            }
+        if (path.startsWith(SECURITY_AREA) && !user.isPermitted(RoleCatalog.SECURITY_MANAGE))
+        {
+            denyForbidden(request, response);
+            return;
         }
-        return false;
+
+        chain.doFilter(req, res);
     }
 
-    // Envoie une réponse 401 en JSON
-    // Extrait pour faciliter les tests unitaires
-    public String construireJson401() {
-        return "{\"code\":\"UNAUTHORIZED\",\"message\":\"Connexion requise\"}";
+    /**
+     * Checks whether a path is available without a session.
+     *
+     * @param path path relative to the application context
+     * @return true for the login page, the login API, health and static assets
+     */
+    public boolean estRoutePublique(String path)
+    {
+        if (path == null)
+        {
+            return false;
+        }
+
+        return path.equals(LOGIN_PATH)
+                || path.equals(LOGIN_API_PATH)
+                || path.equals(HEALTH_PATH)
+                || path.startsWith("/assets/")
+                || path.equals("/favicon.ico");
     }
 
-    private void envoyerErreur401(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    public String construireJson401()
+    {
+        return "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}";
+    }
+
+    public String construireJson403()
+    {
+        return "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}";
+    }
+
+    private void denyUnauthenticated(HttpServletRequest request,
+                                     HttpServletResponse response) throws IOException
+    {
+        if (isApi(request))
+        {
+            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED, construireJson401());
+            return;
+        }
+
+        // Keep the context path: LoginServlet.safeNext() only accepts local paths
+        // that start with it, so a stripped path would fall back to the overview.
+        String target = request.getRequestURI();
+        String query = request.getQueryString();
+
+        if (query != null && !query.isBlank())
+        {
+            target = target + "?" + query;
+        }
+
+        String login = request.getContextPath() + LOGIN_PATH;
+        response.sendRedirect(login + "?next="
+                + URLEncoder.encode(target, StandardCharsets.UTF_8));
+    }
+
+    private void denyForbidden(HttpServletRequest request,
+                               HttpServletResponse response) throws IOException
+    {
+        if (isApi(request))
+        {
+            writeJson(response, HttpServletResponse.SC_FORBIDDEN, construireJson403());
+            return;
+        }
+
+        response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                "Your account does not have access to this area.");
+    }
+
+    private static void writeJson(HttpServletResponse response, int status, String body)
+            throws IOException
+    {
+        response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(construireJson401());
+        response.getWriter().write(body);
+    }
+
+    private static boolean isApi(HttpServletRequest request)
+    {
+        return path(request).startsWith("/api/");
+    }
+
+    private static String path(HttpServletRequest request)
+    {
+        String uri = request.getRequestURI();
+        String context = request.getContextPath();
+
+        return uri != null && context != null && uri.startsWith(context)
+                ? uri.substring(context.length())
+                : uri;
+    }
+
+    private static void addSecurityHeaders(HttpServletResponse response)
+    {
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("X-Frame-Options", "DENY");
+        response.setHeader("Referrer-Policy", "same-origin");
+        response.setHeader("Content-Security-Policy",
+                "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+                        + "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+                        + "font-src 'self' data:; base-uri 'self'; form-action 'self'");
     }
 }

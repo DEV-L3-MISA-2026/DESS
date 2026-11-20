@@ -5,14 +5,20 @@ import com.dess.academic.domain.*;
 import com.dess.academic.exception.ProgramNotFoundException;
 import com.dess.academic.exception.ProgramVersionNotFoundException;
 import com.dess.academic.infrastructure.AcademicRepository;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
 import java.util.List;
 
 /** Implémentation applicative des programmes et versions. */
+@ApplicationScoped
 @Transactional
 public class ProgramServiceImpl implements ProgramService {
     private final AcademicRepository repository;
 
+    @Inject
     public ProgramServiceImpl(AcademicRepository repository) { this.repository = repository; }
 
     @Override

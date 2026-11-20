@@ -1,62 +1,29 @@
 package com.dess.academic.cdi;
 
-import com.dess.academic.application.CourseService;
-import com.dess.academic.application.PeriodService;
-import com.dess.academic.application.ProgramEnrollmentService;
-import com.dess.academic.application.ProgramService;
-import com.dess.academic.application.impl.CourseServiceImpl;
-import com.dess.academic.application.impl.PeriodServiceImpl;
-import com.dess.academic.application.impl.ProgramEnrollmentServiceImpl;
-import com.dess.academic.application.impl.ProgramServiceImpl;
 import com.dess.academic.infrastructure.AcademicRepository;
-import com.dess.academic.infrastructure.CourseRepository;
 import com.dess.academic.infrastructure.JpaAcademicRepository;
-import com.dess.academic.infrastructure.JpaCourseRepository;
-import com.dess.people.application.PeopleService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
-/** Producteurs CDI du module academic. */
+/**
+ * CDI producers of the academic module.
+ *
+ * <p>Only the repositories that are not CDI beans themselves are produced. The service
+ * implementations are ordinary beans so their {@code @Transactional} annotation is
+ * applied by the container; a bean returned from a producer method is not intercepted.</p>
+ */
 @ApplicationScoped
-public class AcademicProducers {
+public class AcademicProducers
+{
     @PersistenceContext(unitName = "dessPU")
     private EntityManager entityManager;
 
-    @Inject
-    private PeopleService peopleService;
-
-    private AcademicRepository repository() {
+    @Produces
+    @ApplicationScoped
+    public AcademicRepository academicRepository()
+    {
         return new JpaAcademicRepository(entityManager);
-    }
-
-    private CourseRepository courseRepository() {
-        return new JpaCourseRepository(entityManager);
-    }
-
-    @Produces
-    @ApplicationScoped
-    public CourseService courseService() {
-        return new CourseServiceImpl(courseRepository());
-    }
-
-    @Produces
-    @ApplicationScoped
-    public PeriodService periodService() {
-        return new PeriodServiceImpl(repository());
-    }
-
-    @Produces
-    @ApplicationScoped
-    public ProgramService programService() {
-        return new ProgramServiceImpl(repository());
-    }
-
-    @Produces
-    @ApplicationScoped
-    public ProgramEnrollmentService programEnrollmentService() {
-        return new ProgramEnrollmentServiceImpl(repository(), peopleService);
     }
 }

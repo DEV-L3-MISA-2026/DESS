@@ -1,0 +1,24 @@
+<%-- Shared document head and application shell. --%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><c:out value="${pageTitle}"/> · DESS</title>
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="${ctx}/assets/css/tokens.css">
+    <link rel="stylesheet" href="${ctx}/assets/css/layout.css">
+    <link rel="stylesheet" href="${ctx}/assets/css/components.css">
+    <link rel="stylesheet" href="${ctx}/assets/css/pages.css">
+    <script src="${ctx}/assets/js/shell.js" defer></script>
+</head>
+<body>
+<a class="dess-skip-link" href="#main-content">Skip to main content</a>
+<div class="dess-shell">
+    <%@ include file="/WEB-INF/views/components/sidebar.jsp" %>
+    <div class="dess-main">
+        <%@ include file="/WEB-INF/views/components/topbar.jsp" %>
+        <main id="main-content" class="dess-content" tabindex="-1">
+            <%@ include file="/WEB-INF/views/components/flash.jsp" %>

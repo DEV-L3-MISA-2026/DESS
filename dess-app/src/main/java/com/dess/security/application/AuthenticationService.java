@@ -7,8 +7,8 @@ import java.util.Optional;
 /**
  * Checks a user's login.
  *
- * <p>The implementation will load the account, check the password with the password adapter and
- * return the account when the login is valid. A failed login must not reveal whether the
+ * <p>The implementation loads the account, checks the password with the password adapter and
+ * returns the account when the login is valid. A failed login does not reveal whether the
  * username exists.</p>
  */
 public interface AuthenticationService

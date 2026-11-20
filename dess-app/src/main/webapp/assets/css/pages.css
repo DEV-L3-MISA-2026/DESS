@@ -1,0 +1,296 @@
+/*
+ * Page-level composition for the server-rendered application pages.
+ *
+ * These rules only arrange shared components and tokens; they do not redefine
+ * colours, type sizes or spacing values.
+ */
+
+/* ---------- Panels and section headings ---------- */
+
+.section-title {
+    margin: 0;
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-section-title);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.panel {
+    margin-top: var(--dess-space-5);
+    padding: var(--dess-space-5);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-lg);
+    background: var(--dess-surface);
+    box-shadow: var(--dess-shadow-panel);
+}
+
+.panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--dess-space-3);
+    margin-bottom: var(--dess-space-4);
+}
+
+.panel-note {
+    margin: var(--dess-space-1) 0 0;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+.panel .table-wrap {
+    margin-top: var(--dess-space-2);
+}
+
+.form-section-title {
+    margin: var(--dess-space-5) 0 var(--dess-space-3);
+    padding-top: var(--dess-space-4);
+    border-top: var(--dess-border-width) solid var(--dess-border);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-component-title);
+    font-weight: 600;
+}
+
+/* ---------- Overview cards ---------- */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--dess-space-3);
+    margin: var(--dess-space-3) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.stat-card {
+    min-width: 0;
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-md);
+    background: var(--dess-surface);
+    box-shadow: var(--dess-shadow-panel);
+}
+
+.stat-link {
+    display: grid;
+    gap: var(--dess-space-1);
+    padding: var(--dess-space-4);
+    color: var(--dess-text);
+    text-decoration: none;
+}
+
+.stat-link:hover {
+    background: var(--dess-accent-soft);
+    color: var(--dess-text);
+    text-decoration: none;
+}
+
+.stat-label {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+}
+
+.stat-value {
+    color: var(--dess-primary);
+    font-size: var(--dess-font-size-page-title);
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.stat-note {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+}
+
+/* ---------- Forms ---------- */
+
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--dess-space-4);
+}
+
+.field {
+    display: grid;
+    gap: var(--dess-space-1);
+    min-width: 0;
+}
+
+.field.grow {
+    flex: 1 1 220px;
+}
+
+.field-small {
+    flex: 0 1 140px;
+}
+
+.field > label {
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+}
+
+.field input,
+.field select,
+.toolbar input {
+    width: 100%;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--dess-space-3);
+}
+
+.form-row .field {
+    flex: 0 1 180px;
+}
+
+.form-actions.compact {
+    align-self: flex-end;
+    padding-bottom: 1px;
+}
+
+.form-actions.compact .btn {
+    min-height: var(--dess-control-height);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dess-space-2);
+}
+
+.toolbar input[type="search"] {
+    min-width: 220px;
+    flex: 1 1 220px;
+}
+
+/* ---------- Sign-in and error pages ---------- */
+
+.auth-body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--dess-background);
+}
+
+.auth-main {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: var(--dess-space-6);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: var(--dess-space-8);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-lg);
+    background: var(--dess-surface);
+    box-shadow: var(--dess-shadow-dialog);
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--dess-space-3);
+    margin-bottom: var(--dess-space-6);
+}
+
+.auth-brand-name {
+    margin: 0;
+    color: var(--dess-primary);
+    font-size: var(--dess-font-size-brand);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.auth-brand-sub {
+    margin: 0;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+    line-height: 1.35;
+}
+
+.auth-title {
+    margin: 0 0 var(--dess-space-2);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-page-title);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.auth-description {
+    margin: 0 0 var(--dess-space-5);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-body);
+    line-height: 1.5;
+}
+
+.auth-card .flash {
+    margin-bottom: var(--dess-space-4);
+}
+
+.auth-submit {
+    width: 100%;
+    justify-content: center;
+}
+
+.auth-note {
+    margin: var(--dess-space-5) 0 0;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    line-height: 1.5;
+}
+
+.error-code {
+    margin: 0 0 var(--dess-space-1);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+    .field-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .panel {
+        padding: var(--dess-space-4);
+    }
+
+    .auth-card {
+        padding: var(--dess-space-5);
+    }
+
+    .auth-main {
+        padding: var(--dess-space-4);
+    }
+}
+
+@media (max-width: 560px) {
+    .stat-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .form-row .field,
+    .field-small {
+        flex-basis: 100%;
+    }
+
+    .form-actions.compact {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-link {
+        transition: none;
+    }
+}

@@ -9,8 +9,8 @@ import java.util.Set;
 /**
  * Creates and manages user accounts.
  *
- * <p>This is a skeleton. The implementation will check unique usernames, hash passwords and save
- * changes through the account repository.</p>
+ * <p>The implementation keeps usernames unique, hashes every password and saves changes
+ * through the account repository. Plain passwords never leave the service.</p>
  */
 public interface UserManagementService
 {
