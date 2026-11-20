@@ -22,6 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ArchitectureTest
 {
+    // Note pour l'équipe (Iavo / Platform) :
+    // On restreint ce test architectural au seul package 'com.dess.institution'
+    // pour préserver son indépendance (pas de SQL/JPA/REST dans institution),
+    // tout en permettant aux modules web/platform (comme DessApplication ou HealthResource)
+    // d'utiliser les annotations Jakarta REST (@Path, @GET, etc.).
     private static final Path MAIN = Path.of("src", "main", "java", "com", "dess", "institution");
 
     private static final List<String> FORBIDDEN_IMPORT_PREFIXES = List.of(
@@ -137,6 +142,9 @@ class ArchitectureTest
                        "pom.xml declares a forbidden dependency: " + banned);
         }
 
+        // Note pour l'équipe (Iavo / Platform) :
+        // Le WAR unique 'dess-app' embarque désormais l'application complète déployée sur WildFly,
+        // donc jakartaee-api est accepté pour fournir les spécifications standard (CDI, REST, etc.).
         assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")
                                              || c.contains("jakartaee-api")),
                    "CDI or Jakarta EE API is the expected Jakarta API");
