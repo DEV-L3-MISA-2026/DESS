@@ -303,7 +303,16 @@ Run Flyway at any time:
 ./ops/db/migrate.sh info       # status only
 ./ops/db/migrate.sh validate   # check applied migrations
 ./ops/db/migrate.sh repair     # repair the schema history after a failed migration
+./ops/db/migrate.sh clean      # drop every object in the schema (local development only)
 ```
+
+`clean` is destructive. It drops the application tables and `flyway_schema_history`, so run
+`./ops/db/migrate.sh` afterwards to rebuild the schema. It exists for local development only.
+
+Applied migrations are immutable. Never edit a file that a database has already applied: Flyway
+stores a checksum and rejects the changed file with a validation error. Add a new migration
+instead. If a local database was already migrated from an older version of the files, run
+`./ops/db/migrate.sh clean` once and then `./ops/db/migrate.sh`.
 
 Extra arguments are passed to Maven:
 
