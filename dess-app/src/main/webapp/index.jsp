@@ -50,6 +50,9 @@
 
     private static final int GRAPH_NODE_W = 220;
     private static final int GRAPH_NODE_H = 78;
+    // The node title is 14px semibold and the status dot starts at x=200, so a longer title
+    // would run into the dot. Twenty-two characters keep a visible gap at that size.
+    private static final int GRAPH_NODE_TITLE_MAX = 22;
     private static final int GRAPH_H_GAP = 34;
     private static final int GRAPH_V_GAP = 86;
     private static final int GRAPH_MARGIN = 32;
@@ -1247,7 +1250,7 @@
                             <rect width="<%= GRAPH_NODE_W %>" height="<%= GRAPH_NODE_H %>" rx="10"></rect>
                             <circle class="gdot <%= unit.active() ? "ok" : "off" %>"
                                     cx="<%= GRAPH_NODE_W - 16 %>" cy="16" r="4.5"></circle>
-                            <text class="gname" x="14" y="27"><%= esc(clipText(unit.name(), 28)) %></text>
+                            <text class="gname" x="14" y="27"><%= esc(clipText(unit.name(), GRAPH_NODE_TITLE_MAX)) %></text>
                             <text class="gline" x="14" y="47"><%= esc(clipText(
                                 unit.code() + " · " + unit.typeCode(), 35)) %></text>
                             <text class="gmeta" x="14" y="64"><%= esc(meta) %></text>
