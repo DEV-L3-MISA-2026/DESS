@@ -6,37 +6,36 @@ import com.dess.security.domain.UserAccount;
 import java.util.Set;
 
 /**
- * @brief Answers authorization questions for an authenticated account.
+ * Answers what an account may do.
  *
- * <p>Scaffold only: the interface declares the authorization use cases. An implementation will
- * resolve the roles and permissions carried by the account and apply the module's authorization
- * rules.</p>
+ * <p>This is a skeleton. The implementation will read the account's roles and permissions and
+ * apply the rules of the module.</p>
  */
 public interface AuthorizationService
 {
     /**
-     * Tests whether an account holds a permission.
+     * Checks whether an account has a permission.
      *
-     * @param account        authenticated account
-     * @param permissionCode permission code to check
-     * @return {@code true} when the account has the permission through one of its roles
+     * @param account account to check
+     * @param permissionCode permission code to look for
+     * @return true when one of the account's roles has the permission
      */
     boolean isPermitted(UserAccount account, String permissionCode);
 
     /**
-     * Tests whether an account holds a role.
+     * Checks whether an account has a role.
      *
-     * @param account  authenticated account
-     * @param roleCode role code to check
-     * @return {@code true} when the account has the role
+     * @param account account to check
+     * @param roleCode role code to look for
+     * @return true when the account has the role
      */
     boolean hasRole(UserAccount account, String roleCode);
 
     /**
-     * Returns the effective permissions of an account.
+     * Returns all permissions granted to an account.
      *
-     * @param account authenticated account
-     * @return the permissions granted by all of the account's roles
+     * @param account account to check
+     * @return the permissions from all of the account's roles
      */
     Set<Permission> permissionsOf(UserAccount account);
 }

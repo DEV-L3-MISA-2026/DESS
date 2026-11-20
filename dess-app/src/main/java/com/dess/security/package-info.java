@@ -1,12 +1,9 @@
 /**
- * @brief Authentication, authorization and user administration.
+ * Security module: accounts, roles, permissions, login and access checks.
  *
- * <p>The module is split into a framework-independent domain, application services that
- * implement the use cases, infrastructure adapters for persistence, password hashing and
- * sessions, and a web delivery layer. Dependencies point inward: web and infrastructure may
- * depend on application and domain, while domain depends on neither.</p>
+ * <p>The module has four parts: domain, application, infrastructure and web. Outer packages may
+ * use inner ones. The domain does not depend on the database or the web layer.</p>
  *
- * <p>Other modules use the application services only. Domain types and infrastructure details
- * stay internal to the module.</p>
+ * <p>Other modules should use the application services only.</p>
  */
 package com.dess.security;

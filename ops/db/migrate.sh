@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/env.sh
 source "$SCRIPT_DIR/../lib/env.sh"
+
+dess_load_env
+dess_require_db_password
+
+export DB_URL="$(dess_jdbc_url)"
+export DB_USER="$DESS_DB_USER"
+export DB_PASSWORD="$DESS_DB_PASSWORD"
+
+echo "Database: $(dess_jdbc_url)"
 
 usage()
 {
@@ -38,11 +48,6 @@ case "$command" in
         exit 64
         ;;
 esac
-
-dess_load_env
-dess_require_db_password
-
-echo "Database: $(dess_jdbc_url)"
 
 if ! dess_check_local_db_port
 then
