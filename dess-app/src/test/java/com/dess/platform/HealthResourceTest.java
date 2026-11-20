@@ -16,3 +16,4 @@ class HealthResourceTest {
         assertEquals("UP", response.get("status"));
     }
 }
+

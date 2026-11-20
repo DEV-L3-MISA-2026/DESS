@@ -22,3 +22,4 @@ public class HealthResource {
         return Map.of("status", "UP");
     }
 }
+
