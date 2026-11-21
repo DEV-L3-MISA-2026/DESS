@@ -1,0 +1,168 @@
+/*
+ * DESS design tokens.
+ *
+ * These values are the canonical visual language for the application. Do not add
+ * page-specific colors, type sizes, spacing or shadows here. Page styles should
+ * compose these tokens instead of repeating raw values.
+ */
+:root {
+    color-scheme: light;
+
+    /* Brand and surfaces */
+    --dess-primary: #172C43;
+    --dess-accent: #347C78;
+    --dess-accent-strong: #2A6663;
+    --dess-accent-soft: #E8F0EF;
+    --dess-background: #F5F6F4;
+    --dess-surface: #FFFFFF;
+    --dess-overlay: rgb(23 44 67 / 45%);
+
+    /* Text. Muted must stay at 4.5:1 or better on both surface and canvas. */
+    --dess-text: #263746;
+    --dess-text-muted: #5F6F82;
+    --dess-on-dark: #FFFFFF;
+    --dess-on-dark-muted: #B6C0CC;
+    --dess-on-dark-hover: rgb(255 255 255 / 8%);
+    --dess-on-dark-active: rgb(255 255 255 / 12%);
+
+    /* Lines. Use --dess-border for decoration such as dividers and table
+       rules. Controls need --dess-border-control, which reaches 3:1 against
+       both the surface and the canvas. */
+    --dess-border: #E2E7E9;
+    --dess-border-strong: #CBD4D9;
+    --dess-border-control: #7F8C99;
+    --dess-border-on-dark: #33475C;
+
+    /* Status. Each status pairs a solid tone with a soft tint for alerts. */
+    --dess-success: #397A59;
+    --dess-success-soft: #EDF5F0;
+    --dess-warning: #D69B45;
+    --dess-warning-strong: #8A5A12;
+    --dess-warning-soft: #FBF4E6;
+    --dess-danger: #B94C4C;
+    --dess-danger-strong: #9E3E3E;
+    --dess-danger-soft: #F9EDED;
+    --dess-info: #477BA5;
+    --dess-info-strong: #3A6890;
+    --dess-info-soft: #EDF3F8;
+
+    --dess-font-family: Inter, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+
+    --dess-font-size-brand: 1.125rem;
+    --dess-font-size-page-title: 1.625rem;
+    --dess-font-size-section-title: 1.1875rem;
+    --dess-font-size-component-title: 0.9375rem;
+    --dess-font-size-body: 0.875rem;
+    --dess-font-size-table: 0.8125rem;
+    --dess-font-size-label: 0.75rem;
+    --dess-font-size-meta: 0.6875rem;
+
+    --dess-space-0: 2px;
+    --dess-space-1: 4px;
+    --dess-space-2: 8px;
+    --dess-space-3: 12px;
+    --dess-space-4: 16px;
+    --dess-space-5: 20px;
+    --dess-space-6: 24px;
+    --dess-space-8: 32px;
+
+    /* Layout and controls */
+    --dess-content-max: 1440px;
+    --dess-sidebar-width: 250px;
+    --dess-sidebar-drawer-width: min(86vw, 300px);
+    --dess-header-height: 64px;
+    --dess-brand-mark-size: 38px;
+    --dess-nav-indicator-width: 3px;
+    --dess-control-height: 40px;
+    --dess-control-height-sm: 32px;
+    --dess-touch-target: 44px;
+    --dess-dialog-width: 720px;
+
+    --dess-radius-sm: 4px;
+    --dess-radius-md: 8px;
+    --dess-radius-lg: 12px;
+    --dess-border-width: 1px;
+    --dess-shadow-panel: 0 1px 3px rgb(23 44 67 / 7%);
+    --dess-shadow-dialog: 0 18px 48px rgb(23 44 67 / 20%);
+
+    /* Two-layer ring: a surface gap then a solid accent. The accent reaches
+       3:1 against both the canvas and the surface, unlike a translucent halo. */
+    --dess-focus-ring: 0 0 0 2px var(--dess-surface), 0 0 0 4px var(--dess-accent);
+    --dess-focus-ring-on-dark: 0 0 0 2px var(--dess-primary),
+        0 0 0 4px var(--dess-on-dark);
+
+    --dess-transition-fast: 120ms ease;
+    --dess-transition-drawer: 180ms ease;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: var(--dess-font-family);
+    color: var(--dess-text);
+    background: var(--dess-background);
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    font-size: var(--dess-font-size-body);
+    line-height: 1.5;
+    color: var(--dess-text);
+    background: var(--dess-background);
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+/* Windows High Contrast and other forced-colors modes drop box-shadow, which
+   would remove the focus indicator entirely. Restore it as a real outline. */
+@media (forced-colors: active) {
+    :focus-visible {
+        outline: 2px solid CanvasText !important;
+        outline-offset: 2px;
+        box-shadow: none !important;
+    }
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

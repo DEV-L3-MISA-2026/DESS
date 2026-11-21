@@ -45,168 +45,31 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="com.dess.security.domain.RoleCatalog" %>
+<%@ page import="com.dess.security.web.CsrfTokens" %>
+<%@ page import="com.dess.security.web.SessionUser" %>
+<%
+    String csrfToken = CsrfTokens.ensure(session);
+    // The filter enforces this server-side; the page only uses it to choose what to render.
+    SessionUser sessionUser = (SessionUser) session.getAttribute(SessionUser.SESSION_ATTRIBUTE);
+    boolean canWrite = sessionUser != null
+            && sessionUser.isPermitted(RoleCatalog.INSTITUTION_WRITE);
+%>
+<c:set var="activeNav" value="institution"/>
+
 <%!
     private static final List<String> EXAMPLES = List.of("university", "high-school", "custom-school");
 
-    private static final int GRAPH_NODE_W = 200;
-    private static final int GRAPH_NODE_H = 68;
-    private static final int GRAPH_H_GAP = 28;
-    private static final int GRAPH_V_GAP = 76;
-    private static final int GRAPH_MARGIN = 28;
+    private static final int GRAPH_NODE_W = 220;
+    private static final int GRAPH_NODE_H = 78;
+    // The node title is 14px semibold and the status dot starts at x=200, so a longer title
+    // would run into the dot. Twenty-two characters keep a visible gap at that size.
+    private static final int GRAPH_NODE_TITLE_MAX = 22;
+    private static final int GRAPH_H_GAP = 34;
+    private static final int GRAPH_V_GAP = 86;
+    private static final int GRAPH_MARGIN = 32;
 
-    private static final String CSS =
-        "*{box-sizing:border-box}"
-        + "body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f5f7;"
-        + "color:#1f2328;line-height:1.45}"
-        + ".wrap{max-width:1280px;margin:0 auto;padding:32px 20px 56px}"
-        + "header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;"
-        + "margin-bottom:20px}"
-        + "h1{font-size:1.35rem;margin:0;letter-spacing:-.02em}"
-        + ".sub{color:#656d76;margin:2px 0 0;font-size:.9rem}"
-        + ".card{background:#fff;border:1px solid #d8dee4;border-radius:10px;padding:18px 20px;margin-bottom:16px}"
-        + ".card h2{font-size:1.02rem;margin:0 0 12px}"
-        + ".card h3{font-size:.92rem;margin:16px 0 8px}"
-        + ".muted{color:#656d76}"
-        + ".mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em}"
-        + ".badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:600}"
-        + ".badge.ok{background:#dafbe1;color:#116329}"
-        + ".badge.off{background:#ffebe9;color:#a40e26}"
-        + ".flash{border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.92rem}"
-        + ".flash.ok{background:#dafbe1;border:1px solid #aceebb;color:#116329}"
-        + ".flash.error{background:#ffebe9;border:1px solid #ffcecb;color:#a40e26}"
-        + ".flash ul{margin:6px 0 0;padding-left:18px}"
-        + "table{width:100%;border-collapse:collapse;font-size:.9rem}"
-        + "th{text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#656d76;"
-        + "padding:6px 8px;border-bottom:1px solid #d8dee4}"
-        + "td{padding:8px;border-bottom:1px solid #eaeef2;vertical-align:top}"
-        + "tr:last-child td{border-bottom:none}"
-        + ".actions{white-space:nowrap}"
-        + ".inline{display:inline}"
-        + "form.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;align-items:start}"
-        + "form.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}"
-        + "label{display:block;font-size:.82rem;font-weight:600;color:#424a53}"
-        + "label input,label select,.row select{display:block;width:100%;margin-top:4px;padding:7px 9px;"
-        + "border:1px solid #c9d1d9;border-radius:6px;font:inherit;font-weight:400;background:#fff}"
-        + "label input[type=checkbox]{display:inline-block;width:auto;margin:0 6px 0 0}"
-        + "label.checkbox{font-weight:400}"
-        + ".span-2{grid-column:1/-1}"
-        + ".hint{display:block;margin-top:3px;color:#8c959f;font-weight:400;font-size:.75rem}"
-        + "fieldset{border:1px solid #d8dee4;border-radius:8px;padding:10px 12px 14px;margin:2px 0 0}"
-        + "fieldset legend{font-size:.8rem;font-weight:600;padding:0 4px}"
-        + "fieldset .grid{gap:10px 14px}"
-        + ".form-actions{display:flex;flex-wrap:wrap;gap:8px}"
-        + ".btn{display:inline-block;border:1px solid #1f2328;background:#1f2328;color:#fff;padding:7px 12px;"
-        + "border-radius:6px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;"
-        + "text-decoration:none}"
-        + ".btn:hover{background:#32383f}"
-        + ".btn-sm{padding:3px 9px;font-size:.78rem}"
-        + ".btn-ghost{background:#fff;color:#1f2328;border-color:#c9d1d9}"
-        + ".btn-ghost:hover{background:#f6f8fa}"
-        + ".btn-danger{background:#cf222e;border-color:#cf222e}"
-        + ".btn-danger:hover{background:#a40e26}"
-        + "hr{border:none;border-top:1px solid #eaeef2;margin:18px 0}"
-        + "dl.info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px;margin:0}"
-        + "dl.info div{min-width:0}"
-        + "dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#656d76}"
-        + "dd{margin:2px 0 0;overflow-wrap:anywhere}"
-        + ".kv{background:#f6f8fa;border:1px solid #eaeef2;border-radius:5px;padding:1px 7px;"
-        + "display:inline-block;margin:1px 0}"
-        + ".code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;"
-        + "color:#424a53;background:#f6f8fa;padding:1px 6px;border-radius:4px}"
-        + ".type{font-size:.75rem;color:#656d76}"
-        + ".footer{color:#8c959f;font-size:.8rem;margin-top:8px}"
-        + ".card-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;"
-        + "gap:8px;margin-bottom:12px}"
-        + ".card-head h2{margin:0}"
-        + ".graph-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;"
-        + "gap:10px;margin-bottom:10px}"
-        + ".graph-toolbar .legend{font-size:.78rem;color:#656d76}"
-        + ".graph-scroll{overflow:auto;border:1px solid #eaeef2;border-radius:10px;"
-        + "background-color:#fbfcfd;background-image:radial-gradient(#dfe3e8 1px,transparent 1px);"
-        + "background-size:20px 20px}"
-        + "svg.graph{display:block;margin:0 auto;user-select:none;touch-action:none}"
-        + ".edge{fill:none;stroke:#c9d1d9;stroke-width:1.6}"
-        + ".gnode{cursor:grab;outline:none}"
-        + ".gnode rect{fill:#fff;stroke:#c9d1d9;stroke-width:1.4;transition:stroke .12s,fill .12s}"
-        + ".gnode:hover rect{stroke:#57606a}"
-        + ".gnode:focus-visible rect{stroke:#0969da;stroke-width:2.2}"
-        + ".gnode.selected rect{stroke:#0969da;stroke-width:2.4}"
-        + ".gnode.inactive rect{fill:#fff8f8;stroke-dasharray:4 3}"
-        + ".gnode.drop-target rect{stroke:#1a7f37;stroke-width:2.6;fill:#f0fff4}"
-        + ".gnode text{pointer-events:none}"
-        + ".gname{font-size:13px;font-weight:600;fill:#1f2328}"
-        + ".gline{font-size:10.5px;fill:#656d76}"
-        + ".gmeta{font-size:10px;fill:#8c959f}"
-        + ".gdot.ok{fill:#1a7f37}"
-        + ".gdot.off{fill:#cf222e}"
-        + ".drag-line{fill:none;stroke:#0969da;stroke-width:2;stroke-dasharray:5 4;pointer-events:none}"
-        + ".hidden-form{display:none}"
-        + ".breadcrumb{font-size:.84rem;color:#656d76;margin:0 0 12px}"
-        + ".breadcrumb a{color:#0969da;text-decoration:none}"
-        + ".path{font-size:.84rem;color:#424a53;background:#f6f8fa;border:1px solid #eaeef2;"
-        + "border-radius:6px;padding:6px 9px;margin:0 0 12px;overflow-wrap:anywhere}"
-        + ".preview{background:#0d1117;color:#e6edf3;border-radius:10px;padding:16px;overflow:auto;"
-        + "max-height:520px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;"
-        + "font-size:.8rem;line-height:1.5;margin:0}"
-        + ".empty{padding:28px 16px;text-align:center;color:#656d76;font-size:.9rem}"
-        + ".danger-zone{border-top:1px solid #eaeef2;margin-top:16px;padding-top:12px}"
-        + "[hidden]{display:none!important}"
-        + ".workspace{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start;"
-        + "margin-bottom:16px}"
-        + ".canvas-card{padding:14px 14px 16px;margin-bottom:0}"
-        + ".canvas-card h2{font-size:.98rem;margin:0}"
-        + ".toolbar-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}"
-        + ".inspector{margin-bottom:0;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}"
-        + ".inspector h2{font-size:1.06rem;margin:0 0 2px;overflow-wrap:anywhere}"
-        + ".inspector .meta{font-size:.8rem;margin:0 0 10px}"
-        + ".graph-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;"
-        + "gap:10px;margin-bottom:8px}"
-        + ".legend{font-size:.78rem;color:#656d76;margin:0 0 10px}"
-        + ".graph-scroll{max-height:calc(100vh - 250px);min-height:420px}"
-        + ".gnode.moving{cursor:grabbing}"
-        + ".gnode.moving rect{stroke:#0969da}"
-        + ".gnode.link-source{opacity:.45}"
-        + "svg.graph.moving{cursor:grabbing}"
-        + "svg.graph.linking{cursor:crosshair}"
-        + ".add-child{cursor:pointer;outline:none}"
-        + ".add-child circle{fill:#fff;stroke:#c9d1d9;stroke-width:1.4;transition:stroke .12s,fill .12s}"
-        + ".add-child path{stroke:#57606a;stroke-width:1.6;fill:none}"
-        + ".add-child:hover circle,.add-child:focus-visible circle{stroke:#0969da;fill:#eef6ff}"
-        + ".add-child:hover path{stroke:#0969da}"
-        + "details.card{padding:0}"
-        + "details.card>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;padding:14px 20px;"
-        + "cursor:pointer;font-weight:600;list-style:none}"
-        + "details.card>summary::-webkit-details-marker{display:none}"
-        + "details.card>summary::before{content:\"▸\";color:#8c959f;font-size:.8rem}"
-        + "details.card[open]>summary::before{content:\"▾\"}"
-        + "details.card[open]>summary{border-bottom:1px solid #eaeef2}"
-        + ".details-body{padding:16px 20px 18px}"
-        + ".summary-note{font-weight:400;font-size:.82rem;color:#656d76}"
-        + "details.subdetails{border:1px solid #eaeef2;border-radius:8px;padding:8px 10px;margin:0}"
-        + "details.subdetails>summary{cursor:pointer;font-size:.82rem;font-weight:600;color:#424a53;"
-        + "list-style:none}"
-        + "details.subdetails>summary::-webkit-details-marker{display:none}"
-        + "details.subdetails[open]>summary{margin-bottom:10px}"
-        + ".inspector-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}"
-        + "dialog{border:none;border-radius:12px;padding:0;margin:auto;width:min(680px,94vw);"
-        + "max-height:88vh;background:#fff;color:#1f2328;box-shadow:0 24px 64px rgba(27,31,36,.35)}"
-        + "dialog::backdrop{background:rgba(27,31,36,.45)}"
-        + ".dialog-form{display:flex;flex-direction:column;max-height:88vh}"
-        + ".dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;"
-        + "padding:16px 20px;border-bottom:1px solid #eaeef2}"
-        + ".dialog-head h2{margin:0;font-size:1.05rem}"
-        + ".dialog-head p{margin:4px 0 0;font-size:.82rem}"
-        + ".dialog-body{padding:16px 20px;overflow:auto}"
-        + ".dialog-body .grid{gap:10px 14px}"
-        + ".dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;"
-        + "border-top:1px solid #eaeef2;background:#f6f8fa;border-radius:0 0 12px 12px}"
-        + ".icon-btn{border:none;background:none;color:#656d76;font-size:1.35rem;line-height:1;"
-        + "padding:2px 7px;border-radius:6px;cursor:pointer}"
-        + ".icon-btn:hover{background:#f0f2f4;color:#1f2328}"
-        + "@media (max-width:1080px){.workspace{grid-template-columns:1fr}"
-        + ".inspector{position:static;max-height:none}}"
-        + "@media (max-width:720px){form.grid,dl.info{grid-template-columns:1fr}.span-2{grid-column:auto}"
-        + ".graph-scroll{max-height:70vh}}";
 
     /**
      * @brief One node of the display-only SVG tree layout.
@@ -436,19 +299,21 @@
      * @param value   value of the hidden field
      * @param label   button label
      * @param css     additional button CSS classes
-     * @param confirm whether a confirmation dialog is required
+     * @param confirmMessage confirmation message, or {@code null} when no confirmation is needed
      * @return the HTML form
      */
-    static String postButton(String action, String field, String value, String label, String css, boolean confirm)
+    static String postButton(String csrfToken, String action, String field, String value, String label, String css,
+                             String confirmMessage)
     {
         StringBuilder html = new StringBuilder("<form method=\"post\" class=\"inline\"");
 
-        if (confirm)
+        if (confirmMessage != null && !confirmMessage.isBlank())
         {
-            html.append(" onsubmit=\"return confirm('Confirm this action?')\"");
+            html.append(" data-confirm=\"").append(esc(confirmMessage)).append('"');
         }
 
         html.append('>');
+        appendHidden(html, "csrfToken", csrfToken);
         appendHidden(html, "action", action);
         appendHidden(html, field, value);
         html.append("<button type=\"submit\" class=\"btn btn-sm ").append(esc(css)).append("\">")
@@ -601,26 +466,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DESS — Institution unavailable</title>
-    <style><%= CSS %></style>
+    <title>Institution unavailable · DESS</title>
+    <link rel="icon" href="<%= request.getContextPath() %>/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
+    <link rel="apple-touch-icon" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/tokens.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/layout.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/institution.css">
+    <script src="<%= request.getContextPath() %>/assets/js/shell.js" defer></script>
 </head>
 <body>
-<main class="wrap">
-    <header class="top">
-        <div>
-            <h1>DESS · Institution Tree</h1>
-            <p class="sub">Graph editor for the institution module</p>
-        </div>
-    </header>
-    <div class="flash error">
-        <strong>The institution module could not be opened.</strong><br>
-        <%= esc(rootMessage(error)) %>
+<a class="dess-skip-link" href="#main-content">Skip to main content</a>
+<div class="dess-shell">
+    <%@ include file="/WEB-INF/views/components/sidebar.jsp" %>
+    <div class="dess-main">
+        <header class="dess-topbar">
+            <div class="dess-topbar-context">
+                <button type="button" class="dess-mobile-menu" data-nav-toggle
+                        aria-expanded="false" aria-controls="dess-sidebar">Menu</button>
+                <span class="dess-topbar-title">Institution module</span>
+                <span class="dess-topbar-separator" aria-hidden="true">/</span>
+                <span>Configuration</span>
+            </div>
+            <div class="dess-topbar-right">
+                <%@ include file="/WEB-INF/views/components/user-menu.jspf" %>
+            </div>
+        </header>
+        <main id="main-content" class="dess-content" tabindex="-1">
+            <div class="dess-page-header">
+                <div class="dess-page-heading">
+                    <nav class="dess-breadcrumb" aria-label="Breadcrumb">
+                        <ol>
+                            <li>Institution</li>
+                            <li aria-current="page">Unavailable</li>
+                        </ol>
+                    </nav>
+                    <h1 class="dess-page-title">Institution unavailable</h1>
+                    <p class="dess-page-description">
+                        The institution module could not be opened because its configuration was not loaded.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flash error" role="alert">
+                <strong>The institution module could not be opened.</strong><br>
+                <%= esc(rootMessage(error)) %>
+            </div>
+
+            <section class="card" aria-labelledby="recovery-title">
+                <h2 id="recovery-title">What to check</h2>
+                <ol>
+                    <li>Confirm that the XML file exists and is readable.</li>
+                    <li>
+                        Check the path in <span class="mono">DESS_INSTITUTION_CONFIG</span>.
+                        The default is <span class="mono">config/institution.xml</span>.
+                    </li>
+                    <li>Reload this page after correcting the file.</li>
+                </ol>
+                <div class="form-actions">
+                    <a class="btn" href="<%= request.getContextPath() %>/">Reload the page</a>
+                </div>
+            </section>
+
+            <footer class="dess-footer">
+                <p>DESS · Department Exam and Schedule System</p>
+                <p>Local development only.</p>
+            </footer>
+        </main>
     </div>
-    <p class="muted">
-        Check the XML file configured by <span class="mono">DESS_INSTITUTION_CONFIG</span>
-        (default <span class="mono">config/institution.xml</span>), then reload this page.
-    </p>
-</main>
+</div>
 </body>
 </html>
 <%
@@ -636,9 +552,17 @@
         String message = null;
         String redirectTarget = "";
 
-        if ("initialize".equals(action) || "updateInfo".equals(action) || "reload".equals(action))
+        if ("initialize".equals(action))
         {
             redirectTarget = "#institution";
+        }
+        else if ("updateInfo".equals(action))
+        {
+            redirectTarget = "#tree";
+        }
+        else if ("reload".equals(action))
+        {
+            redirectTarget = "";
         }
         else if ("loadExample".equals(action))
         {
@@ -922,102 +846,193 @@
 
     ConfigurationStatus status = institutionService.getStatus();
     String requestedParent = trim(request.getParameter("parent"));
-    boolean openCreateDialog = status == ConfigurationStatus.READY
+    boolean openCreateDialog = canWrite
+        && status == ConfigurationStatus.READY
         && !"error".equals(flashKind)
         && (request.getParameter("create") != null || requestedParent != null);
     String openCreateAttribute = openCreateDialog
         ? " data-open-create=\"" + esc(requestedParent == null ? "" : requestedParent) + "\""
         : "";
+    InstitutionInfo currentInfo = status == ConfigurationStatus.READY
+        ? institutionService.getInfo()
+        : null;
+    String selectedId = trim(request.getParameter("node"));
 %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DESS — Institution Tree</title>
-    <style><%= CSS %></style>
+    <title>Institution structure · DESS</title>
+    <link rel="icon" href="<%= request.getContextPath() %>/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
+    <link rel="apple-touch-icon" href="<%= request.getContextPath() %>/assets/img/app-icon-192.png">
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/tokens.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/layout.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/institution.css">
+    <script src="<%= request.getContextPath() %>/assets/js/shell.js" defer></script>
 </head>
 <body<%= openCreateAttribute %>>
-<main class="wrap">
-    <header class="top">
-        <div>
-            <h1>DESS · Institution Tree</h1>
-            <p class="sub">Visual editor for the institution module</p>
-        </div>
-        <div class="header-actions">
-            <span class="badge <%= status == ConfigurationStatus.READY ? "ok" : "off" %>">
-                <%= status == ConfigurationStatus.READY ? "READY" : "NOT_INITIALIZED" %>
-            </span>
-            <% if (status == ConfigurationStatus.READY) { %>
-            <a class="btn btn-sm btn-ghost" href="?check=1">Check</a>
-            <a class="btn btn-sm btn-ghost" href="?preview=1#xml">XML</a>
-            <a class="btn btn-sm" href="<%= request.getContextPath() %>/export.jsp">Download</a>
-            <% } %>
-        </div>
-    </header>
-
-    <% if (flashText != null) { %>
-    <div class="flash <%= "error".equals(flashKind) ? "error" : "ok" %>"><%= esc(flashText) %></div>
-    <% } %>
-
-    <% if (status != ConfigurationStatus.READY) { %>
-    <section class="card" id="institution">
-        <h2>Create a named tree</h2>
-        <p class="muted">
-            No configuration is loaded. The expected file is
-            <span class="mono"><%= esc(configFile.toString()) %></span>.
-        </p>
-
-        <form method="post" class="grid">
-            <input type="hidden" name="action" value="initialize">
-            <label>Tree code
-                <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
-                       placeholder="TEST_UNIV">
-            </label>
-            <label>Tree name
-                <input name="name" required maxlength="120" placeholder="Test University">
-            </label>
-            <label class="span-2">Description
-                <input name="description" maxlength="255" placeholder="Optional">
-            </label>
-            <div class="form-actions span-2">
-                <button class="btn" type="submit">Create the tree</button>
+<a class="dess-skip-link" href="#main-content">Skip to main content</a>
+<div class="dess-shell">
+    <%@ include file="/WEB-INF/views/components/sidebar.jsp" %>
+    <div class="dess-main">
+        <header class="dess-topbar">
+            <div class="dess-topbar-context">
+                <button type="button" class="dess-mobile-menu" data-nav-toggle
+                        aria-expanded="false" aria-controls="dess-sidebar">Menu</button>
+                <span class="dess-topbar-title">Institution module</span>
+                <span class="dess-topbar-separator" aria-hidden="true">/</span>
+                <span><%= status == ConfigurationStatus.READY ? "Structure" : "Setup" %></span>
             </div>
-        </form>
+            <div class="dess-topbar-right">
+                <%@ include file="/WEB-INF/views/components/user-menu.jspf" %>
+            </div>
+        </header>
+        <main id="main-content" class="dess-content" tabindex="-1">
+            <div class="dess-page-header">
+                <div class="dess-page-heading">
+                    <nav class="dess-breadcrumb" aria-label="Breadcrumb">
+                        <ol>
+                            <li>Institution</li>
+                            <li aria-current="page">Structure</li>
+                        </ol>
+                    </nav>
+                    <h1 class="dess-page-title">Institution structure</h1>
+                    <p class="dess-page-description">
+                        <% if (status == ConfigurationStatus.READY) { %>
+                        <% if (canWrite) { %>
+                        Browse and maintain the organizational hierarchy. Every change is validated
+                        and written to the institution XML file.
+                        <% } else { %>
+                        Browse the organizational hierarchy. Your role can view the structure but
+                        cannot change it.
+                        <% } %>
+                        <% } else { %>
+                        Create a named tree or load an example to start the institution hierarchy.
+                        <% } %>
+                    </p>
+                </div>
+                <div class="header-actions">
+                    <span class="badge <%= status == ConfigurationStatus.READY ? "ok" : "warn" %>">
+                        <%= status == ConfigurationStatus.READY
+                            ? "Configuration ready" : "Not initialized" %>
+                    </span>
+                    <% if (status == ConfigurationStatus.READY) {
+                        String nodeQuery = selectedId == null || selectedId.isEmpty()
+                            ? "" : "node=" + urlEncode(selectedId) + "&";
+                    %>
+                    <a class="btn btn-sm btn-ghost" href="?<%= nodeQuery %>check=1">Validate</a>
+                    <a class="btn btn-sm btn-ghost" href="?<%= nodeQuery %>preview=1#xml">Preview XML</a>
+                    <a class="btn btn-sm" href="<%= request.getContextPath() %>/export.jsp">Download XML</a>
+                    <% } %>
+                </div>
+            </div>
 
-        <hr>
+            <div class="dess-context-bar" role="group" aria-label="Current context">
+                <div class="dess-context-item">
+                    <span class="dess-context-label">Institution</span>
+                    <span class="dess-context-value">
+                        <% if (currentInfo != null) { %>
+                        <strong><%= esc(currentInfo.name()) %></strong>
+                        <span class="mono"><%= esc(currentInfo.code()) %></span>
+                        <% } else { %>
+                        <span class="muted">Not initialized</span>
+                        <% } %>
+                    </span>
+                </div>
+                <div class="dess-context-item">
+                    <span class="dess-context-label">Configuration file</span>
+                    <span class="dess-context-value mono"><%= esc(configFile.toString()) %></span>
+                </div>
+            </div>
 
-        <h3>Load an example</h3>
-        <p class="muted">
-            The example is copied to the configuration file, then reloaded. No unit type is
-            hard-coded in the application: everything comes from the XML.
-        </p>
-        <form method="post" class="row">
-            <input type="hidden" name="action" value="loadExample">
-            <select name="example" aria-label="Example">
-                <option value="university">University (5 levels)</option>
-                <option value="high-school">High school (5 levels)</option>
-                <option value="custom-school">Conservatory (custom types)</option>
-            </select>
-            <button class="btn" type="submit">Load the example</button>
-        </form>
+            <% if (flashText != null) { %>
+            <div class="flash <%= "error".equals(flashKind) ? "error" : "ok" %>"
+                 role="<%= "error".equals(flashKind) ? "alert" : "status" %>"><%= esc(flashText) %></div>
+            <% } %>
 
-        <hr>
+            <% if (!canWrite) { %>
+            <div class="flash info" role="status">
+                <strong>Read-only view.</strong>
+                Your role can view the institution structure but cannot change it.
+                Ask an administrator to make changes.
+            </div>
+            <% } %>
 
-        <form method="post" class="inline">
-            <input type="hidden" name="action" value="reload">
-            <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
-        </form>
-    </section>
-    <% } else {
-        InstitutionInfo info = institutionService.getInfo();
+            <% if (status != ConfigurationStatus.READY) { %>
+            <% if (!canWrite) { %>
+            <section class="card" id="institution" aria-labelledby="initialize-title">
+                <h2 id="initialize-title">Institution not initialized</h2>
+                <p class="muted">
+                    No configuration is loaded. An administrator must create the tree or load an
+                    example before the hierarchy can be viewed.
+                </p>
+            </section>
+            <% } else { %>
+            <section class="card" id="institution" aria-labelledby="initialize-title">
+                <h2 id="initialize-title">Create a named tree</h2>
+                <p class="muted">
+                    No configuration is loaded. The expected file is
+                    <span class="mono"><%= esc(configFile.toString()) %></span>.
+                </p>
+
+                <form method="post" class="grid">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                    <input type="hidden" name="action" value="initialize">
+                    <label>Tree code
+                        <input name="code" required maxlength="64"
+                               pattern="[A-Za-z0-9][A-Za-z0-9_.-]*" placeholder="TEST_UNIV">
+                    </label>
+                    <label>Tree name
+                        <input name="name" required maxlength="120" placeholder="Test University">
+                    </label>
+                    <label class="span-2">Description
+                        <input name="description" maxlength="255" placeholder="Optional">
+                    </label>
+                    <div class="form-actions span-2">
+                        <button class="btn" type="submit">Create the tree</button>
+                    </div>
+                </form>
+
+                <hr>
+
+                <h3>Load an example</h3>
+                <p class="muted">
+                    The example is copied to the configuration file, then reloaded. No unit type is
+                    hard-coded in the application: everything comes from the XML.
+                </p>
+                <form method="post" class="row">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                    <input type="hidden" name="action" value="loadExample">
+                    <label>Example
+                        <select name="example">
+                            <option value="university">University (5 levels)</option>
+                            <option value="high-school">High school (5 levels)</option>
+                            <option value="custom-school">Conservatory (custom types)</option>
+                        </select>
+                    </label>
+                    <button class="btn" type="submit">Load the example</button>
+                </form>
+
+                <hr>
+
+                <form method="post" class="inline">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                    <input type="hidden" name="action" value="reload">
+                    <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
+                </form>
+            </section>
+            <% } %>
+            <% } else {
         InstitutionConfig institutionConfig = institutionService.getConfig();
         List<UnitTypeDefinition> allTypes = unitTypeService.getAll();
         List<AllowedParentChildPair> pairs = unitTypeService.getAllowedPairs();
         List<OrganizationalUnit> roots = hierarchyService.getRoots();
         List<UnitTypeDefinition> activeTypes = new ArrayList<>();
         ValidationReport report = null;
-        String selectedId = trim(request.getParameter("node"));
         OrganizationalUnit selectedUnit = selectedId == null || selectedId.isEmpty()
             ? null
             : hierarchyService.getById(selectedId).orElse(null);
@@ -1086,6 +1101,10 @@
             graphHeight = Math.max(graphHeight, box.y + GRAPH_NODE_H + GRAPH_MARGIN);
         }
 
+        // The canvas may shrink to fit, but not below 70% of the graph's
+        // natural width; narrower panes scroll instead of shrinking labels.
+        int graphMinWidth = (int) Math.round(graphWidth * 0.7);
+
         List<OrganizationalUnit> moveCandidates = new ArrayList<>();
         List<String> allowedParentTypes = new ArrayList<>();
 
@@ -1119,23 +1138,25 @@
     %>
     <details class="card" id="tree">
         <summary>
-            <span>Tree settings</span>
+            <h2 class="summary-title">Tree settings</h2>
             <span class="summary-note">
-                <%= esc(info.name()) %> · <span class="mono"><%= esc(info.code()) %></span>
+                <%= esc(currentInfo.name()) %> · <span class="mono"><%= esc(currentInfo.code()) %></span>
             </span>
         </summary>
         <div class="details-body">
+            <% if (canWrite) { %>
             <form method="post" class="grid">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="updateInfo">
                 <label>Tree code
                     <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
-                           value="<%= esc(info.code()) %>">
+                           value="<%= esc(currentInfo.code()) %>">
                 </label>
                 <label>Tree name
-                    <input name="name" required maxlength="120" value="<%= esc(info.name()) %>">
+                    <input name="name" required maxlength="120" value="<%= esc(currentInfo.name()) %>">
                 </label>
                 <label class="span-2">Description
-                    <input name="description" maxlength="255" value="<%= esc(info.description()) %>"
+                    <input name="description" maxlength="255" value="<%= esc(currentInfo.description()) %>"
                            placeholder="Optional">
                 </label>
                 <div class="form-actions span-2">
@@ -1143,15 +1164,26 @@
                 </div>
             </form>
 
-            <div class="form-actions" style="margin-top:12px">
+            <div class="form-actions details-actions">
                 <form method="post" class="inline">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                     <input type="hidden" name="action" value="reload">
                     <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
                 </form>
-                <span class="summary-note">id <span class="mono"><%= esc(info.id()) %></span></span>
+                <span class="summary-note">id <span class="mono"><%= esc(currentInfo.id()) %></span></span>
             </div>
+            <% } else { %>
+            <p class="muted flush-top">
+                <strong><%= esc(currentInfo.name()) %></strong>
+                · <span class="mono"><%= esc(currentInfo.code()) %></span>
+            </p>
+            <% if (currentInfo.description() != null && !currentInfo.description().isBlank()) { %>
+            <p><%= esc(currentInfo.description()) %></p>
+            <% } %>
+            <p class="summary-note">id <span class="mono"><%= esc(currentInfo.id()) %></span></p>
+            <% } %>
 
-            <p class="hint" style="margin-top:12px">
+            <p class="hint details-note">
                 XML file: <span class="mono"><%= esc(configFile.toString()) %></span>
             </p>
         </div>
@@ -1159,9 +1191,9 @@
 
     <% if (report != null) { %>
         <% if (report.valid()) { %>
-        <div class="flash ok">The configuration is valid.</div>
+        <div class="flash ok" role="status">The configuration is valid.</div>
         <% } else { %>
-        <div class="flash error">
+        <div class="flash error" role="alert">
             <strong>The configuration is invalid:</strong>
             <ul>
                 <% for (String error : report.errors()) { %>
@@ -1175,15 +1207,15 @@
     <% if (request.getParameter("preview") != null) { %>
     <details class="card" id="xml" open>
         <summary>
-            <span>XML preview</span>
+            <h2 class="summary-title">XML preview</h2>
             <span class="summary-note">persisted file</span>
         </summary>
         <div class="details-body">
-            <p class="muted" style="margin-top:0">
+            <p class="muted flush-top">
                 This is the current persisted file generated from the named tree.
             </p>
             <% if (xmlPreviewError != null) { %>
-            <div class="flash error"><%= esc(xmlPreviewError) %></div>
+            <div class="flash error" role="alert"><%= esc(xmlPreviewError) %></div>
             <% } else { %>
             <pre class="preview"><%= esc(xmlPreview) %></pre>
             <% } %>
@@ -1192,37 +1224,64 @@
     <% } %>
 
     <div class="workspace">
-        <section class="card canvas-card" id="graph">
+        <section class="card canvas-card" id="graph" aria-labelledby="graph-title">
             <div class="graph-toolbar">
                 <div class="toolbar-title">
-                    <h2>Hierarchy</h2>
-                    <span class="muted"><%= graphBoxes.size() %> unit(s)</span>
+                    <h2 id="graph-title">Hierarchy</h2>
+                    <span class="muted">
+                        <%= graphBoxes.size() %> <%= graphBoxes.size() == 1 ? "unit" : "units" %>
+                    </span>
                 </div>
                 <div class="form-actions">
+                    <% if (!graphBoxes.isEmpty()) { %>
                     <button type="button" class="btn btn-sm btn-ghost" id="tidyLayout">Tidy layout</button>
+                    <% } %>
+                    <% if (canWrite) { %>
                     <button type="button" class="btn btn-sm new-root">+ New root</button>
+                    <% } %>
                 </div>
             </div>
-            <p class="legend">
-                Drag a node to move it · Shift-drag onto another node to re-parent it ·
-                use <strong>+</strong> on a node to add a child. Positions are kept in this browser.
+            <% if (!graphBoxes.isEmpty()) { %>
+            <p class="legend" id="graph-legend">
+                <% if (canWrite) { %>
+                Drag a node to arrange it. Drag the round handle on a node onto another node to
+                connect them. Use <strong>+</strong> to add a child. Positions are kept in this browser.
+                <% } else { %>
+                Select a node to view its details. Drag a node to arrange the canvas; positions are
+                kept in this browser.
+                <% } %>
+                <span class="graph-hint">
+                    On a small screen, scroll the canvas sideways to reach every unit.
+                </span>
             </p>
+            <% } %>
 
             <% if (graphBoxes.isEmpty()) { %>
             <div class="empty">
-                No unit yet.
-                <button type="button" class="btn btn-sm new-root">Create the first root unit</button>
+                <p><strong>No units yet.</strong></p>
+                <% if (canWrite) { %>
+                <p>Create the first root unit to start the institution hierarchy.</p>
+                <button type="button" class="btn new-root">Create the first root unit</button>
+                <% } else { %>
+                <p>An administrator must create the first root unit.</p>
+                <% } %>
             </div>
             <% } else { %>
-            <div class="graph-scroll">
+            <div class="graph-scroll" tabindex="0" role="region"
+                 aria-label="Institution hierarchy canvas" aria-describedby="graph-legend">
                 <svg id="graphSvg" class="graph" width="<%= graphWidth %>" height="<%= graphHeight %>"
                      viewBox="0 0 <%= graphWidth %> <%= graphHeight %>" role="group"
-                     data-tree="<%= esc(info.id()) %>"
+                     style="--graph-min: <%= graphMinWidth %>px"
+                     data-tree="<%= esc(currentInfo.id()) %>"
                      data-width="<%= graphWidth %>" data-height="<%= graphHeight %>"
                      aria-label="Institution unit graph">
                     <g class="edges">
-                        <% for (GraphEdge edge : graphEdges) { %>
-                        <path class="edge"
+                        <% for (GraphEdge edge : graphEdges) {
+                            boolean connected = selectedUnit != null
+                                && (selectedUnit.id().equals(edge.parentId)
+                                    || selectedUnit.id().equals(edge.childId));
+                        %>
+                        <path class="edge<%= connected ? " connected" : "" %>"
                               data-parent="<%= esc(edge.parentId) %>"
                               data-child="<%= esc(edge.childId) %>"
                               d="<%= edge.path %>"></path>
@@ -1254,19 +1313,22 @@
                            data-home-y="<%= box.y %>"
                            transform="translate(<%= box.x %>,<%= box.y %>)"
                            tabindex="0" role="button"
-                           aria-label="<%= esc(unit.name() + ", " + unit.code() + ", type " + unit.typeCode()) %>">
+                           <%= selected ? "aria-current=\"true\"" : "" %>
+                           aria-label="<%= esc(unit.name() + ", " + unit.code() + ", type "
+                               + unit.typeCode() + (unit.active() ? ", active" : ", inactive")) %>">
                             <title><%= esc(unit.name() + " (" + unit.code() + ") · " + unit.typeCode()
                                              + (unit.active() ? " · active" : " · inactive")) %></title>
                             <rect width="<%= GRAPH_NODE_W %>" height="<%= GRAPH_NODE_H %>" rx="10"></rect>
                             <circle class="gdot <%= unit.active() ? "ok" : "off" %>"
-                                    cx="<%= GRAPH_NODE_W - 14 %>" cy="14" r="4.5"></circle>
-                            <text class="gname" x="12" y="25"><%= esc(clipText(unit.name(), 25)) %></text>
-                            <text class="gline" x="12" y="43"><%= esc(clipText(
-                                unit.code() + " · " + unit.typeCode(), 32)) %></text>
-                            <text class="gmeta" x="12" y="58"><%= esc(meta) %></text>
+                                    cx="<%= GRAPH_NODE_W - 16 %>" cy="16" r="4.5"></circle>
+                            <text class="gname" x="14" y="27"><%= esc(clipText(unit.name(), GRAPH_NODE_TITLE_MAX)) %></text>
+                            <text class="gline" x="14" y="47"><%= esc(clipText(
+                                unit.code() + " · " + unit.typeCode(), 35)) %></text>
+                            <text class="gmeta" x="14" y="64"><%= esc(meta) %></text>
                         </g>
                         <% } %>
                     </g>
+                    <% if (canWrite) { %>
                     <g class="adds">
                         <% for (GraphBox box : graphBoxes) { %>
                         <g class="add-child" data-for="<%= esc(box.unit.id()) %>"
@@ -1274,37 +1336,61 @@
                            tabindex="0" role="button"
                            aria-label="<%= esc("Add a child under " + box.unit.name()) %>">
                             <title>Add a child under <%= esc(box.unit.name()) %></title>
-                            <circle r="11"></circle>
+                            <ellipse class="add-child-hit" rx="12" ry="20"></ellipse>
+                            <circle class="add-child-ring" r="11"></circle>
                             <path d="M-5,0 H5 M0,-5 V5"></path>
                         </g>
                         <% } %>
                     </g>
+                    <g class="handles">
+                        <% for (GraphBox box : graphBoxes) { %>
+                        <g class="link-handle" data-for="<%= esc(box.unit.id()) %>"
+                           transform="translate(<%= box.x %>,<%= box.y + GRAPH_NODE_H / 2 %>)"
+                           tabindex="0" role="button"
+                           aria-label="<%= esc("Connect " + box.unit.name() + " to another unit") %>">
+                            <title>Connect <%= esc(box.unit.name()) %> to another unit</title>
+                            <circle class="link-handle-hit" r="15"></circle>
+                            <circle class="link-handle-dot" r="6"></circle>
+                        </g>
+                        <% } %>
+                    </g>
+                    <% } %>
                 </svg>
             </div>
+            <p class="visually-hidden" id="graph-status" role="status" aria-live="polite"></p>
             <% } %>
 
+            <% if (canWrite) { %>
             <form id="moveForm" method="post" class="hidden-form">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="moveUnit">
                 <input type="hidden" name="id" id="moveId">
                 <input type="hidden" name="parentId" id="moveParentId">
             </form>
+            <% } %>
         </section>
 
-    <aside class="card inspector" id="editor">
+    <aside class="card inspector" id="editor" aria-labelledby="editor-title">
         <% if (selectedMissing) { %>
-        <h2>Node</h2>
-        <div class="flash error">This node no longer exists.</div>
+        <h2 id="editor-title">Unit not found</h2>
+        <div class="flash error" role="alert">This node no longer exists.</div>
         <% } else if (selectedUnit == null) { %>
-        <h2>Node</h2>
-        <p class="muted" style="margin-top:0">
+        <h2 id="editor-title">Unit details</h2>
+        <% if (canWrite) { %>
+        <p class="muted flush-top">
             Select a node in the graph to edit its fields, parent and status.
         </p>
         <p class="muted">
-            Drag nodes to arrange the canvas. Shift-drag one node onto another to change its
-            parent. Positions are stored in this browser; <em>Tidy layout</em> restores the
-            automatic tree.
+            Drag nodes to arrange the canvas. Drag the round handle on a node onto another node
+            to choose which unit becomes the parent. Positions are stored in this browser;
+            <em>Tidy layout</em> restores the automatic tree.
         </p>
         <button type="button" class="btn btn-sm btn-ghost new-root">+ New root unit</button>
+        <% } else { %>
+        <p class="muted flush-top">
+            Select a node in the graph to view its details, parent and status.
+        </p>
+        <% } %>
         <% } else {
             UnitTypeDefinition selectedType = unitTypeService.getByCode(selectedUnit.typeCode()).orElse(null);
             List<OrganizationalUnit> path = institutionConfig.pathOf(selectedUnit);
@@ -1321,7 +1407,7 @@
             }
         %>
         <div class="card-head">
-            <h2><%= esc(selectedUnit.name()) %></h2>
+            <h2 id="editor-title"><%= esc(selectedUnit.name()) %></h2>
             <span class="badge <%= selectedUnit.active() ? "ok" : "off" %>">
                 <%= selectedUnit.active() ? "active" : "inactive" %>
             </span>
@@ -1333,11 +1419,13 @@
             · <%= esc(selectedType.label()) %>
             <% } %>
         </p>
-        <p class="breadcrumb">
+        <p class="path-trail">
             <a href="#graph">Graph</a> / <%= esc(pathText.toString()) %>
         </p>
 
+        <% if (canWrite) { %>
         <form method="post" class="stack">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="updateUnit">
             <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
             <label>Name
@@ -1366,7 +1454,9 @@
                     <label>
                         <%= esc(attribute.label()) %><%= attribute.required() ? " *" : "" %>
                         <% if (attribute.type() == AttributeType.BOOLEAN) { %>
-                        <select name="attr_<%= esc(attribute.key()) %>" <%= required ? "required" : "" %>>
+                        <select name="attr_<%= esc(attribute.key()) %>"
+                                aria-label="<%= esc(attribute.label() + (attribute.required() ? " (required)" : "")) %>"
+                                <%= required ? "required" : "" %>>
                             <option value="">(default value)</option>
                             <option value="true" <%= "true".equals(raw) ? "selected" : "" %>>true</option>
                             <option value="false" <%= "false".equals(raw) ? "selected" : "" %>>false</option>
@@ -1374,6 +1464,7 @@
                         <% } else { %>
                         <input type="<%= inputType(attribute.type()) %>"
                                name="attr_<%= esc(attribute.key()) %>"
+                               aria-label="<%= esc(attribute.label() + (attribute.required() ? " (required)" : "")) %>"
                                value="<%= esc(raw) %>"
                                placeholder="<%= esc(attribute.hasDefault()
                                    ? "Default: " + attribute.defaultValue() : attribute.type().name()) %>"
@@ -1393,11 +1484,40 @@
                 <button class="btn" type="submit">Save changes</button>
             </div>
         </form>
+        <% } else { %>
+        <p class="muted flush-top">
+            <% if (selectedUnit.description() == null || selectedUnit.description().isBlank()) { %>
+            No description.
+            <% } else { %>
+            <%= esc(selectedUnit.description()) %>
+            <% } %>
+        </p>
+        <% if (selectedType != null && !selectedType.attributes().isEmpty()) { %>
+        <details class="subdetails">
+            <summary>Attributes (<%= selectedType.attributes().size() %>)</summary>
+            <div class="stack">
+                <% for (AttributeDefinition attribute : selectedType.attributes()) {
+                    AttributeValue current = selectedUnit.values().get(attribute.key());
+                %>
+                <p class="kv">
+                    <span class="mono"><%= esc(attribute.key()) %></span> :
+                    <%= esc(attribute.label()) %>
+                    <% if (current != null) { %>
+                    — <%= esc(current.value()) %>
+                    <% } else { %>
+                    <span class="muted">— not set</span>
+                    <% } %>
+                </p>
+                <% } %>
+            </div>
+        </details>
+        <% } %>
+        <% } %>
 
         <hr>
 
         <h3>Parent</h3>
-        <p class="muted" style="margin-top:0">
+        <p class="muted flush-top">
             <% if (selectedUnit.parentId() == null) { %>
             <strong>none (root)</strong>
             <% } else {
@@ -1410,11 +1530,13 @@
             <% } } %>
         </p>
 
+        <% if (canWrite) { %>
         <form method="post" class="stack">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="moveUnit">
             <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
             <label>New parent
-                <select name="parentId">
+                <select name="parentId" aria-describedby="move-hint">
                     <option value="" <%= selectedUnit.parentId() == null ? "selected" : "" %>>
                         (none — make this node a root)
                     </option>
@@ -1437,11 +1559,11 @@
                 </select>
             </label>
             <div>
-                <button class="btn btn-sm" type="submit">Move node</button>
+                <button class="btn btn-sm btn-ghost" type="submit">Move node</button>
             </div>
         </form>
-        <p class="hint" style="margin-top:6px">
-            Or Shift-drag the node onto the new parent in the graph.
+        <p class="hint" id="move-hint">
+            Or drag from the node's link handle onto the new parent in the graph.
         </p>
 
         <hr>
@@ -1453,45 +1575,68 @@
                     data-parent-code="<%= esc(selectedUnit.code()) %>"
                     data-parent-type="<%= esc(selectedUnit.typeCode()) %>"
                     data-parent-active="<%= selectedUnit.active() %>">+ Add child</button>
-            <%= selectedUnit.active()
-                ? "<form method=\"post\" class=\"inline\""
-                  + " onsubmit=\"return confirm('Deactivate this unit and its descendants?')\">"
-                  + "<input type=\"hidden\" name=\"action\" value=\"deactivateUnit\">"
-                  + "<input type=\"hidden\" name=\"id\" value=\"" + esc(selectedUnit.id()) + "\">"
-                  + "<input type=\"hidden\" name=\"cascade\" value=\"true\">"
-                  + "<button type=\"submit\" class=\"btn btn-sm btn-ghost\">Deactivate</button></form>"
-                : postButton("activateUnit", "id", selectedUnit.id(), "Activate", "btn-ghost", false) %>
+            <% if (selectedUnit.active()) { %>
             <form method="post" class="inline"
-                  onsubmit="return confirm('Delete this unit? Deletion is refused when it has children.')">
+                  data-confirm="Deactivate '<%= esc(selectedUnit.name()) %>' and its descendants? They will also be deactivated.">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                <input type="hidden" name="action" value="deactivateUnit">
+                <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
+                <input type="hidden" name="cascade" value="true">
+                <button type="submit" class="btn btn-sm btn-ghost">Deactivate</button>
+            </form>
+            <% } else { %>
+            <%= postButton(csrfToken, "activateUnit", "id", selectedUnit.id(), "Activate", "btn-ghost", null) %>
+            <% } %>
+        </div>
+
+        <div class="danger-zone">
+            <p class="hint">
+                Deleting a unit is permanent. Deletion is refused while the unit has children.
+            </p>
+            <form method="post" class="inline"
+                  data-confirm="Delete '<%= esc(selectedUnit.name()) %>'? This cannot be undone. Deletion is refused while the unit has children.">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                 <input type="hidden" name="action" value="deleteUnit">
                 <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
             </form>
         </div>
         <% } %>
+        <% } %>
     </aside>
     </div>
 
     <details class="card" id="types">
         <summary>
-            <span>Unit types and relations</span>
+            <h2 class="summary-title">Unit types and relations</h2>
             <span class="summary-note">
-                <%= allTypes.size() %> type(s) · <%= pairs.size() %> relation(s)
+                <%= allTypes.size() %> <%= allTypes.size() == 1 ? "type" : "types" %> ·
+                <%= pairs.size() %> <%= pairs.size() == 1 ? "relation" : "relations" %>
             </span>
         </summary>
         <div class="details-body">
         <% if (allTypes.isEmpty()) { %>
-        <p class="muted">No unit types. Create one to build a hierarchy.</p>
+        <div class="empty">
+            <p><strong>No unit types yet.</strong></p>
+            <p>A unit type defines the attributes and the allowed parent-child relations.</p>
+            <% if (canWrite) { %>
+            <a class="btn btn-sm" href="#create-type-form">Create the first type</a>
+            <% } %>
+        </div>
         <% } else { %>
+        <div class="table-wrap" role="region" aria-label="Unit types table" tabindex="0">
         <table>
+            <caption class="visually-hidden">Unit types</caption>
             <thead>
             <tr>
-                <th>Code</th>
-                <th>Label</th>
-                <th>State</th>
-                <th>Attributes</th>
-                <th>Allowed children</th>
-                <th>Actions</th>
+                <th scope="col">Code</th>
+                <th scope="col">Label</th>
+                <th scope="col">State</th>
+                <th scope="col">Attributes</th>
+                <th scope="col">Allowed children</th>
+                <% if (canWrite) { %>
+                <th scope="col">Actions</th>
+                <% } %>
             </tr>
             </thead>
             <tbody>
@@ -1530,22 +1675,28 @@
                     <span class="mono"><%= esc(String.join(", ", childTypes)) %></span>
                     <% } %>
                 </td>
+                <% if (canWrite) { %>
                 <td class="actions">
                     <%= type.active()
-                        ? postButton("deactivateType", "code", type.code(), "Deactivate", "btn-ghost", false)
-                        : postButton("activateType", "code", type.code(), "Activate", "btn-ghost", false) %>
-                    <%= postButton("deleteType", "code", type.code(), "Delete", "btn-danger", true) %>
+                        ? postButton(csrfToken, "deactivateType", "code", type.code(), "Deactivate", "btn-ghost", null)
+                        : postButton(csrfToken, "activateType", "code", type.code(), "Activate", "btn-ghost", null) %>
+                    <%= postButton(csrfToken, "deleteType", "code", type.code(), "Delete", "btn-danger",
+                        "Delete unit type '" + type.code() + "'? Deletion is refused while units still use it.") %>
                 </td>
+                <% } %>
             </tr>
             <% } %>
             </tbody>
         </table>
+        </div>
         <% } %>
 
+        <% if (canWrite) { %>
         <hr>
 
-        <h3>Create a type</h3>
-        <form method="post" class="grid">
+        <h3 id="create-type-title">Create a type</h3>
+        <form method="post" class="grid" id="create-type-form">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="createType">
             <label>Code
                 <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
@@ -1558,47 +1709,59 @@
                 <button class="btn" type="submit">Create the type</button>
             </div>
         </form>
+        <% } %>
 
         <hr>
 
         <h3>Allowed relations</h3>
         <% if (pairs.isEmpty()) { %>
         <p class="muted">
-            No relation. A root unit may use any type; a relation is required to create a child
-            unit.
+            No relation is defined. A root unit may use any type; a relation is required to create
+            a child unit.
         </p>
         <% } else { %>
+        <div class="table-wrap" role="region" aria-label="Allowed parent-child relations table"
+             tabindex="0">
         <table>
+            <caption class="visually-hidden">Allowed parent-child relations</caption>
             <thead>
             <tr>
-                <th>Parent type</th>
-                <th></th>
-                <th>Child type</th>
-                <th>Actions</th>
+                <th scope="col">Parent type</th>
+                <th scope="col"><span class="visually-hidden">Direction</span></th>
+                <th scope="col">Child type</th>
+                <% if (canWrite) { %>
+                <th scope="col">Actions</th>
+                <% } %>
             </tr>
             </thead>
             <tbody>
             <% for (AllowedParentChildPair pair : pairs) { %>
             <tr>
                 <td class="mono"><%= esc(pair.parent()) %></td>
-                <td>→</td>
+                <td aria-hidden="true">→</td>
                 <td class="mono"><%= esc(pair.child()) %></td>
+                <% if (canWrite) { %>
                 <td class="actions">
                     <form method="post" class="inline"
-                          onsubmit="return confirm('Confirm this action?')">
+                          data-confirm="Remove the allowed relation <%= esc(pair.parent()) %> → <%= esc(pair.child()) %>?">
+                        <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
                         <input type="hidden" name="action" value="removePair">
                         <input type="hidden" name="parentType" value="<%= esc(pair.parent()) %>">
                         <input type="hidden" name="childType" value="<%= esc(pair.child()) %>">
                         <button class="btn btn-sm btn-danger" type="submit">Remove</button>
                     </form>
                 </td>
+                <% } %>
             </tr>
             <% } %>
             </tbody>
         </table>
+        </div>
         <% } %>
 
-        <form method="post" class="row" style="margin-top:12px">
+        <% if (canWrite) { %>
+        <form method="post" class="row form-row-spaced">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="addPair">
             <label>Parent type
                 <select name="parentType" required>
@@ -1620,26 +1783,32 @@
                 <button class="btn" type="submit">Allow the relation</button>
             </div>
         </form>
+        <% } %>
         </div>
     </details>
 
-    <dialog id="createDialog" aria-labelledby="createTitle">
+    <% if (canWrite) { %>
+    <dialog id="createDialog" aria-labelledby="createTitle"
+            <%= activeTypes.isEmpty() ? "" : "aria-describedby=\"createParentLine\"" %>>
         <% if (activeTypes.isEmpty()) { %>
         <div class="dialog-head">
             <div>
                 <h2 id="createTitle">New unit</h2>
                 <p class="muted">No active unit type is available.</p>
             </div>
-            <button type="button" class="icon-btn" data-close-dialog aria-label="Close">×</button>
+            <button type="button" class="icon-btn" data-close-dialog
+                    aria-label="Close dialog">×</button>
         </div>
         <div class="dialog-body">
-            <p class="muted" style="margin:0">
-                Activate a type or create one under <a href="#types">Unit types and relations</a>
+            <p class="muted flush">
+                Activate a type or create one under
+                <a href="#types" data-close-dialog>Unit types and relations</a>
                 before adding units.
             </p>
         </div>
         <% } else { %>
         <form method="post" class="dialog-form">
+                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="createUnit">
             <input type="hidden" name="parentId" id="createParentId" value="">
             <div class="dialog-head">
@@ -1649,21 +1818,26 @@
                         The unit is added at the top of the hierarchy.
                     </p>
                 </div>
-                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">×</button>
+                <button type="button" class="icon-btn" data-close-dialog
+                        aria-label="Close dialog">×</button>
             </div>
             <div class="dialog-body">
+                <p class="hint flush-top" aria-hidden="true">
+                    Fields marked <span class="req">*</span> are required.
+                </p>
                 <div class="grid">
-                    <label>Name
+                    <label>Name <span class="req" aria-hidden="true">*</span>
                         <input id="createName" name="name" required maxlength="120"
                                autocomplete="off" placeholder="Computer Science Department">
                     </label>
-                    <label>Code
+                    <label><span id="createCodeLabel">Code <span class="req" aria-hidden="true">*</span></span>
                         <input id="createCode" name="code" required maxlength="64"
+                               aria-labelledby="createCodeLabel"
                                pattern="[A-Za-z0-9][A-Za-z0-9_.-]*" autocomplete="off"
                                placeholder="CS_DEPT">
                         <span class="hint">Generated from the name; edit it if needed.</span>
                     </label>
-                    <label>Type
+                    <label>Type <span class="req" aria-hidden="true">*</span>
                         <select id="createType" name="typeCode" required>
                             <% for (UnitTypeDefinition type : activeTypes) { %>
                             <option value="<%= esc(type.code()) %>"
@@ -1678,15 +1852,16 @@
                         <input name="description" maxlength="255" placeholder="Optional">
                     </label>
                     <label class="checkbox span-2">
-                        <input type="checkbox" name="active" id="createActive" checked>
-                        Activate the unit on creation
+                        <input type="checkbox" name="active" id="createActive" checked
+                               aria-labelledby="createActiveLabel">
+                        <span id="createActiveLabel">Activate the unit on creation</span>
                         <span class="hint" id="createActiveHint" hidden>
                             The selected parent is inactive, so the new unit must start inactive.
                         </span>
                     </label>
                 </div>
 
-                <p class="hint" id="createNoType" hidden>
+                <p class="hint" id="createNoType" role="status" hidden>
                     No active type is allowed under this parent. Add an allowed relation under
                     Unit types and relations first.
                 </p>
@@ -1697,8 +1872,8 @@
                         continue;
                     }
                 %>
-                <fieldset data-attributes="<%= esc(type.code()) %>" hidden disabled
-                          style="margin-top:12px">
+                <fieldset class="dialog-fieldset" data-attributes="<%= esc(type.code()) %>"
+                          hidden disabled>
                     <legend>Attributes — <%= esc(type.label()) %></legend>
                     <div class="grid">
                         <% for (AttributeDefinition attribute : type.attributes()) {
@@ -1710,7 +1885,9 @@
                         <label>
                             <%= esc(attribute.label()) %><%= attribute.required() ? " *" : "" %>
                             <% if (attribute.type() == AttributeType.BOOLEAN) { %>
-                            <select name="attr_<%= esc(attribute.key()) %>" <%= required ? "required" : "" %>>
+                            <select name="attr_<%= esc(attribute.key()) %>"
+                                    aria-label="<%= esc(attribute.label() + (attribute.required() ? " (required)" : "")) %>"
+                                    <%= required ? "required" : "" %>>
                                 <option value="">(default value)</option>
                                 <option value="true">true</option>
                                 <option value="false">false</option>
@@ -1718,6 +1895,7 @@
                             <% } else { %>
                             <input type="<%= inputType(attribute.type()) %>"
                                    name="attr_<%= esc(attribute.key()) %>"
+                                   aria-label="<%= esc(attribute.label() + (attribute.required() ? " (required)" : "")) %>"
                                    placeholder="<%= esc(placeholder) %>"
                                    <%= required ? "required" : "" %><%= inputStep(attribute.type()) %>>
                             <% } %>
@@ -1739,10 +1917,51 @@
         <% } %>
     </dialog>
 
-    <p class="footer">
-        Changes are validated by the institution module and then written atomically to the XML
-        file. This page is only for local development.
-    </p>
+    <dialog id="linkDialog" class="link-dialog" aria-labelledby="linkTitle"
+            aria-describedby="linkNote">
+        <div class="dialog-panel">
+            <div class="dialog-head">
+                <div>
+                    <h2 id="linkTitle">Connect units</h2>
+                    <p class="muted">Choose which unit becomes the parent.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close-link
+                        aria-label="Close dialog">×</button>
+            </div>
+            <div class="dialog-body">
+                <fieldset class="link-choices">
+                    <legend class="visually-hidden">Parent and child</legend>
+                    <label class="link-option">
+                        <input type="radio" name="linkDirection" value="a" checked>
+                        <span id="linkOptionA"></span>
+                    </label>
+                    <label class="link-option">
+                        <input type="radio" name="linkDirection" value="b">
+                        <span id="linkOptionB"></span>
+                    </label>
+                </fieldset>
+                <p class="hint flush-top" id="linkNote">
+                    The move is checked when you confirm. Invalid relations and moves that
+                    create a cycle are refused.
+                </p>
+            </div>
+            <div class="dialog-foot">
+                <button type="button" class="btn btn-ghost" data-close-link>Cancel</button>
+                <button type="button" class="btn" id="linkConfirm">Connect</button>
+            </div>
+        </div>
+    </dialog>
+
+    <% } %>
+
+    <footer class="dess-footer">
+        <% if (canWrite) { %>
+        <p>Changes are validated by the institution module and then written atomically to the XML file.</p>
+        <% } else { %>
+        <p>Read-only view. Changes are validated by the institution module before they are written to the XML file.</p>
+        <% } %>
+        <p>This page is only for local development.</p>
+    </footer>
 
     <script>
         (function () {
@@ -1766,8 +1985,17 @@
             var moveForm = document.getElementById('moveForm');
             var moveId = document.getElementById('moveId');
             var moveParent = document.getElementById('moveParentId');
+            var linkDialog = document.getElementById('linkDialog');
+            var linkOptionA = document.getElementById('linkOptionA');
+            var linkOptionB = document.getElementById('linkOptionB');
+            var linkConfirm = document.getElementById('linkConfirm');
+            var linkStatus = document.getElementById('graph-status');
+            var legendEl = document.getElementById('graph-legend');
+            var legendDefault = legendEl ? legendEl.innerHTML : '';
+            var statusTimer = null;
             var nodes = {};
             var adds = {};
+            var handles = {};
             var positions = {};
             var storageKey = svg
                 ? 'dess.institution.layout.' + svg.getAttribute('data-tree')
@@ -1777,6 +2005,9 @@
             var overlay = null;
             var dragged = false;
             var linkMode = false;
+            var pickSourceId = null;
+            var linkSourceId = null;
+            var linkTargetId = null;
             var startClientX = 0;
             var startClientY = 0;
             var pointerX = 0;
@@ -1793,6 +2024,11 @@
 
             document.querySelectorAll('.add-child').forEach(function (add) {
                 adds[add.getAttribute('data-for')] = add;
+            });
+
+            document.querySelectorAll('.link-handle').forEach(function (handle) {
+                handles[handle.getAttribute('data-for')] = handle;
+                handle.setAttribute('aria-pressed', 'false');
             });
 
             function syncAttributes() {
@@ -1894,7 +2130,19 @@
                 }
 
                 if (createActiveHint) {
-                    createActiveHint.hidden = !parent || parent.active;
+                    var hintApplies = parent && !parent.active;
+
+                    createActiveHint.hidden = !hintApplies;
+
+                    // Referenced hidden text is still announced, so detach the
+                    // description unless the hint actually applies.
+                    if (createActive) {
+                        if (hintApplies) {
+                            createActive.setAttribute('aria-describedby', 'createActiveHint');
+                        } else {
+                            createActive.removeAttribute('aria-describedby');
+                        }
+                    }
                 }
 
                 filterTypes(parent ? parent.type : null);
@@ -1962,11 +2210,8 @@
             });
 
             if (dialog) {
-                dialog.addEventListener('click', function (event) {
-                    if (event.target === dialog && dialog.close) {
-                        dialog.close();
-                    }
-                });
+                // Escape and the explicit close controls close the dialog.
+                // A backdrop click does not, so typed values are not lost.
             }
 
             document.querySelectorAll('.new-root').forEach(function (button) {
@@ -1994,6 +2239,17 @@
                     node.addEventListener('keydown', function (event) {
                         if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
+
+                            if (pickSourceId) {
+                                if (pickSourceId === id) {
+                                    cancelPickMode(true);
+                                } else {
+                                    openLinkDialog(pickSourceId, id);
+                                }
+
+                                return;
+                            }
+
                             openNode(id);
                         }
                     });
@@ -2020,10 +2276,56 @@
                     });
                 });
 
+                svg.querySelectorAll('.link-handle').forEach(function (handle) {
+                    var id = handle.getAttribute('data-for');
+
+                    handle.addEventListener('pointerdown', function (event) {
+                        if (event.button !== 0) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                        beginLinkDrag(id, event);
+                    });
+
+                    handle.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+
+                            if (pickSourceId === id) {
+                                cancelPickMode(true);
+                            } else {
+                                startPickMode(id);
+                            }
+                        }
+                    });
+                });
+
+                svg.addEventListener('click', function (event) {
+                    if (!pickSourceId) {
+                        return;
+                    }
+
+                    if (event.target.closest('.gnode') || event.target.closest('.link-handle')) {
+                        return;
+                    }
+
+                    cancelPickMode(true);
+                });
+
                 loadStored();
                 Object.keys(positions).forEach(applyPosition);
                 routeEdges();
                 updateExtent();
+
+                // On narrow screens the canvas scrolls horizontally. Start
+                // centred so the root and its main branches are visible.
+                var scroll = svg.parentElement;
+
+                if (scroll && scroll.scrollWidth > scroll.clientWidth) {
+                    scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) / 2;
+                }
 
                 var tidyButton = document.getElementById('tidyLayout');
 
@@ -2049,10 +2351,211 @@
                 window.location.href = '?node=' + encodeURIComponent(id) + '#editor';
             }
 
+            function nameOf(id) {
+                var node = nodes[id];
+
+                return node ? node.getAttribute('data-name') : id;
+            }
+
+            function setGraphStatus(text) {
+                if (!linkStatus) {
+                    return;
+                }
+
+                linkStatus.textContent = text;
+
+                // While a source is picked, the legend line shows the same
+                // instruction in view; otherwise it returns to the static help.
+                if (legendEl && text && pickSourceId) {
+                    legendEl.textContent = text;
+                    legendEl.classList.add('picking');
+                } else if (legendEl && legendEl.classList.contains('picking')) {
+                    legendEl.innerHTML = legendDefault;
+                    legendEl.classList.remove('picking');
+                }
+
+                if (statusTimer) {
+                    window.clearTimeout(statusTimer);
+                    statusTimer = null;
+                }
+
+                // A message that describes a finished action clears itself; a
+                // pick-mode hint stays until the mode ends.
+                if (text && !pickSourceId) {
+                    statusTimer = window.setTimeout(function () {
+                        linkStatus.textContent = '';
+                        statusTimer = null;
+                    }, 6000);
+                }
+            }
+
+            function markSource(id) {
+                Object.keys(nodes).forEach(function (key) {
+                    nodes[key].classList.toggle('link-source', key === id);
+                });
+
+                Object.keys(handles).forEach(function (key) {
+                    handles[key].setAttribute('aria-pressed', key === id ? 'true' : 'false');
+                });
+
+                svg.classList.toggle('picking', Boolean(id));
+            }
+
+            function startPickMode(id) {
+                if (!nodes[id] || !positions[id]) {
+                    return;
+                }
+
+                pickSourceId = id;
+                markSource(id);
+                setGraphStatus('Connecting from ' + nameOf(id)
+                    + '. Select another unit to connect, or press Escape to cancel.');
+            }
+
+            function cancelPickMode(announce) {
+                if (!pickSourceId) {
+                    return;
+                }
+
+                markSource(null);
+                pickSourceId = null;
+                setGraphStatus(announce ? 'Connection cancelled.' : '');
+            }
+
+            function beginLinkDrag(id, event) {
+                if (!positions[id] || !nodes[id]) {
+                    return;
+                }
+
+                cancelPickMode(false);
+                activeNode = nodes[id];
+                dragged = false;
+                linkMode = true;
+                startClientX = event.clientX;
+                startClientY = event.clientY;
+                originX = positions[id].x;
+                originY = positions[id].y;
+                // A handle drag starts at the node's left edge; a Shift-drag on
+                // the node body starts at its centre.
+                cableX = originX;
+                cableY = originY + NODE_H / 2;
+
+                var point = svgPoint(event);
+                pointerX = point.x;
+                pointerY = point.y;
+
+                document.addEventListener('pointermove', onPointerMove);
+                document.addEventListener('pointerup', onPointerUp);
+                document.addEventListener('pointercancel', onPointerUp);
+            }
+
+            function openLinkDialog(sourceId, targetId) {
+                if (!linkDialog || !sourceId || !targetId || sourceId === targetId) {
+                    return;
+                }
+
+                linkSourceId = sourceId;
+                linkTargetId = targetId;
+
+                var sourceName = nameOf(sourceId);
+                var targetName = nameOf(targetId);
+
+                if (linkOptionA) {
+                    linkOptionA.textContent = targetName + ' becomes a child of ' + sourceName;
+                }
+
+                if (linkOptionB) {
+                    linkOptionB.textContent = sourceName + ' becomes a child of ' + targetName;
+                }
+
+                var first = linkDialog.querySelector('input[name="linkDirection"][value="a"]');
+
+                if (first) {
+                    first.checked = true;
+                }
+
+                cancelPickMode(false);
+
+                if (typeof linkDialog.showModal === 'function') {
+                    linkDialog.showModal();
+                } else {
+                    linkDialog.setAttribute('open', '');
+                }
+
+                if (first) {
+                    first.focus();
+                }
+            }
+
+            function closeLinkDialog() {
+                if (!linkDialog) {
+                    return;
+                }
+
+                if (linkDialog.close) {
+                    linkDialog.close();
+                } else {
+                    linkDialog.removeAttribute('open');
+                }
+
+                linkSourceId = null;
+                linkTargetId = null;
+            }
+
+            function submitLink() {
+                if (!moveForm || !moveId || !moveParent || !linkSourceId || !linkTargetId) {
+                    return;
+                }
+
+                var choice = linkDialog
+                    ? linkDialog.querySelector('input[name="linkDirection"]:checked')
+                    : null;
+                var targetBecomesChild = !choice || choice.value === 'a';
+                var childId = targetBecomesChild ? linkTargetId : linkSourceId;
+                var parentId = targetBecomesChild ? linkSourceId : linkTargetId;
+
+                moveId.value = childId;
+                moveParent.value = parentId;
+                closeLinkDialog();
+                moveForm.submit();
+            }
+
+            document.querySelectorAll('[data-close-link]').forEach(function (button) {
+                button.addEventListener('click', closeLinkDialog);
+            });
+
+            if (linkConfirm) {
+                linkConfirm.addEventListener('click', submitLink);
+            }
+
+            if (linkDialog) {
+                linkDialog.addEventListener('close', function () {
+                    linkSourceId = null;
+                    linkTargetId = null;
+                });
+
+                // The dialog is not a form, so Enter confirms from the radios.
+                linkDialog.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter'
+                        && event.target
+                        && event.target.tagName === 'INPUT') {
+                        event.preventDefault();
+                        submitLink();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && pickSourceId) {
+                    cancelPickMode(true);
+                }
+            });
+
             function applyPosition(id) {
                 var position = positions[id];
                 var node = nodes[id];
                 var add = adds[id];
+                var handle = handles[id];
 
                 if (!position || !node) {
                     return;
@@ -2063,6 +2566,11 @@
                 if (add) {
                     add.setAttribute('transform', 'translate('
                         + (position.x + NODE_W + PLUS_GAP) + ',' + (position.y + NODE_H / 2) + ')');
+                }
+
+                if (handle) {
+                    handle.setAttribute('transform', 'translate('
+                        + position.x + ',' + (position.y + NODE_H / 2) + ')');
                 }
             }
 
@@ -2159,6 +2667,7 @@
 
                 overlay = null;
                 activeNode = null;
+                linkMode = false;
                 svg.classList.remove('linking');
                 svg.classList.remove('moving');
             }
@@ -2171,6 +2680,18 @@
                 var id = event.currentTarget.getAttribute('data-id');
 
                 if (!positions[id]) {
+                    return;
+                }
+
+                if (pickSourceId) {
+                    event.preventDefault();
+
+                    if (pickSourceId === id) {
+                        cancelPickMode(true);
+                    } else {
+                        openLinkDialog(pickSourceId, id);
+                    }
+
                     return;
                 }
 
@@ -2228,7 +2749,11 @@
                     clearTarget();
 
                     var element = document.elementFromPoint(event.clientX, event.clientY);
-                    var target = element && element.closest ? element.closest('.gnode') : null;
+                    var handleEl = element && element.closest
+                        ? element.closest('.link-handle') : null;
+                    var target = handleEl
+                        ? nodes[handleEl.getAttribute('data-for')]
+                        : element && element.closest ? element.closest('.gnode') : null;
 
                     if (target && target !== activeNode) {
                         currentTarget = target;
@@ -2243,7 +2768,6 @@
                 positions[id].y = Math.max(MARGIN, Math.round(originY + point.y - pointerY));
                 applyPosition(id);
                 routeEdges();
-                updateExtent();
             }
 
             function onPointerUp() {
@@ -2257,20 +2781,25 @@
 
                 var id = activeNode.getAttribute('data-id');
                 var targetId = currentTarget ? currentTarget.getAttribute('data-id') : null;
+                var wasLink = linkMode;
 
                 if (!dragged) {
                     cleanup();
+
+                    if (wasLink) {
+                        startPickMode(id);
+                        return;
+                    }
+
                     openNode(id);
                     return;
                 }
 
                 cleanup();
 
-                if (linkMode) {
-                    if (targetId && targetId !== id && moveForm && moveId && moveParent) {
-                        moveId.value = id;
-                        moveParent.value = targetId;
-                        moveForm.submit();
+                if (wasLink) {
+                    if (targetId && targetId !== id) {
+                        openLinkDialog(id, targetId);
                     }
 
                     return;
@@ -2303,6 +2832,8 @@
         })();
     </script>
     <% } %>
-</main>
+        </main>
+    </div>
+</div>
 </body>
 </html>

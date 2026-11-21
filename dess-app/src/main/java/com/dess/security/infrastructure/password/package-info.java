@@ -1,7 +1,6 @@
 /**
- * @brief Password hashing and verification.
+ * Hashes and checks passwords.
  *
- * <p>Provides the password encoder port used during authentication and account creation.
- * Plain-text passwords never leave this package; only salted hashes are persisted.</p>
+ * <p>A plain password is never stored. Only a salted hash is saved.</p>
  */
 package com.dess.security.infrastructure.password;

@@ -1,7 +1,6 @@
 /**
- * @brief Account, role and permission persistence adapters.
+ * Stores accounts, roles and permissions.
  *
- * <p>Maps domain objects to the configured storage and implements the repository ports used by
- * the application layer. Schema evolution remains owned by Flyway.</p>
+ * <p>Flyway owns the database schema. This package only reads and writes data.</p>
  */
 package com.dess.security.infrastructure.persistence;
