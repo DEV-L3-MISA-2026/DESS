@@ -4,21 +4,10 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li><a href="${ctx}/app">Overview</a></li>
-                <li aria-current="page">Scheduling</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">Scheduling</h1>
-        <p class="dess-page-description">
-            Rooms and the bookings that reserve them. A booking appears as active only after the
-            scheduling service has stored it.
-        </p>
-    </div>
-</div>
+<c:set var="pageDescription" value="Rooms and the bookings that reserve them. A booking appears as active only after the scheduling service has stored it."/>
+<c:set var="breadcrumbParentLabel" value="Overview"/>
+<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="rooms-title">
     <div class="panel-head">
@@ -30,10 +19,9 @@
 
     <c:choose>
         <c:when test="${empty rooms}">
-            <div class="empty">
-                <strong>No room yet.</strong>
-                <p>Add a room before a teaching session or an examination can use it.</p>
-            </div>
+            <c:set var="emptyTitle" value="No room yet."/>
+            <c:set var="emptyMessage" value="Add a room before a teaching session or an examination can use it."/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Rooms">
@@ -111,10 +99,9 @@
 
     <c:choose>
         <c:when test="${empty bookings}">
-            <div class="empty">
-                <strong>No booking yet.</strong>
-                <p>Teaching sessions and examinations will appear here once they are scheduled.</p>
-            </div>
+            <c:set var="emptyTitle" value="No booking yet."/>
+            <c:set var="emptyMessage" value="Teaching sessions and examinations will appear here once they are scheduled."/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Bookings">
@@ -137,9 +124,9 @@
                             <td class="mono"><c:out value="${booking.startsAt}"/></td>
                             <td class="mono"><c:out value="${booking.endsAt}"/></td>
                             <td>
-                                <span class="badge ${booking.status == 'ACTIVE' ? 'ok' : 'off'}">
-                                    <c:out value="${booking.status == 'ACTIVE' ? 'Active' : 'Cancelled'}"/>
-                                </span>
+                                <c:set var="badgeTone" value="${booking.status == 'ACTIVE' ? 'ok' : 'off'}"/>
+                                <c:set var="badgeLabel" value="${booking.status == 'ACTIVE' ? 'Active' : 'Cancelled'}"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
                     </c:forEach>

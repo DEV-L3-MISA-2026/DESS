@@ -48,11 +48,20 @@ Icon-only buttons need an accessible name. Prefer an icon with text when the mea
 - Primary action (optional)
 - Secondary actions (optional)
 
+The application pages render the header, breadcrumb, empty state and status badge
+from shared JSP fragments under `WEB-INF/views/components/`: `page-header.jspf`,
+`breadcrumb.jspf`, `empty-state.jspf` and `status-badge.jspf`. Pages set EL variables
+and include the fragment; they do not repeat the markup.
+
 ### Section header
 A small heading and optional supporting action used to organize long pages.
 
 ### Panel
 A restrained white surface with a subtle border. Use for grouping related content, not as a wrapper around every element.
+
+`.panel` is the shared class for application pages. The institution editor still uses
+`.card`; both render the same surface, padding, radius and shadow, so they cannot drift
+apart. Only the stacking margin differs.
 
 ## 5. Data components
 

@@ -1,0 +1,10 @@
+<%-- Breadcrumb for the current page. Set breadcrumbParentLabel and
+     breadcrumbParentHref before including. Omit both on a root page. --%>
+<nav class="dess-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+        <c:if test="${not empty breadcrumbParentLabel}">
+            <li><a href="${breadcrumbParentHref}"><c:out value="${breadcrumbParentLabel}"/></a></li>
+        </c:if>
+        <li aria-current="page"><c:out value="${pageTitle}"/></li>
+    </ol>
+</nav>

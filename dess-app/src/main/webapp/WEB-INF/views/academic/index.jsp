@@ -4,21 +4,10 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li><a href="${ctx}/app">Overview</a></li>
-                <li aria-current="page">Academic</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">Academic</h1>
-        <p class="dess-page-description">
-            Periods set the calendar; programs describe credentials; courses form the catalogue.
-            A course is not yet an offering.
-        </p>
-    </div>
-</div>
+<c:set var="pageDescription" value="Periods set the calendar; programs describe credentials; courses form the catalogue. A course is not yet an offering."/>
+<c:set var="breadcrumbParentLabel" value="Overview"/>
+<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="periods-title">
     <div class="panel-head">
@@ -30,10 +19,9 @@
 
     <c:choose>
         <c:when test="${empty periods}">
-            <div class="empty">
-                <strong>No academic period yet.</strong>
-                <p>A period is the year and term that academic operations refer to.</p>
-            </div>
+            <c:set var="emptyTitle" value="No academic period yet."/>
+            <c:set var="emptyMessage" value="A period is the year and term that academic operations refer to."/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Academic periods">
@@ -104,10 +92,9 @@
 
     <c:choose>
         <c:when test="${empty programs}">
-            <div class="empty">
-                <strong>No program yet.</strong>
-                <p>Create a program before adding its versions and enrollments.</p>
-            </div>
+            <c:set var="emptyTitle" value="No program yet."/>
+            <c:set var="emptyMessage" value="Create a program before adding its versions and enrollments."/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Academic programs">
@@ -125,9 +112,9 @@
                             <td class="mono"><c:out value="${program.code}"/></td>
                             <td><c:out value="${program.name}"/></td>
                             <td>
-                                <span class="badge ${program.status == 'ACTIVE' ? 'ok' : 'off'}">
-                                    <c:out value="${program.status == 'ACTIVE' ? 'Active' : 'Inactive'}"/>
-                                </span>
+                                <c:set var="badgeTone" value="${program.status == 'ACTIVE' ? 'ok' : 'off'}"/>
+                                <c:set var="badgeLabel" value="${program.status == 'ACTIVE' ? 'Active' : 'Inactive'}"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
                     </c:forEach>
@@ -180,10 +167,9 @@
 
     <c:choose>
         <c:when test="${empty courses}">
-            <div class="empty">
-                <strong>No course yet.</strong>
-                <p>Add the first course to the catalogue.</p>
-            </div>
+            <c:set var="emptyTitle" value="No course yet."/>
+            <c:set var="emptyMessage" value="Add the first course to the catalogue."/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Course catalogue">
@@ -201,9 +187,9 @@
                             <td class="mono"><c:out value="${course.code}"/></td>
                             <td><c:out value="${course.title}"/></td>
                             <td>
-                                <span class="badge ${course.active ? 'ok' : 'off'}">
-                                    <c:out value="${course.active ? 'Active' : 'Inactive'}"/>
-                                </span>
+                                <c:set var="badgeTone" value="${course.active ? 'ok' : 'off'}"/>
+                                <c:set var="badgeLabel" value="${course.active ? 'Active' : 'Inactive'}"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
                     </c:forEach>

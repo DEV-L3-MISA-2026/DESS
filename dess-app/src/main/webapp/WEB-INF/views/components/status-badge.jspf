@@ -1,0 +1,3 @@
+<%-- Status badge. Set badgeTone to ok, warn, info, danger or off, and
+     badgeLabel to the visible text. Both values are page-authored literals. --%>
+<span class="badge ${badgeTone}"><c:out value="${badgeLabel}"/></span>
