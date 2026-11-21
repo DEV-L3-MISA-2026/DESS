@@ -19,8 +19,9 @@ Tokens live in `src/main/webapp/assets/css/tokens.css`. Page styles compose them
 | `--dess-text-muted` | `#5F6F82` | Secondary text and metadata |
 | `--dess-on-dark` | `#FFFFFF` | Text and icons on the primary sidebar |
 | `--dess-on-dark-muted` | `#B6C0CC` | Group headings and footer text on the sidebar |
-| `--dess-border` | `#E2E7E9` | Dividers, panel borders, input outlines |
-| `--dess-border-strong` | `#CBD4D9` | Hovered control outline |
+| `--dess-border` | `#E2E7E9` | Dividers, panel borders and table rules |
+| `--dess-border-strong` | `#CBD4D9` | Emphasised divider or badge outline |
+| `--dess-border-control` | `#7F8C99` | Default outline for inputs, ghost buttons and choice cards |
 | `--dess-border-on-dark` | `#33475C` | Dividers on the sidebar |
 | `--dess-success` | `#397A59` | Successful state |
 | `--dess-success-soft` | `#EDF5F0` | Success alert background |
@@ -30,7 +31,8 @@ Tokens live in `src/main/webapp/assets/css/tokens.css`. Page styles compose them
 | `--dess-danger` | `#B94C4C` | Error and destructive state |
 | `--dess-danger-strong` | `#9E3E3E` | Error text, destructive hover |
 | `--dess-danger-soft` | `#F9EDED` | Error alert background |
-| `--dess-info` | `#477BA5` | Informational state |
+| `--dess-info` | `#477BA5` | Informational marker and border |
+| `--dess-info-strong` | `#3A6890` | Informational text and badge labels |
 | `--dess-info-soft` | `#EDF3F8` | Information alert background |
 
 ### Contrast baseline
@@ -48,6 +50,21 @@ All text tokens meet WCAG 2.2 AA (4.5:1) on the surfaces where they are used.
 | `--dess-accent-strong` on `--dess-surface` | 6.6:1 |
 | `--dess-success` on `--dess-surface` | 5.1:1 |
 | `--dess-danger-strong` on `--dess-surface` | 6.2:1 |
+| `--dess-info-strong` on `--dess-info-soft` | 5.3:1 |
+| `--dess-success` on `--dess-success-soft` | 4.6:1 |
+| `--dess-warning-strong` on `--dess-warning-soft` | 5.4:1 |
+| `--dess-danger-strong` on `--dess-danger-soft` | 5.7:1 |
+
+Non-text contrast for control outlines:
+
+| Pair | Ratio |
+|---|---:|
+| `--dess-border-control` on `--dess-surface` | 3.4:1 |
+| `--dess-border-control` on `--dess-background` | 3.2:1 |
+
+Do not use `--dess-text-muted` on `--dess-accent-soft`, or `--dess-info` on
+`--dess-info-soft`, as normal text: both pairs fall below 4.5:1. Use
+`--dess-text` or `--dess-info-strong` instead.
 
 `--dess-warning` is a marker colour only. Warning text uses `--dess-warning-strong`.
 
@@ -155,6 +172,7 @@ The canonical file is `src/main/webapp/assets/css/tokens.css`. The following is 
 
     --dess-border: #E2E7E9;
     --dess-border-strong: #CBD4D9;
+    --dess-border-control: #7F8C99;
     --dess-border-on-dark: #33475C;
 
     --dess-success: #397A59;
@@ -166,6 +184,7 @@ The canonical file is `src/main/webapp/assets/css/tokens.css`. The following is 
     --dess-danger-strong: #9E3E3E;
     --dess-danger-soft: #F9EDED;
     --dess-info: #477BA5;
+    --dess-info-strong: #3A6890;
     --dess-info-soft: #EDF3F8;
 
     --dess-font-family: Inter, -apple-system, BlinkMacSystemFont,

@@ -25,7 +25,8 @@ public class Pbkdf2PasswordEncoder implements PasswordEncoder
 {
     private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final String PREFIX = "pbkdf2-sha256";
-    private static final int DEFAULT_ITERATIONS = 210_000;
+    private static final int MIN_ITERATIONS = 600_000;
+    private static final int MAX_ITERATIONS = 1_000_000; // To avoid DDOS attack by memory tampering
     private static final int SALT_BYTES = 16;
     private static final int HASH_BITS = 256;
 
@@ -34,7 +35,7 @@ public class Pbkdf2PasswordEncoder implements PasswordEncoder
 
     public Pbkdf2PasswordEncoder()
     {
-        this(DEFAULT_ITERATIONS);
+        this(MIN_ITERATIONS);
     }
 
     Pbkdf2PasswordEncoder(int iterations)
@@ -81,8 +82,22 @@ public class Pbkdf2PasswordEncoder implements PasswordEncoder
         try
         {
             int storedIterations = Integer.parseInt(parts[1]);
+
+            // Value outside the interval, either is too weak for Pbkdf2 encryption,
+            // or consume CPU.
+            if (storedIterations < MIN_ITERATIONS || storedIterations > MAX_ITERATIONS)
+            {
+                return false;
+            }
+
             byte[] salt = Base64.getDecoder().decode(parts[2]);
             byte[] expected = Base64.getDecoder().decode(parts[3]);
+
+            if (salt.length != SALT_BYTES || expected.length != HASH_BITS/8)
+            {
+                return false;
+            }
+
             byte[] actual = hash(rawPassword.toCharArray(), salt, storedIterations);
 
             return MessageDigest.isEqual(expected, actual);

@@ -62,8 +62,8 @@ com.dess.security/
 | Logout | `POST /logout` with a CSRF token; it invalidates the session. |
 | CSRF | One random 32-byte token per session, sent as the `csrfToken` form field or the `X-CSRF-Token` header. Any POST without a valid token gets `403` before authentication runs. |
 | Throttling | Five failed logins in five minutes lock the username and client address for five minutes. State is in memory. |
-| Authorization | `SecurityFilter` requires a session for every page except the public list. `/app/security` also requires the `ADMIN` role. API requests get a JSON `401` instead of a redirect. |
-| Roles | `ADMIN` has the `ALL` permission. `PROFESSOR` may read institution, people, academic and scheduling data. |
+| Authorization | `SecurityFilter` requires a session for every page except the public list. `/app/security` also requires the `ADMIN` role. Non-GET requests outside `/app/`, `/api/`, `/login`, `/logout` and `/assets/` require `institution:write`, so the institution editor cannot be changed through an alias path. API requests get a JSON `401` instead of a redirect. |
+| Roles | `ADMIN` has the `ALL` permission. `PROFESSOR` may read institution, people, academic and scheduling data, and cannot change the institution structure. |
 | Security page | Administrators can list accounts and create one with a username, display name, role and initial password. |
 
 Public paths: `/login`, `/api/auth/login`, `/api/health`, `/assets/` and `/favicon.ico`.

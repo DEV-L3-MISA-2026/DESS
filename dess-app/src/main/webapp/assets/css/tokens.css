@@ -25,9 +25,12 @@
     --dess-on-dark-hover: rgb(255 255 255 / 8%);
     --dess-on-dark-active: rgb(255 255 255 / 12%);
 
-    /* Lines. Strong borders mark the edge of a control, not decoration. */
+    /* Lines. Use --dess-border for decoration such as dividers and table
+       rules. Controls need --dess-border-control, which reaches 3:1 against
+       both the surface and the canvas. */
     --dess-border: #E2E7E9;
     --dess-border-strong: #CBD4D9;
+    --dess-border-control: #7F8C99;
     --dess-border-on-dark: #33475C;
 
     /* Status. Each status pairs a solid tone with a soft tint for alerts. */
@@ -40,6 +43,7 @@
     --dess-danger-strong: #9E3E3E;
     --dess-danger-soft: #F9EDED;
     --dess-info: #477BA5;
+    --dess-info-strong: #3A6890;
     --dess-info-soft: #EDF3F8;
 
     --dess-font-family: Inter, -apple-system, BlinkMacSystemFont,
@@ -124,6 +128,16 @@ textarea {
 :focus-visible {
     outline: none;
     box-shadow: var(--dess-focus-ring);
+}
+
+/* Windows High Contrast and other forced-colors modes drop box-shadow, which
+   would remove the focus indicator entirely. Restore it as a real outline. */
+@media (forced-colors: active) {
+    :focus-visible {
+        outline: 2px solid CanvasText !important;
+        outline-offset: 2px;
+        box-shadow: none !important;
+    }
 }
 
 [hidden] {

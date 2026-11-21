@@ -25,6 +25,7 @@ class AuthorizationServiceTest
     void administratorHasEveryPermission()
     {
         assertTrue(service.isPermitted(admin, RoleCatalog.PEOPLE_WRITE));
+        assertTrue(service.isPermitted(admin, RoleCatalog.INSTITUTION_WRITE));
         assertTrue(service.isPermitted(admin, RoleCatalog.SECURITY_MANAGE));
         assertTrue(service.hasRole(admin, RoleCatalog.ADMIN));
     }
@@ -32,8 +33,10 @@ class AuthorizationServiceTest
     @Test
     void professorHasReadPermissionsOnly()
     {
+        assertTrue(service.isPermitted(professor, RoleCatalog.INSTITUTION_READ));
         assertTrue(service.isPermitted(professor, RoleCatalog.PEOPLE_READ));
         assertTrue(service.isPermitted(professor, RoleCatalog.ACADEMIC_READ));
+        assertFalse(service.isPermitted(professor, RoleCatalog.INSTITUTION_WRITE));
         assertFalse(service.isPermitted(professor, RoleCatalog.PEOPLE_WRITE));
         assertFalse(service.isPermitted(professor, RoleCatalog.SECURITY_MANAGE));
     }

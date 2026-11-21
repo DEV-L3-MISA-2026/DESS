@@ -16,6 +16,7 @@ public final class RoleCatalog
 
     public static final String PERMISSION_ALL = "ALL";
     public static final String INSTITUTION_READ = "institution:read";
+    public static final String INSTITUTION_WRITE = "institution:write";
     public static final String PEOPLE_READ = "people:read";
     public static final String PEOPLE_WRITE = "people:write";
     public static final String ACADEMIC_READ = "academic:read";

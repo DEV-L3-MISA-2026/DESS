@@ -19,12 +19,14 @@ import java.nio.charset.StandardCharsets;
  * Requires a signed-in user for application pages and the REST API.
  *
  * <p>API callers receive JSON errors; browser requests are redirected to the login page
- * with a safe return path. The security area also requires the administrator role.</p>
+ * with a safe return path. The security area also requires the administrator role, and
+ * changing the institution structure requires the {@code institution:write} permission.</p>
  */
 public class SecurityFilter implements Filter
 {
     private static final String LOGIN_PATH = "/login";
     private static final String LOGIN_API_PATH = "/api/auth/login";
+    private static final String LOGOUT_PATH = "/logout";
     private static final String HEALTH_PATH = "/api/health";
     private static final String SECURITY_AREA = "/app/security";
 
@@ -61,7 +63,47 @@ public class SecurityFilter implements Filter
             return;
         }
 
+        if (estEcritureInstitution(path, request.getMethod())
+                && !user.isPermitted(RoleCatalog.INSTITUTION_WRITE))
+        {
+            denyForbidden(request, response);
+            return;
+        }
+
         chain.doFilter(req, res);
+    }
+
+    /**
+     * Checks whether a request tries to change the institution structure.
+     *
+     * <p>Writes outside the application, API, login and static areas belong to the
+     * institution editor. Treating them as institution writes keeps the rule safe when a
+     * container maps a path parameter, an encoded segment or a doubled slash onto the
+     * editor. Known areas keep their own checks.</p>
+     *
+     * @param path path relative to the application context
+     * @param method HTTP method of the request
+     * @return true when the request needs {@code institution:write}
+     */
+    public boolean estEcritureInstitution(String path, String method)
+    {
+        if (path == null || method == null)
+        {
+            return false;
+        }
+
+        if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)
+                || "OPTIONS".equalsIgnoreCase(method))
+        {
+            return false;
+        }
+
+        return !path.equals(LOGIN_PATH)
+                && !path.equals(LOGOUT_PATH)
+                && !path.startsWith("/api/")
+                && !path.startsWith("/app/")
+                && !path.startsWith("/assets/")
+                && !path.equals("/favicon.ico");
     }
 
     /**
