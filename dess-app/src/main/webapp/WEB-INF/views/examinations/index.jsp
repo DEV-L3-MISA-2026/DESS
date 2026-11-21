@@ -19,6 +19,9 @@
             contract that reserves their room, group and invigilators is frozen.
         </p>
     </div>
+    <div class="header-actions">
+        <a class="btn" href="${ctx}/app/exam-sessions">Manage sessions</a>
+    </div>
 </div>
 
 <section class="panel" aria-labelledby="sessions-title">
