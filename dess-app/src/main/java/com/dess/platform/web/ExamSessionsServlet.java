@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
@@ -24,6 +25,10 @@ import com.dess.assessment.application.ExamSessionService;
 import com.dess.assessment.domain.ExamSession;
 import com.dess.assessment.domain.ExamSessionConflictException;
 import com.dess.people.application.PeopleService;
+import com.dess.platform.web.view.ExamSessionsView;
+import com.dess.platform.web.view.ManagedSessionRow;
+import com.dess.platform.web.view.Option;
+import com.dess.platform.web.view.Views;
 import com.dess.scheduling.application.RoomService;
 import com.dess.security.application.AuthorizationService;
 import com.dess.security.domain.RoleCatalog;
@@ -38,7 +43,6 @@ import com.dess.security.domain.RoleCatalog;
 @WebServlet("/app/exam-sessions")
 public class ExamSessionsServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/exam-sessions/index.jsp";
     private static final String LIST_PATH = "/app/exam-sessions";
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -63,7 +67,7 @@ public class ExamSessionsServlet extends HttpServlet
             throws ServletException, IOException
     {
         Web.exposeFlash(request);
-        showPage(request, response, Web.form(), Map.of(), Web.form(), Map.of(), Web.form(), Map.of());
+        showPage(request, response, Web.form(), Map.of(), Web.form(), Map.of(), Map.of());
     }
 
     @Override
@@ -114,7 +118,7 @@ public class ExamSessionsServlet extends HttpServlet
             if (!errors.isEmpty())
             {
                 renderError(request, response, form, errors, Web.form(), Map.of(),
-                        Web.form(), Map.of());
+                        Map.of());
                 return;
             }
 
@@ -127,13 +131,13 @@ public class ExamSessionsServlet extends HttpServlet
         {
             errors.put("form", exception.getMessage());
             renderError(request, response, form, errors, Web.form(), Map.of(),
-                    Web.form(), Map.of());
+                    Map.of());
         }
         catch (IllegalArgumentException exception)
         {
             errors.putIfAbsent("form", exception.getMessage());
             renderError(request, response, form, errors, Web.form(), Map.of(),
-                    Web.form(), Map.of());
+                    Map.of());
         }
     }
 
@@ -154,7 +158,7 @@ public class ExamSessionsServlet extends HttpServlet
             if (!errors.isEmpty())
             {
                 renderError(request, response, Web.form(), Map.of(), form, errors,
-                        Web.form(), Map.of());
+                        Map.of());
                 return;
             }
 
@@ -166,13 +170,13 @@ public class ExamSessionsServlet extends HttpServlet
         {
             errors.put("form", exception.getMessage());
             renderError(request, response, Web.form(), Map.of(), form, errors,
-                    Web.form(), Map.of());
+                    Map.of());
         }
         catch (IllegalArgumentException exception)
         {
             errors.putIfAbsent("form", exception.getMessage());
             renderError(request, response, Web.form(), Map.of(), form, errors,
-                    Web.form(), Map.of());
+                    Map.of());
         }
     }
 
@@ -188,7 +192,7 @@ public class ExamSessionsServlet extends HttpServlet
         if (!errors.isEmpty())
         {
             renderError(request, response, Web.form(), Map.of(), Web.form(), Map.of(),
-                    form, errors);
+                    errors);
             return;
         }
 
@@ -301,77 +305,68 @@ public class ExamSessionsServlet extends HttpServlet
                           Map<String, String> sessionForm, Map<String, String> sessionErrors,
                           Map<String, String> invigilatorForm,
                           Map<String, String> invigilatorErrors,
-                          Map<String, String> cancelForm,
                           Map<String, String> cancelErrors)
             throws ServletException, IOException
     {
-        List<Map<String, Object>> rooms = roomService.findAll().stream()
-                .map(room -> Map.<String, Object>of(
-                        "id", room.id().toString(),
-                        "label", room.code() + " - " + room.name()))
+        var allRooms = roomService.findAll();
+        Map<UUID, String> roomLabels = allRooms.stream()
+                .collect(Collectors.toMap(room -> room.id(),
+                        room -> room.code() + " - " + room.name()));
+
+        List<Option> rooms = allRooms.stream()
+                .map(room -> Option.of(room.id().toString(),
+                        room.code() + " - " + room.name(),
+                        room.id().toString().equals(sessionForm.get("roomId"))))
                 .toList();
 
         Map<UUID, String> assessmentLabels =
                 AssessmentPresentation.labels(assessmentService.list());
-        List<Map<String, Object>> assessments = assessmentLabels.entrySet().stream()
-                .map(entry -> Map.<String, Object>of(
-                        "id", entry.getKey().toString(),
-                        "title", entry.getValue()))
+        List<Option> assessments = assessmentLabels.entrySet().stream()
+                .map(entry -> Option.of(entry.getKey().toString(), entry.getValue()))
                 .toList();
 
-        List<Map<String, Object>> allSessions = examSessionService.findAll().stream()
-                .map(session -> Map.<String, Object>of(
-                        "id", session.id().toString(),
-                        "assessment", AssessmentPresentation.label(session.assessmentId(),
+        List<ManagedSessionRow> allSessions = examSessionService.findAll().stream()
+                .map(session -> new ManagedSessionRow(
+                        session.id().toString(),
+                        AssessmentPresentation.label(session.assessmentId(),
                                 assessmentLabels),
-                        "startsAt", DATE_TIME.format(session.startsAt()),
-                        "endsAt", DATE_TIME.format(session.endsAt()),
-                        "room", roomLabel(session.roomId()),
-                        "candidateCount", session.candidatePersonIds().size(),
-                        "invigilators", String.join(", ", session.invigilatorPersonIds()
+                        DATE_TIME.format(session.startsAt()),
+                        DATE_TIME.format(session.endsAt()),
+                        roomLabels.getOrDefault(session.roomId(), "Unknown room"),
+                        session.candidatePersonIds().size(),
+                        String.join(", ", session.invigilatorPersonIds()
                                 .stream().map(String::valueOf).toList())))
                 .toList();
 
         String query = Web.param(request, "q");
-        List<Map<String, Object>> sessions = allSessions.stream()
+        List<ManagedSessionRow> sessions = allSessions.stream()
                 .filter(session -> query.isBlank()
-                        || session.get("id").toString().toLowerCase().contains(query.toLowerCase()))
+                        || session.getId().toLowerCase().contains(query.toLowerCase()))
                 .toList();
 
-        request.setAttribute("query", query);
-        request.setAttribute("rooms", rooms);
-        request.setAttribute("assessments", assessments);
-        request.setAttribute("sessions", sessions);
-        request.setAttribute("selectableSessions", allSessions);
-        request.setAttribute("sessionForm", sessionForm);
-        request.setAttribute("sessionErrors", sessionErrors);
-        request.setAttribute("invigilatorForm", invigilatorForm);
-        request.setAttribute("invigilatorErrors", invigilatorErrors);
-        request.setAttribute("cancelForm", cancelForm);
-        request.setAttribute("cancelErrors", cancelErrors);
-        request.setAttribute("canWrite", canWrite(request));
-        request.setAttribute("activeNav", "examinations");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        List<Option> selectableSessions = allSessions.stream()
+                .map(session -> Option.of(session.getId(),
+                        session.getStartsAt() + " - " + session.getRoom(),
+                        session.getId().equals(invigilatorForm.get("sessionId"))))
+                .toList();
+
+        ExamSessionsView view = new ExamSessionsView(sessions, selectableSessions,
+                assessments, rooms, query, canWrite(request), sessionForm, sessionErrors,
+                invigilatorForm, invigilatorErrors, cancelErrors);
+
+        Views.render(request, response, view);
     }
 
     private void renderError(HttpServletRequest request, HttpServletResponse response,
                              Map<String, String> sessionForm, Map<String, String> sessionErrors,
                              Map<String, String> invigilatorForm,
                              Map<String, String> invigilatorErrors,
-                             Map<String, String> cancelForm,
                              Map<String, String> cancelErrors)
             throws ServletException, IOException
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         showPage(request, response, sessionForm, sessionErrors,
-                invigilatorForm, invigilatorErrors, cancelForm, cancelErrors);
-    }
-
-    private String roomLabel(UUID roomId)
-    {
-        return roomService.findById(roomId)
-                .map(room -> room.code() + " - " + room.name())
-                .orElse("Unknown room");
+                invigilatorForm, invigilatorErrors, cancelErrors);
     }
 
     private boolean canWrite(HttpServletRequest request)

@@ -1,5 +1,8 @@
 package com.dess.platform.web;
 
+import com.dess.platform.web.view.AccountRow;
+import com.dess.platform.web.view.SecurityView;
+import com.dess.platform.web.view.Views;
 import com.dess.security.application.AuthorizationService;
 import com.dess.security.application.UserManagementService;
 import com.dess.security.domain.RoleCatalog;
@@ -26,7 +29,6 @@ import java.util.stream.Collectors;
 @WebServlet("/app/security")
 public class SecurityServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/security/index.jsp";
     private static final String LIST_PATH = "/app/security";
 
     @Inject
@@ -40,9 +42,7 @@ public class SecurityServlet extends HttpServlet
             throws ServletException, IOException
     {
         Web.exposeFlash(request);
-        request.setAttribute("form", Web.form());
-        request.setAttribute("errors", Map.of());
-        showPage(request, response);
+        render(request, response, Web.form(), Map.of());
     }
 
     @Override
@@ -95,26 +95,23 @@ public class SecurityServlet extends HttpServlet
         }
     }
 
-    private void showPage(HttpServletRequest request, HttpServletResponse response)
+    private void render(HttpServletRequest request, HttpServletResponse response,
+                        Map<String, String> form, Map<String, String> errors)
             throws ServletException, IOException
     {
-        List<Map<String, Object>> accounts = userManagementService.findAll().stream()
-                .map(account -> Map.<String, Object>of(
-                        "id", account.id(),
-                        "username", account.username(),
-                        "displayName", account.displayName(),
-                        "roles", account.roles().stream()
+        List<AccountRow> accounts = userManagementService.findAll().stream()
+                .map(account -> new AccountRow(
+                        account.username(),
+                        account.displayName(),
+                        account.roles().stream()
                                 .map(role -> role.code())
                                 .collect(Collectors.joining(", ")),
-                        "active", account.active()))
+                        account.active()))
                 .toList();
 
-        request.setAttribute("accounts", accounts);
-        request.setAttribute("roles", List.of(
-                Map.of("code", RoleCatalog.ADMIN, "name", "Administrator"),
-                Map.of("code", RoleCatalog.PROFESSOR, "name", "Professor")));
-        request.setAttribute("activeNav", "security");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        SecurityView view = new SecurityView(accounts, form, errors);
+
+        Views.render(request, response, view);
     }
 
     private void renderError(HttpServletRequest request, HttpServletResponse response,
@@ -122,8 +119,6 @@ public class SecurityServlet extends HttpServlet
             throws ServletException, IOException
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        request.setAttribute("form", form);
-        request.setAttribute("errors", errors);
-        showPage(request, response);
+        render(request, response, form, errors);
     }
 }

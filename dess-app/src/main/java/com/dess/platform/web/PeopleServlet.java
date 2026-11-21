@@ -7,6 +7,9 @@ import com.dess.people.domain.StudentProfile;
 import com.dess.people.exception.DuplicateEmailException;
 import com.dess.people.exception.DuplicateRegistrationNumberException;
 import com.dess.people.exception.PeopleException;
+import com.dess.platform.web.view.PeopleView;
+import com.dess.platform.web.view.PersonRow;
+import com.dess.platform.web.view.Views;
 import com.dess.security.application.AuthorizationService;
 import com.dess.security.domain.RoleCatalog;
 import jakarta.inject.Inject;
@@ -32,7 +35,6 @@ import java.util.Optional;
 @WebServlet("/app/people")
 public class PeopleServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/people/index.jsp";
     private static final String LIST_PATH = "/app/people";
 
     @Inject
@@ -46,9 +48,7 @@ public class PeopleServlet extends HttpServlet
             throws ServletException, IOException
     {
         Web.exposeFlash(request);
-        request.setAttribute("form", Web.form());
-        request.setAttribute("errors", Map.of());
-        showPage(request, response);
+        showPage(request, response, Web.form(), Map.of());
     }
 
     @Override
@@ -111,11 +111,12 @@ public class PeopleServlet extends HttpServlet
         }
     }
 
-    private void showPage(HttpServletRequest request, HttpServletResponse response)
+    private void showPage(HttpServletRequest request, HttpServletResponse response,
+                          Map<String, String> form, Map<String, String> errors)
             throws ServletException, IOException
     {
         String query = Web.param(request, "q").toLowerCase();
-        List<Map<String, Object>> rows = new ArrayList<>();
+        List<PersonRow> rows = new ArrayList<>();
 
         for (StudentProfile student : peopleService.listStudents())
         {
@@ -136,20 +137,14 @@ public class PeopleServlet extends HttpServlet
                 continue;
             }
 
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("personId", value.id());
-            row.put("name", fullName);
-            row.put("email", value.email());
-            row.put("registrationNumber", student.registrationNumber());
-            row.put("active", value.active());
-            rows.add(row);
+            rows.add(new PersonRow(fullName, value.email(),
+                    student.registrationNumber(), value.active()));
         }
 
-        request.setAttribute("students", rows);
-        request.setAttribute("q", Web.param(request, "q"));
-        request.setAttribute("canWrite", canWrite(request));
-        request.setAttribute("activeNav", "people");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        PeopleView view = new PeopleView(rows, Web.param(request, "q"),
+                canWrite(request), form, errors);
+
+        Views.render(request, response, view);
     }
 
     private void renderWithErrors(HttpServletRequest request, HttpServletResponse response,
@@ -157,9 +152,7 @@ public class PeopleServlet extends HttpServlet
             throws ServletException, IOException
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        request.setAttribute("form", form);
-        request.setAttribute("errors", errors);
-        showPage(request, response);
+        showPage(request, response, form, errors);
     }
 
     private boolean canWrite(HttpServletRequest request)

@@ -4,8 +4,12 @@ import com.dess.academic.application.CourseService;
 import com.dess.academic.application.PeriodService;
 import com.dess.academic.application.ProgramService;
 import com.dess.people.application.PeopleService;
+import com.dess.platform.web.view.BookingRow;
+import com.dess.platform.web.view.DashboardView;
+import com.dess.platform.web.view.Views;
 import com.dess.scheduling.application.BookingService;
 import com.dess.scheduling.application.RoomService;
+import com.dess.scheduling.domain.BookingStatus;
 import com.dess.security.application.UserManagementService;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
@@ -32,7 +36,6 @@ import java.util.stream.Collectors;
 @WebServlet({"/app", "/app/"})
 public class HomeServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/dashboard/index.jsp";
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -63,32 +66,36 @@ public class HomeServlet extends HttpServlet
     {
         Web.exposeFlash(request);
 
-        request.setAttribute("studentCount", peopleService.listStudents().size());
-        request.setAttribute("courseCount", courseService.list().size());
-        request.setAttribute("periodCount", periodService.listAll().size());
-        request.setAttribute("programCount", programService.listAll().size());
-        request.setAttribute("roomCount", roomService.findAll().size());
-
         var allBookings = bookingService.findAll();
         Map<UUID, String> roomCodes = roomService.findAll().stream()
                 .collect(Collectors.toMap(room -> room.id(), room -> room.code()));
-        List<Map<String, Object>> upcoming = BookingPresentation
+        List<BookingRow> upcoming = BookingPresentation
                 .upcoming(allBookings, OffsetDateTime.now(ZoneOffset.UTC), 6)
                 .stream()
-                .map(booking -> Map.<String, Object>of(
-                        "id", booking.id().toString(),
-                        "ownerType", BookingPresentation.ownerLabel(booking.ownerType()),
-                        "resources", BookingPresentation.resources(
+                .map(booking -> new BookingRow(
+                        BookingPresentation.ownerLabel(booking.ownerType()),
+                        BookingPresentation.resources(
                                 bookingService.findSlotsByBookingId(booking.id()), roomCodes),
-                        "startsAt", DATE_TIME.format(booking.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                        "endsAt", DATE_TIME.format(booking.endsAt().withOffsetSameInstant(ZoneOffset.UTC))))
+                        DATE_TIME.format(booking.startsAt()
+                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        DATE_TIME.format(booking.endsAt()
+                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        booking.status() == BookingStatus.ACTIVE))
                 .toList();
 
-        request.setAttribute("bookingCount", allBookings.size());
-        request.setAttribute("upcomingBookings", upcoming);
-        request.setAttribute("accountCount", userManagementService.findAll().size());
-        request.setAttribute("activeNav", "overview");
+        var user = Web.currentUser(request);
 
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        DashboardView view = new DashboardView(
+                user != null && user.isAdmin(),
+                peopleService.listStudents().size(),
+                courseService.list().size(),
+                periodService.listAll().size(),
+                programService.listAll().size(),
+                roomService.findAll().size(),
+                allBookings.size(),
+                userManagementService.findAll().size(),
+                upcoming);
+
+        Views.render(request, response, view);
     }
 }

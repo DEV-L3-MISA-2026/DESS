@@ -1,7 +1,12 @@
 package com.dess.platform.web;
 
+import com.dess.platform.web.view.BookingRow;
+import com.dess.platform.web.view.RoomRow;
+import com.dess.platform.web.view.SchedulingView;
+import com.dess.platform.web.view.Views;
 import com.dess.scheduling.application.BookingService;
 import com.dess.scheduling.application.RoomService;
+import com.dess.scheduling.domain.BookingStatus;
 import com.dess.scheduling.domain.Room;
 import com.dess.security.application.AuthorizationService;
 import com.dess.security.domain.RoleCatalog;
@@ -31,7 +36,6 @@ import java.util.stream.Collectors;
 @WebServlet("/app/scheduling")
 public class SchedulingServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/scheduling/index.jsp";
     private static final String LIST_PATH = "/app/scheduling";
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -50,9 +54,7 @@ public class SchedulingServlet extends HttpServlet
             throws ServletException, IOException
     {
         Web.exposeFlash(request);
-        request.setAttribute("roomForm", Web.form());
-        request.setAttribute("roomErrors", Map.of());
-        showPage(request, response);
+        render(request, response, Web.form(), Map.of());
     }
 
     @Override
@@ -124,17 +126,14 @@ public class SchedulingServlet extends HttpServlet
         }
     }
 
-    private void showPage(HttpServletRequest request, HttpServletResponse response)
+    private void render(HttpServletRequest request, HttpServletResponse response,
+                        Map<String, String> roomForm, Map<String, String> roomErrors)
             throws ServletException, IOException
     {
         var allRooms = roomService.findAll();
 
-        List<Map<String, Object>> rooms = allRooms.stream()
-                .map(room -> Map.<String, Object>of(
-                        "id", room.id().toString(),
-                        "code", room.code(),
-                        "name", room.name(),
-                        "capacity", room.capacity()))
+        List<RoomRow> rooms = allRooms.stream()
+                .map(room -> new RoomRow(room.code(), room.name(), room.capacity()))
                 .toList();
 
         Map<UUID, String> roomCodes = allRooms.stream()
@@ -142,22 +141,22 @@ public class SchedulingServlet extends HttpServlet
 
         // The service has no bulk slot query yet. The list is small, so one
         // lookup per booking keeps the resource labels accurate for now.
-        List<Map<String, Object>> bookings = bookingService.findAll().stream()
-                .map(booking -> Map.<String, Object>of(
-                        "id", booking.id().toString(),
-                        "ownerType", BookingPresentation.ownerLabel(booking.ownerType()),
-                        "resources", BookingPresentation.resources(
+        List<BookingRow> bookings = bookingService.findAll().stream()
+                .map(booking -> new BookingRow(
+                        BookingPresentation.ownerLabel(booking.ownerType()),
+                        BookingPresentation.resources(
                                 bookingService.findSlotsByBookingId(booking.id()), roomCodes),
-                        "startsAt", DATE_TIME.format(booking.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                        "endsAt", DATE_TIME.format(booking.endsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                        "status", booking.status().name()))
+                        DATE_TIME.format(booking.startsAt()
+                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        DATE_TIME.format(booking.endsAt()
+                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        booking.status() == BookingStatus.ACTIVE))
                 .toList();
 
-        request.setAttribute("rooms", rooms);
-        request.setAttribute("bookings", bookings);
-        request.setAttribute("canWrite", canWrite(request));
-        request.setAttribute("activeNav", "scheduling");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        SchedulingView view = new SchedulingView(rooms, bookings, canWrite(request),
+                roomForm, roomErrors);
+
+        Views.render(request, response, view);
     }
 
     private void renderError(HttpServletRequest request, HttpServletResponse response,
@@ -165,9 +164,7 @@ public class SchedulingServlet extends HttpServlet
             throws ServletException, IOException
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        request.setAttribute("roomForm", form);
-        request.setAttribute("roomErrors", errors);
-        showPage(request, response);
+        render(request, response, form, errors);
     }
 
     private boolean canWrite(HttpServletRequest request)

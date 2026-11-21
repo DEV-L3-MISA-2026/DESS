@@ -1,27 +1,19 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Scheduling"/>
-<c:set var="topbarContext" value="Rooms and bookings"/>
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageDescription" value="Rooms and the bookings that reserve them. A booking appears as active only after the scheduling service has stored it. The weekly timetable is not available yet."/>
-<c:set var="breadcrumbParentLabel" value="Overview"/>
-<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
 <%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="rooms-title">
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="rooms-title">Rooms</h2>
-            <p class="panel-note"><c:out value="${fn:length(rooms)}"/>
-                <c:out value="${fn:length(rooms) == 1 ? 'room' : 'rooms'}"/>.</p>
+            <p class="panel-note"><c:out value="${page.roomCountLabel}"/></p>
         </div>
     </div>
 
     <c:choose>
-        <c:when test="${empty rooms}">
-            <c:set var="emptyTitle" value="No room yet."/>
-            <c:set var="emptyMessage" value="Add a room before a teaching session or an examination can use it."/>
+        <c:when test="${empty page.rooms}">
+            <c:set var="emptyState" value="${page.roomsEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -35,7 +27,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="room" items="${rooms}">
+                    <c:forEach var="room" items="${page.rooms}">
                         <tr>
                             <td class="mono"><c:out value="${room.code}"/></td>
                             <td><c:out value="${room.name}"/></td>
@@ -50,10 +42,10 @@
 
     <c:if test="${canWrite}">
         <h3 class="form-section-title">Add a room</h3>
-        <c:if test="${not empty roomErrors.form}">
-            <div class="flash error" role="alert"><c:out value="${roomErrors.form}"/></div>
+        <c:if test="${not empty page.roomErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${page.roomErrors.form}"/></div>
         </c:if>
-        <c:set var="validationErrors" value="${roomErrors}"/>
+        <c:set var="validationErrors" value="${page.roomErrors}"/>
         <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/scheduling" class="form-row">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -61,28 +53,28 @@
             <div class="field">
                 <label for="roomCode">Code <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="roomCode" name="code" type="text" required
-                       value="<c:out value='${roomForm.code}'/>"
-                       <c:if test="${not empty roomErrors.roomCode}">aria-invalid="true" aria-describedby="roomCode-error"</c:if>>
-                <c:if test="${not empty roomErrors.roomCode}">
-                    <p class="field-error" id="roomCode-error"><c:out value="${roomErrors.roomCode}"/></p>
+                       value="<c:out value='${page.roomForm.code}'/>"
+                       <c:if test="${not empty page.roomErrors.roomCode}">aria-invalid="true" aria-describedby="roomCode-error"</c:if>>
+                <c:if test="${not empty page.roomErrors.roomCode}">
+                    <p class="field-error" id="roomCode-error"><c:out value="${page.roomErrors.roomCode}"/></p>
                 </c:if>
             </div>
             <div class="field grow">
                 <label for="roomName">Name <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="roomName" name="name" type="text" required
-                       value="<c:out value='${roomForm.name}'/>"
-                       <c:if test="${not empty roomErrors.roomName}">aria-invalid="true" aria-describedby="roomName-error"</c:if>>
-                <c:if test="${not empty roomErrors.roomName}">
-                    <p class="field-error" id="roomName-error"><c:out value="${roomErrors.roomName}"/></p>
+                       value="<c:out value='${page.roomForm.name}'/>"
+                       <c:if test="${not empty page.roomErrors.roomName}">aria-invalid="true" aria-describedby="roomName-error"</c:if>>
+                <c:if test="${not empty page.roomErrors.roomName}">
+                    <p class="field-error" id="roomName-error"><c:out value="${page.roomErrors.roomName}"/></p>
                 </c:if>
             </div>
             <div class="field field-small">
                 <label for="roomCapacity">Capacity <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="roomCapacity" name="capacity" type="number" min="1" step="1" required
-                       value="<c:out value='${roomForm.capacity}'/>"
-                       <c:if test="${not empty roomErrors.roomCapacity}">aria-invalid="true" aria-describedby="roomCapacity-error"</c:if>>
-                <c:if test="${not empty roomErrors.roomCapacity}">
-                    <p class="field-error" id="roomCapacity-error"><c:out value="${roomErrors.roomCapacity}"/></p>
+                       value="<c:out value='${page.roomForm.capacity}'/>"
+                       <c:if test="${not empty page.roomErrors.roomCapacity}">aria-invalid="true" aria-describedby="roomCapacity-error"</c:if>>
+                <c:if test="${not empty page.roomErrors.roomCapacity}">
+                    <p class="field-error" id="roomCapacity-error"><c:out value="${page.roomErrors.roomCapacity}"/></p>
                 </c:if>
             </div>
             <div class="form-actions compact">
@@ -101,9 +93,8 @@
     </div>
 
     <c:choose>
-        <c:when test="${empty bookings}">
-            <c:set var="emptyTitle" value="No booking yet."/>
-            <c:set var="emptyMessage" value="Teaching sessions and examinations will appear here once they are scheduled."/>
+        <c:when test="${empty page.bookings}">
+            <c:set var="emptyState" value="${page.bookingsEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -119,15 +110,14 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="booking" items="${bookings}">
+                    <c:forEach var="booking" items="${page.bookings}">
                         <tr>
                             <td><c:out value="${booking.ownerType}"/></td>
                             <td><c:out value="${booking.resources}"/></td>
                             <td class="mono"><c:out value="${booking.startsAt}"/></td>
                             <td class="mono"><c:out value="${booking.endsAt}"/></td>
                             <td>
-                                <c:set var="badgeTone" value="${booking.status == 'ACTIVE' ? 'ok' : 'off'}"/>
-                                <c:set var="badgeLabel" value="${booking.status == 'ACTIVE' ? 'Active' : 'Cancelled'}"/>
+                                <c:set var="badge" value="${booking.status}"/>
                                 <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>

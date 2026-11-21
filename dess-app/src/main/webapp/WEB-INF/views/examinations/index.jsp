@@ -1,31 +1,19 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Examinations"/>
-<c:set var="topbarContext" value="Exam sessions"/>
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageDescription" value="Exam sessions: one assessment, in one room, at one time, with its candidates and invigilators. Sessions are created on the management page."/>
-<c:set var="breadcrumbParentLabel" value="Overview"/>
-<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
-<c:set var="headerActionLabel" value="Manage sessions"/>
-<c:set var="headerActionHref" value="${ctx}/app/exam-sessions"/>
 <%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="sessions-title">
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="sessions-title">Exam sessions</h2>
-            <p class="panel-note"><c:out value="${fn:length(sessions)}"/>
-                <c:out value="${fn:length(sessions) == 1 ? 'session' : 'sessions'}"/>. Times are in UTC.</p>
+            <p class="panel-note"><c:out value="${page.countLabel}"/></p>
         </div>
     </div>
 
     <c:choose>
-        <c:when test="${empty sessions}">
-            <c:set var="emptyTitle" value="No exam session yet."/>
-            <c:set var="emptyMessage" value="Exam sessions appear here once they are scheduled. Candidates are linked once eligibility is known, and invigilators are assigned afterwards."/>
-            <c:set var="emptyActionLabel" value="Manage sessions"/>
-            <c:set var="emptyActionHref" value="${ctx}/app/exam-sessions"/>
+        <c:when test="${empty page.sessions}">
+            <c:set var="emptyState" value="${page.sessionsEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -41,7 +29,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="session" items="${sessions}">
+                    <c:forEach var="session" items="${page.sessions}">
                         <tr>
                             <td class="mono"><c:out value="${session.startsAt}"/></td>
                             <td class="mono"><c:out value="${session.endsAt}"/></td>

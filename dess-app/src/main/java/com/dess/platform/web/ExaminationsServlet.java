@@ -16,6 +16,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import com.dess.assessment.application.ExamSessionService;
+import com.dess.platform.web.view.ExaminationsView;
+import com.dess.platform.web.view.SessionRow;
+import com.dess.platform.web.view.Views;
 import com.dess.scheduling.application.RoomService;
 
 /**
@@ -28,7 +31,6 @@ import com.dess.scheduling.application.RoomService;
 @WebServlet("/app/examinations")
 public class ExaminationsServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/examinations/index.jsp";
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -53,20 +55,19 @@ public class ExaminationsServlet extends HttpServlet
                 .collect(Collectors.toMap(room -> room.id(),
                         room -> room.code() + " - " + room.name()));
 
-        List<Map<String, Object>> sessions = examSessionService.findAll().stream()
-                .map(session -> Map.<String, Object>of(
-                        "id", session.id().toString(),
-                        "startsAt", DATE_TIME.format(
-                                session.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                        "endsAt", DATE_TIME.format(
-                                session.endsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                        "room", roomLabels.getOrDefault(session.roomId(), "Unknown room"),
-                        "candidateCount", session.candidatePersonIds().size(),
-                        "invigilatorCount", session.invigilatorPersonIds().size()))
+        List<SessionRow> sessions = examSessionService.findAll().stream()
+                .map(session -> new SessionRow(
+                        DATE_TIME.format(session.startsAt()
+                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        DATE_TIME.format(session.endsAt()
+                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        roomLabels.getOrDefault(session.roomId(), "Unknown room"),
+                        session.candidatePersonIds().size(),
+                        session.invigilatorPersonIds().size()))
                 .toList();
 
-        request.setAttribute("sessions", sessions);
-        request.setAttribute("activeNav", "examinations");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        ExaminationsView view = new ExaminationsView(sessions);
+
+        Views.render(request, response, view);
     }
 }

@@ -6,9 +6,15 @@ import com.dess.academic.application.CreatePeriodCommand;
 import com.dess.academic.application.CreateProgramCommand;
 import com.dess.academic.application.PeriodService;
 import com.dess.academic.application.ProgramService;
+import com.dess.academic.domain.AcademicProgramStatus;
 import com.dess.academic.exception.AcademicException;
 import com.dess.academic.exception.DuplicateCourseCodeException;
 import com.dess.academic.exception.DuplicatePeriodException;
+import com.dess.platform.web.view.AcademicView;
+import com.dess.platform.web.view.CourseRow;
+import com.dess.platform.web.view.PeriodRow;
+import com.dess.platform.web.view.ProgramRow;
+import com.dess.platform.web.view.Views;
 import com.dess.security.application.AuthorizationService;
 import com.dess.security.domain.RoleCatalog;
 import jakarta.inject.Inject;
@@ -32,7 +38,6 @@ import java.util.Map;
 @WebServlet("/app/academic")
 public class AcademicServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/academic/index.jsp";
     private static final String LIST_PATH = "/app/academic";
 
     @Inject
@@ -52,13 +57,10 @@ public class AcademicServlet extends HttpServlet
             throws ServletException, IOException
     {
         Web.exposeFlash(request);
-        request.setAttribute("courseForm", Web.form());
-        request.setAttribute("periodForm", Web.form());
-        request.setAttribute("programForm", Web.form());
-        request.setAttribute("courseErrors", Map.of());
-        request.setAttribute("periodErrors", Map.of());
-        request.setAttribute("programErrors", Map.of());
-        showPage(request, response);
+        render(request, response,
+                Web.form(), Map.of(),
+                Web.form(), Map.of(),
+                Web.form(), Map.of());
     }
 
     @Override
@@ -183,38 +185,31 @@ public class AcademicServlet extends HttpServlet
         }
     }
 
-    private void showPage(HttpServletRequest request, HttpServletResponse response)
+    private void render(HttpServletRequest request, HttpServletResponse response,
+                        Map<String, String> periodForm, Map<String, String> periodErrors,
+                        Map<String, String> programForm, Map<String, String> programErrors,
+                        Map<String, String> courseForm, Map<String, String> courseErrors)
             throws ServletException, IOException
     {
-        List<Map<String, Object>> periods = periodService.listAll().stream()
-                .map(period -> Map.<String, Object>of(
-                        "id", period.id(),
-                        "academicYear", period.academicYear(),
-                        "term", period.term()))
+        List<PeriodRow> periods = periodService.listAll().stream()
+                .map(period -> new PeriodRow(period.academicYear(), period.term()))
                 .toList();
 
-        List<Map<String, Object>> programs = programService.listAll().stream()
-                .map(program -> Map.<String, Object>of(
-                        "id", program.id(),
-                        "code", program.code(),
-                        "name", program.name(),
-                        "status", program.status().name()))
+        List<ProgramRow> programs = programService.listAll().stream()
+                .map(program -> new ProgramRow(program.code(), program.name(),
+                        program.status() == AcademicProgramStatus.ACTIVE))
                 .toList();
 
-        List<Map<String, Object>> courses = courseService.list().stream()
-                .map(course -> Map.<String, Object>of(
-                        "id", course.id().toString(),
-                        "code", course.code(),
-                        "title", course.title(),
-                        "active", course.active()))
+        List<CourseRow> courses = courseService.list().stream()
+                .map(course -> new CourseRow(course.code(), course.title(), course.active()))
                 .toList();
 
-        request.setAttribute("periods", periods);
-        request.setAttribute("programs", programs);
-        request.setAttribute("courses", courses);
-        request.setAttribute("canWrite", canWrite(request));
-        request.setAttribute("activeNav", "academic");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        AcademicView view = new AcademicView(periods, programs, courses, canWrite(request),
+                periodForm, periodErrors,
+                programForm, programErrors,
+                courseForm, courseErrors);
+
+        Views.render(request, response, view);
     }
 
     private void renderError(HttpServletRequest request, HttpServletResponse response,
@@ -223,16 +218,19 @@ public class AcademicServlet extends HttpServlet
             throws ServletException, IOException
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        request.setAttribute("courseForm", Web.form());
-        request.setAttribute("periodForm", Web.form());
-        request.setAttribute("programForm", Web.form());
-        request.setAttribute("courseErrors", Map.of());
-        request.setAttribute("periodErrors", Map.of());
-        request.setAttribute("programErrors", Map.of());
 
-        request.setAttribute(formName + "Form", form);
-        request.setAttribute(formName + "Errors", errors);
-        showPage(request, response);
+        Map<String, String> empty = Map.of();
+        Map<String, String> periodForm = "period".equals(formName) ? form : Web.form();
+        Map<String, String> periodErrors = "period".equals(formName) ? errors : empty;
+        Map<String, String> programForm = "program".equals(formName) ? form : Web.form();
+        Map<String, String> programErrors = "program".equals(formName) ? errors : empty;
+        Map<String, String> courseForm = "course".equals(formName) ? form : Web.form();
+        Map<String, String> courseErrors = "course".equals(formName) ? errors : empty;
+
+        render(request, response,
+                periodForm, periodErrors,
+                programForm, programErrors,
+                courseForm, courseErrors);
     }
 
     private boolean canWrite(HttpServletRequest request)

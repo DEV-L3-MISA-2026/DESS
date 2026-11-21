@@ -19,6 +19,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import com.dess.assessment.application.ExamSessionService;
 import com.dess.assessment.application.ResultService;
 import com.dess.assessment.domain.ExamSession;
+import com.dess.platform.web.view.Badge;
+import com.dess.platform.web.view.ResultRow;
+import com.dess.platform.web.view.ResultsView;
+import com.dess.platform.web.view.Views;
 import com.dess.scheduling.application.RoomService;
 
 /**
@@ -32,7 +36,6 @@ import com.dess.scheduling.application.RoomService;
 @WebServlet("/app/results")
 public class ResultsServlet extends HttpServlet
 {
-    private static final String VIEW = "/WEB-INF/views/results/index.jsp";
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -71,26 +74,24 @@ public class ResultsServlet extends HttpServlet
                     assessmentId -> resultService.listByAssessment(assessmentId).size());
         }
 
-        List<Map<String, Object>> sessions = allSessions.stream()
+        List<ResultRow> sessions = allSessions.stream()
                 .map(session -> {
                     ResultProgress progress = ResultProgress.of(
                             session.candidatePersonIds().size(),
                             recordedByAssessment.get(session.assessmentId()));
-                    return Map.<String, Object>of(
-                            "id", session.id().toString(),
-                            "startsAt", DATE_TIME.format(
-                                    session.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                            "endsAt", DATE_TIME.format(
-                                    session.endsAt().withOffsetSameInstant(ZoneOffset.UTC)),
-                            "room", roomLabels.getOrDefault(session.roomId(), "Unknown room"),
-                            "candidateCount", session.candidatePersonIds().size(),
-                            "resultLabel", progress.label(),
-                            "resultTone", progress.tone());
+                    return new ResultRow(
+                            DATE_TIME.format(session.startsAt()
+                                    .withOffsetSameInstant(ZoneOffset.UTC)),
+                            DATE_TIME.format(session.endsAt()
+                                    .withOffsetSameInstant(ZoneOffset.UTC)),
+                            roomLabels.getOrDefault(session.roomId(), "Unknown room"),
+                            session.candidatePersonIds().size(),
+                            Badge.of(progress.tone(), progress.label()));
                 })
                 .toList();
 
-        request.setAttribute("sessions", sessions);
-        request.setAttribute("activeNav", "results");
-        request.getRequestDispatcher(VIEW).forward(request, response);
+        ResultsView view = new ResultsView(sessions);
+
+        Views.render(request, response, view);
     }
 }

@@ -1,27 +1,19 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Academic"/>
-<c:set var="topbarContext" value="Catalogue and calendar"/>
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageDescription" value="Periods set the calendar; programs describe credentials; courses form the catalogue. A course is not yet an offering."/>
-<c:set var="breadcrumbParentLabel" value="Overview"/>
-<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
 <%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="periods-title">
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="periods-title">Academic periods</h2>
-            <p class="panel-note"><c:out value="${fn:length(periods)}"/>
-                <c:out value="${fn:length(periods) == 1 ? 'period' : 'periods'}"/>.</p>
+            <p class="panel-note"><c:out value="${page.periodCountLabel}"/></p>
         </div>
     </div>
 
     <c:choose>
-        <c:when test="${empty periods}">
-            <c:set var="emptyTitle" value="No academic period yet."/>
-            <c:set var="emptyMessage" value="A period is the year and term that academic operations refer to."/>
+        <c:when test="${empty page.periods}">
+            <c:set var="emptyState" value="${page.periodsEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -34,10 +26,10 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="period" items="${periods}">
+                    <c:forEach var="period" items="${page.periods}">
                         <tr>
                             <td class="mono"><c:out value="${period.academicYear}"/></td>
-                            <td>Term <c:out value="${period.term}"/></td>
+                            <td><c:out value="${period.termLabel}"/></td>
                         </tr>
                     </c:forEach>
                     </tbody>
@@ -48,10 +40,10 @@
 
     <c:if test="${canWrite}">
         <h3 class="form-section-title">Add a period</h3>
-        <c:if test="${not empty periodErrors.form}">
-            <div class="flash error" role="alert"><c:out value="${periodErrors.form}"/></div>
+        <c:if test="${not empty page.periodErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${page.periodErrors.form}"/></div>
         </c:if>
-        <c:set var="validationErrors" value="${periodErrors}"/>
+        <c:set var="validationErrors" value="${page.periodErrors}"/>
         <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/academic" class="form-row">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -60,22 +52,22 @@
                 <label for="academicYear">Academic year <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="academicYear" name="academicYear" type="text" required
                        placeholder="2026-2027"
-                       value="<c:out value='${periodForm.academicYear}'/>"
-                       <c:if test="${not empty periodErrors.academicYear}">aria-invalid="true" aria-describedby="academicYear-error"</c:if>>
-                <c:if test="${not empty periodErrors.academicYear}">
-                    <p class="field-error" id="academicYear-error"><c:out value="${periodErrors.academicYear}"/></p>
+                       value="<c:out value='${page.periodForm.academicYear}'/>"
+                       <c:if test="${not empty page.periodErrors.academicYear}">aria-invalid="true" aria-describedby="academicYear-error"</c:if>>
+                <c:if test="${not empty page.periodErrors.academicYear}">
+                    <p class="field-error" id="academicYear-error"><c:out value="${page.periodErrors.academicYear}"/></p>
                 </c:if>
             </div>
             <div class="field">
                 <label for="term">Term <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <select id="term" name="term" required
-                        <c:if test="${not empty periodErrors.term}">aria-invalid="true" aria-describedby="term-error"</c:if>>
-                    <option value="1" ${periodForm.term == '1' ? 'selected' : ''}>1</option>
-                    <option value="2" ${periodForm.term == '2' ? 'selected' : ''}>2</option>
-                    <option value="3" ${periodForm.term == '3' ? 'selected' : ''}>3</option>
+                        <c:if test="${not empty page.periodErrors.term}">aria-invalid="true" aria-describedby="term-error"</c:if>>
+                    <c:forEach var="option" items="${page.termOptions}">
+                        <option value="${option.value}" ${option.selectedAttribute}><c:out value="${option.label}"/></option>
+                    </c:forEach>
                 </select>
-                <c:if test="${not empty periodErrors.term}">
-                    <p class="field-error" id="term-error"><c:out value="${periodErrors.term}"/></p>
+                <c:if test="${not empty page.periodErrors.term}">
+                    <p class="field-error" id="term-error"><c:out value="${page.periodErrors.term}"/></p>
                 </c:if>
             </div>
             <div class="form-actions compact">
@@ -89,15 +81,13 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="programs-title">Programs</h2>
-            <p class="panel-note"><c:out value="${fn:length(programs)}"/>
-                <c:out value="${fn:length(programs) == 1 ? 'program' : 'programs'}"/>.</p>
+            <p class="panel-note"><c:out value="${page.programCountLabel}"/></p>
         </div>
     </div>
 
     <c:choose>
-        <c:when test="${empty programs}">
-            <c:set var="emptyTitle" value="No program yet."/>
-            <c:set var="emptyMessage" value="Create a program before adding its versions and enrollments."/>
+        <c:when test="${empty page.programs}">
+            <c:set var="emptyState" value="${page.programsEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -111,13 +101,12 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="program" items="${programs}">
+                    <c:forEach var="program" items="${page.programs}">
                         <tr>
                             <td class="mono"><c:out value="${program.code}"/></td>
                             <td><c:out value="${program.name}"/></td>
                             <td>
-                                <c:set var="badgeTone" value="${program.status == 'ACTIVE' ? 'ok' : 'off'}"/>
-                                <c:set var="badgeLabel" value="${program.status == 'ACTIVE' ? 'Active' : 'Inactive'}"/>
+                                <c:set var="badge" value="${program.status}"/>
                                 <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
@@ -130,10 +119,10 @@
 
     <c:if test="${canWrite}">
         <h3 class="form-section-title">Add a program</h3>
-        <c:if test="${not empty programErrors.form}">
-            <div class="flash error" role="alert"><c:out value="${programErrors.form}"/></div>
+        <c:if test="${not empty page.programErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${page.programErrors.form}"/></div>
         </c:if>
-        <c:set var="validationErrors" value="${programErrors}"/>
+        <c:set var="validationErrors" value="${page.programErrors}"/>
         <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/academic" class="form-row">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -141,19 +130,19 @@
             <div class="field">
                 <label for="programCode">Code <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="programCode" name="code" type="text" required
-                       value="<c:out value='${programForm.code}'/>"
-                       <c:if test="${not empty programErrors.programCode}">aria-invalid="true" aria-describedby="programCode-error"</c:if>>
-                <c:if test="${not empty programErrors.programCode}">
-                    <p class="field-error" id="programCode-error"><c:out value="${programErrors.programCode}"/></p>
+                       value="<c:out value='${page.programForm.code}'/>"
+                       <c:if test="${not empty page.programErrors.programCode}">aria-invalid="true" aria-describedby="programCode-error"</c:if>>
+                <c:if test="${not empty page.programErrors.programCode}">
+                    <p class="field-error" id="programCode-error"><c:out value="${page.programErrors.programCode}"/></p>
                 </c:if>
             </div>
             <div class="field grow">
                 <label for="programName">Name <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="programName" name="name" type="text" required
-                       value="<c:out value='${programForm.name}'/>"
-                       <c:if test="${not empty programErrors.programName}">aria-invalid="true" aria-describedby="programName-error"</c:if>>
-                <c:if test="${not empty programErrors.programName}">
-                    <p class="field-error" id="programName-error"><c:out value="${programErrors.programName}"/></p>
+                       value="<c:out value='${page.programForm.name}'/>"
+                       <c:if test="${not empty page.programErrors.programName}">aria-invalid="true" aria-describedby="programName-error"</c:if>>
+                <c:if test="${not empty page.programErrors.programName}">
+                    <p class="field-error" id="programName-error"><c:out value="${page.programErrors.programName}"/></p>
                 </c:if>
             </div>
             <div class="form-actions compact">
@@ -167,15 +156,13 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="courses-title">Courses</h2>
-            <p class="panel-note"><c:out value="${fn:length(courses)}"/>
-                <c:out value="${fn:length(courses) == 1 ? 'course' : 'courses'}"/> in the catalogue.</p>
+            <p class="panel-note"><c:out value="${page.courseCountLabel}"/></p>
         </div>
     </div>
 
     <c:choose>
-        <c:when test="${empty courses}">
-            <c:set var="emptyTitle" value="No course yet."/>
-            <c:set var="emptyMessage" value="Add the first course to the catalogue."/>
+        <c:when test="${empty page.courses}">
+            <c:set var="emptyState" value="${page.coursesEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -189,13 +176,12 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="course" items="${courses}">
+                    <c:forEach var="course" items="${page.courses}">
                         <tr>
                             <td class="mono"><c:out value="${course.code}"/></td>
                             <td><c:out value="${course.title}"/></td>
                             <td>
-                                <c:set var="badgeTone" value="${course.active ? 'ok' : 'off'}"/>
-                                <c:set var="badgeLabel" value="${course.active ? 'Active' : 'Inactive'}"/>
+                                <c:set var="badge" value="${course.status}"/>
                                 <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
@@ -208,10 +194,10 @@
 
     <c:if test="${canWrite}">
         <h3 class="form-section-title">Add a course</h3>
-        <c:if test="${not empty courseErrors.form}">
-            <div class="flash error" role="alert"><c:out value="${courseErrors.form}"/></div>
+        <c:if test="${not empty page.courseErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${page.courseErrors.form}"/></div>
         </c:if>
-        <c:set var="validationErrors" value="${courseErrors}"/>
+        <c:set var="validationErrors" value="${page.courseErrors}"/>
         <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/academic" class="form-row">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -219,19 +205,19 @@
             <div class="field">
                 <label for="courseCode">Code <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="courseCode" name="code" type="text" required
-                       value="<c:out value='${courseForm.code}'/>"
-                       <c:if test="${not empty courseErrors.courseCode}">aria-invalid="true" aria-describedby="courseCode-error"</c:if>>
-                <c:if test="${not empty courseErrors.courseCode}">
-                    <p class="field-error" id="courseCode-error"><c:out value="${courseErrors.courseCode}"/></p>
+                       value="<c:out value='${page.courseForm.code}'/>"
+                       <c:if test="${not empty page.courseErrors.courseCode}">aria-invalid="true" aria-describedby="courseCode-error"</c:if>>
+                <c:if test="${not empty page.courseErrors.courseCode}">
+                    <p class="field-error" id="courseCode-error"><c:out value="${page.courseErrors.courseCode}"/></p>
                 </c:if>
             </div>
             <div class="field grow">
                 <label for="courseTitle">Title <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="courseTitle" name="title" type="text" required
-                       value="<c:out value='${courseForm.title}'/>"
-                       <c:if test="${not empty courseErrors.courseTitle}">aria-invalid="true" aria-describedby="courseTitle-error"</c:if>>
-                <c:if test="${not empty courseErrors.courseTitle}">
-                    <p class="field-error" id="courseTitle-error"><c:out value="${courseErrors.courseTitle}"/></p>
+                       value="<c:out value='${page.courseForm.title}'/>"
+                       <c:if test="${not empty page.courseErrors.courseTitle}">aria-invalid="true" aria-describedby="courseTitle-error"</c:if>>
+                <c:if test="${not empty page.courseErrors.courseTitle}">
+                    <p class="field-error" id="courseTitle-error"><c:out value="${page.courseErrors.courseTitle}"/></p>
                 </c:if>
             </div>
             <div class="form-actions compact">

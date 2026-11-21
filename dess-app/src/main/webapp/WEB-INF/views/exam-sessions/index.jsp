@@ -1,25 +1,13 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Manage exam sessions"/>
-<c:set var="topbarContext" value="Examinations"/>
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageDescription" value="Schedule sessions, find one by its id, change its invigilators or cancel it. A session is stored only after the booking service confirmed the room and the invigilators for that time range. Times are entered and shown in UTC."/>
-<c:set var="breadcrumbParentLabel" value="Overview"/>
-<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
-<c:set var="breadcrumbSectionLabel" value="Examinations"/>
-<c:set var="breadcrumbSectionHref" value="${ctx}/app/examinations"/>
-<c:set var="headerActionLabel" value="View examinations"/>
-<c:set var="headerActionHref" value="${ctx}/app/examinations"/>
 <%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="sessions-title">
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="sessions-title">Exam sessions</h2>
-            <p class="panel-note"><c:out value="${fn:length(sessions)}"/> of
-                <c:out value="${fn:length(selectableSessions)}"/>
-                <c:out value="${fn:length(selectableSessions) == 1 ? 'session' : 'sessions'}"/> shown.</p>
+            <p class="panel-note"><c:out value="${page.countLabel}"/></p>
         </div>
     </div>
 
@@ -27,12 +15,12 @@
         <div class="field grow">
             <label for="sessionSearch">Search by session id</label>
             <input id="sessionSearch" name="q" type="search"
-                   value="<c:out value='${query}'/>"
+                   value="<c:out value='${page.query}'/>"
                    placeholder="Type part or all of the id">
         </div>
         <div class="form-actions compact">
             <button class="btn" type="submit">Search</button>
-            <c:if test="${not empty query}">
+            <c:if test="${not empty page.query}">
                 <a class="btn btn-ghost" href="${ctx}/app/exam-sessions">Clear</a>
             </c:if>
         </div>
@@ -40,19 +28,8 @@
     <p class="hint">The match is case-insensitive and does not need the full id.</p>
 
     <c:choose>
-        <c:when test="${empty sessions}">
-            <c:choose>
-                <c:when test="${not empty query}">
-                    <c:set var="emptyTitle" value="No session matches this id."/>
-                    <c:set var="emptyMessage" value="Try a shorter id or clear the search."/>
-                    <c:set var="emptyActionLabel" value="Clear search"/>
-                    <c:set var="emptyActionHref" value="${ctx}/app/exam-sessions"/>
-                </c:when>
-                <c:otherwise>
-                    <c:set var="emptyTitle" value="No exam session yet."/>
-                    <c:set var="emptyMessage" value="Schedule the first session below."/>
-                </c:otherwise>
-            </c:choose>
+        <c:when test="${empty page.sessions}">
+            <c:set var="emptyState" value="${page.sessionsEmpty}"/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
@@ -72,7 +49,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="session" items="${sessions}">
+                    <c:forEach var="session" items="${page.sessions}">
                         <tr>
                             <td class="mono"><c:out value="${session.id}"/></td>
                             <td><c:out value="${session.assessment}"/></td>
@@ -82,8 +59,7 @@
                             <td><c:out value="${session.candidateCount}"/></td>
                             <td><c:out value="${session.invigilators}"/></td>
                             <td>
-                                <c:set var="badgeTone" value="ok"/>
-                                <c:set var="badgeLabel" value="Confirmed"/>
+                                <c:set var="badge" value="${session.booking}"/>
                                 <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                             <td>
@@ -104,10 +80,10 @@
 
     <c:if test="${canWrite}">
         <h3 class="form-section-title">Schedule an exam session</h3>
-        <c:if test="${not empty sessionErrors.form}">
-            <div class="flash error" role="alert"><c:out value="${sessionErrors.form}"/></div>
+        <c:if test="${not empty page.sessionErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${page.sessionErrors.form}"/></div>
         </c:if>
-        <c:set var="validationErrors" value="${sessionErrors}"/>
+        <c:set var="validationErrors" value="${page.sessionErrors}"/>
         <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/exam-sessions" class="grid">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -116,62 +92,59 @@
                 <label for="assessmentId">Assessment <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="assessmentId" name="assessmentId" type="text" required
                        list="assessment-options"
-                       value="<c:out value='${sessionForm.assessmentId}'/>"
-                       <c:if test="${not empty sessionErrors.assessmentId}">aria-invalid="true" aria-describedby="assessmentId-error"</c:if>>
+                       value="<c:out value='${page.sessionForm.assessmentId}'/>"
+                       <c:if test="${not empty page.sessionErrors.assessmentId}">aria-invalid="true" aria-describedby="assessmentId-error"</c:if>>
                 <datalist id="assessment-options">
-                    <c:forEach var="assessment" items="${assessments}">
-                        <option value="<c:out value='${assessment.id}'/>"><c:out value="${assessment.title}"/></option>
+                    <c:forEach var="assessment" items="${page.assessments}">
+                        <option value="<c:out value='${assessment.value}'/>"><c:out value="${assessment.label}"/></option>
                     </c:forEach>
                 </datalist>
                 <p class="hint">Pick a known assessment or paste its id. The title is shown
                 in the session list; an id with no definition is marked as unknown.</p>
-                <c:if test="${not empty sessionErrors.assessmentId}">
-                    <p class="field-error" id="assessmentId-error"><c:out value="${sessionErrors.assessmentId}"/></p>
+                <c:if test="${not empty page.sessionErrors.assessmentId}">
+                    <p class="field-error" id="assessmentId-error"><c:out value="${page.sessionErrors.assessmentId}"/></p>
                 </c:if>
             </div>
             <div class="field">
                 <label for="roomId">Room <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <select id="roomId" name="roomId" required
-                        <c:if test="${not empty sessionErrors.roomId}">aria-invalid="true" aria-describedby="roomId-error"</c:if>>
+                        <c:if test="${not empty page.sessionErrors.roomId}">aria-invalid="true" aria-describedby="roomId-error"</c:if>>
                     <option value="">Choose a room</option>
-                    <c:forEach var="room" items="${rooms}">
-                        <option value="<c:out value='${room.id}'/>"
-                                <c:if test="${sessionForm.roomId == room.id}">selected</c:if>>
-                            <c:out value="${room.label}"/>
-                        </option>
+                    <c:forEach var="room" items="${page.rooms}">
+                        <option value="${room.value}" ${room.selectedAttribute}><c:out value="${room.label}"/></option>
                     </c:forEach>
                 </select>
-                <c:if test="${not empty sessionErrors.roomId}">
-                    <p class="field-error" id="roomId-error"><c:out value="${sessionErrors.roomId}"/></p>
+                <c:if test="${not empty page.sessionErrors.roomId}">
+                    <p class="field-error" id="roomId-error"><c:out value="${page.sessionErrors.roomId}"/></p>
                 </c:if>
             </div>
             <div class="field">
                 <label for="startsAt">Starts (UTC) <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="startsAt" name="startsAt" type="datetime-local" required
-                       value="<c:out value='${sessionForm.startsAt}'/>"
-                       <c:if test="${not empty sessionErrors.startsAt}">aria-invalid="true" aria-describedby="startsAt-error"</c:if>>
-                <c:if test="${not empty sessionErrors.startsAt}">
-                    <p class="field-error" id="startsAt-error"><c:out value="${sessionErrors.startsAt}"/></p>
+                       value="<c:out value='${page.sessionForm.startsAt}'/>"
+                       <c:if test="${not empty page.sessionErrors.startsAt}">aria-invalid="true" aria-describedby="startsAt-error"</c:if>>
+                <c:if test="${not empty page.sessionErrors.startsAt}">
+                    <p class="field-error" id="startsAt-error"><c:out value="${page.sessionErrors.startsAt}"/></p>
                 </c:if>
             </div>
             <div class="field">
                 <label for="endsAt">Ends (UTC) <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="endsAt" name="endsAt" type="datetime-local" required
-                       value="<c:out value='${sessionForm.endsAt}'/>"
-                       <c:if test="${not empty sessionErrors.endsAt}">aria-invalid="true" aria-describedby="endsAt-error"</c:if>>
-                <c:if test="${not empty sessionErrors.endsAt}">
-                    <p class="field-error" id="endsAt-error"><c:out value="${sessionErrors.endsAt}"/></p>
+                       value="<c:out value='${page.sessionForm.endsAt}'/>"
+                       <c:if test="${not empty page.sessionErrors.endsAt}">aria-invalid="true" aria-describedby="endsAt-error"</c:if>>
+                <c:if test="${not empty page.sessionErrors.endsAt}">
+                    <p class="field-error" id="endsAt-error"><c:out value="${page.sessionErrors.endsAt}"/></p>
                 </c:if>
             </div>
             <div class="field">
                 <label for="invigilators">Invigilators</label>
                 <input id="invigilators" name="invigilators" type="text"
-                       value="<c:out value='${sessionForm.invigilators}'/>"
-                       <c:if test="${not empty sessionErrors.invigilators}">aria-invalid="true" aria-describedby="invigilators-error"</c:if>>
+                       value="<c:out value='${page.sessionForm.invigilators}'/>"
+                       <c:if test="${not empty page.sessionErrors.invigilators}">aria-invalid="true" aria-describedby="invigilators-error"</c:if>>
                 <p class="hint">Comma-separated person ids. Each invigilator is also booked,
                 so a person booked at the same time is reported as a conflict.</p>
-                <c:if test="${not empty sessionErrors.invigilators}">
-                    <p class="field-error" id="invigilators-error"><c:out value="${sessionErrors.invigilators}"/></p>
+                <c:if test="${not empty page.sessionErrors.invigilators}">
+                    <p class="field-error" id="invigilators-error"><c:out value="${page.sessionErrors.invigilators}"/></p>
                 </c:if>
             </div>
             <div class="form-actions span-2">
@@ -190,17 +163,14 @@
                 The room and time range stay the same.</p>
             </div>
         </div>
-        <c:if test="${not empty invigilatorErrors.form}">
-            <div class="flash error" role="alert"><c:out value="${invigilatorErrors.form}"/></div>
+        <c:if test="${not empty page.invigilatorErrors.form}">
+            <div class="flash error" role="alert"><c:out value="${page.invigilatorErrors.form}"/></div>
         </c:if>
-        <c:set var="validationErrors" value="${invigilatorErrors}"/>
+        <c:set var="validationErrors" value="${page.invigilatorErrors}"/>
         <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <c:choose>
-            <c:when test="${empty selectableSessions}">
-                <c:set var="emptyTitle" value="No session to update."/>
-                <c:set var="emptyMessage" value="Schedule a session first."/>
-                <c:set var="emptyActionLabel" value=""/>
-                <c:set var="emptyActionHref" value=""/>
+            <c:when test="${empty page.selectableSessions}">
+                <c:set var="emptyState" value="${page.selectableSessionsEmpty}"/>
                 <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
             </c:when>
             <c:otherwise>
@@ -210,28 +180,25 @@
                     <div class="field">
                         <label for="sessionId">Session <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                         <select id="sessionId" name="sessionId" required
-                                <c:if test="${not empty invigilatorErrors.sessionId}">aria-invalid="true" aria-describedby="sessionId-error"</c:if>>
+                                <c:if test="${not empty page.invigilatorErrors.sessionId}">aria-invalid="true" aria-describedby="sessionId-error"</c:if>>
                             <option value="">Choose a session</option>
-                            <c:forEach var="session" items="${selectableSessions}">
-                                <option value="<c:out value='${session.id}'/>"
-                                        <c:if test="${invigilatorForm.sessionId == session.id}">selected</c:if>>
-                                    <c:out value="${session.startsAt}"/> - <c:out value="${session.room}"/>
-                                </option>
+                            <c:forEach var="session" items="${page.selectableSessions}">
+                                <option value="${session.value}" ${session.selectedAttribute}><c:out value="${session.label}"/></option>
                             </c:forEach>
                         </select>
-                        <c:if test="${not empty invigilatorErrors.sessionId}">
-                            <p class="field-error" id="sessionId-error"><c:out value="${invigilatorErrors.sessionId}"/></p>
+                        <c:if test="${not empty page.invigilatorErrors.sessionId}">
+                            <p class="field-error" id="sessionId-error"><c:out value="${page.invigilatorErrors.sessionId}"/></p>
                         </c:if>
                     </div>
                     <div class="field">
                         <label for="assignInvigilators">Invigilator person ids</label>
                         <input id="assignInvigilators" name="invigilators" type="text"
-                               value="<c:out value='${invigilatorForm.invigilators}'/>"
-                               <c:if test="${not empty invigilatorErrors.invigilators}">aria-invalid="true" aria-describedby="assignInvigilators-error"</c:if>>
+                               value="<c:out value='${page.invigilatorForm.invigilators}'/>"
+                               <c:if test="${not empty page.invigilatorErrors.invigilators}">aria-invalid="true" aria-describedby="assignInvigilators-error"</c:if>>
                         <p class="hint">Comma-separated person ids. Leave empty to keep only
                         the room booked.</p>
-                        <c:if test="${not empty invigilatorErrors.invigilators}">
-                            <p class="field-error" id="assignInvigilators-error"><c:out value="${invigilatorErrors.invigilators}"/></p>
+                        <c:if test="${not empty page.invigilatorErrors.invigilators}">
+                            <p class="field-error" id="assignInvigilators-error"><c:out value="${page.invigilatorErrors.invigilators}"/></p>
                         </c:if>
                     </div>
                     <div class="form-actions span-2">
@@ -242,11 +209,11 @@
         </c:choose>
     </section>
 
-    <c:if test="${not empty cancelErrors}">
+    <c:if test="${not empty page.cancelErrors}">
         <div class="flash error" role="alert">
             <strong>The session was not cancelled.</strong>
             <ul>
-                <c:forEach var="entry" items="${cancelErrors}">
+                <c:forEach var="entry" items="${page.cancelErrors}">
                     <li><c:out value="${entry.value}"/></li>
                 </c:forEach>
             </ul>

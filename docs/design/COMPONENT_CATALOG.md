@@ -141,16 +141,29 @@ Chronological list grouped by day, preserving the same information as the calend
 Suggested JSP fragments/tag files:
 ```text
 WEB-INF/views/components/
+├── head.jspf
 ├── sidebar.jsp
-├── navbar.jsp
-├── breadcrumb.jsp
-├── page-header.jsp
-├── alert.jsp
-├── status-badge.jsp
-├── pagination.jsp
-├── empty-state.jsp
-└── validation-summary.jsp
+├── topbar.jsp
+├── breadcrumb.jspf
+├── page-header.jspf
+├── flash.jsp
+├── status-badge.jspf
+├── empty-state.jspf
+└── validation-summary.jspf
 ```
+
+### Page view models
+
+Application pages expose one `page` request attribute built under
+`com.dess.platform.web.view`. A page view carries the shell (`PageChrome`), the
+count labels, the empty states, the badges and typed rows. The JSP reads
+`${page.*}` and keeps markup only; it does not build labels or choose badge
+tones.
+
+`Views.render` also sets the flat shell attributes, so the institution editor,
+login and error pages keep working. Hrefs inside a view model are
+application-relative. `Views.render` adds the context path for shell values and
+`empty-state.jspf` adds it for empty-state actions.
 
 Suggested CSS organization:
 - `tokens.css`: canonical variables.
