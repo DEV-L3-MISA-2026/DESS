@@ -96,7 +96,10 @@ candidate eligibility is checked by the assessment definitions work, not
 here.
 
 The `/app/examinations` page stays a read-only list with a link to the
-management page. The `/app/exam-sessions` page schedules sessions, finds
+management page. The `/app/results` page lists each session with the number
+of results recorded for its assessment. Result entry and correction exist in
+the application layer but have no page yet, so the page never shows a mark
+that was not stored. The `/app/exam-sessions` page schedules sessions, finds
 one by a case-insensitive substring of its id, replaces invigilators and
 cancels a session after a confirmation dialog. It shows a session only
 after the server stored it. Write actions require `academic:write`, use
@@ -121,8 +124,8 @@ session in the same transaction.
 
 - Booking a student group: the `ExamSession` model has no group field
   yet, so only the room and the invigilators are reserved.
-- The `/app/results` page still shows a placeholder. It can read through
-  `ResultService` in a follow-up.
+- The `/app/results` page lists sessions and recorded-result counts. Result
+  entry, correction and candidate-level lists have no page yet.
 - Integration tests against PostgreSQL through Testcontainers; the
   service tests use in-memory fakes, and the Flyway migration is applied
   separately during local setup.

@@ -14,9 +14,8 @@ import java.util.UUID;
  * <p>The assessment module owns this type. Scheduling only knows the
  * booking that reserves the room, the group and the invigilators for
  * the same time range. The assessmentId refers to the Assessment
- * definition owned by the assessment definitions work. It is a UUID
- * here because that definition is not implemented yet, so there is no
- * type to link to.</p>
+ * definition owned by the assessment module. The session records the
+ * id as given; it does not check that the definition exists yet.</p>
  *
  * <p>Rules of the model:</p>
  * <ul>

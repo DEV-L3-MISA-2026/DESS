@@ -11,11 +11,10 @@ import java.util.UUID;
  *
  * <p>A result belongs to an assessment and to a student. It records
  * which exam session the student sat, when the session id is known.
- * The session id is optional on purpose: exam sessions have no
- * persistence yet on the dev branch, so a result must be recordable
- * without a stored session. When session persistence lands, the
- * result service should check that the session exists, belongs to
- * the assessment and lists the student as a candidate.</p>
+ * The session id is optional on purpose, so a result stays recordable
+ * for a paper or an import. The result service does not check yet that
+ * the session exists, belongs to the assessment and lists the student
+ * as a candidate.</p>
  *
  * <p>One student has at most one result per assessment. That is the
  * MVP rule: a retake is a new assessment, not a second result. The

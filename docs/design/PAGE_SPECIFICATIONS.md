@@ -134,6 +134,15 @@ Capture the assessment, date, start/end time, room, supervisors, and candidate s
 - Make candidate eligibility visible before finalizing the session.
 - Do not silently include ineligible candidates.
 
+### Implementation status
+Exam sessions persist and `/app/exam-sessions` can schedule, search, replace
+invigilators and cancel them. `/app/examinations` is a read-only session list
+with UTC times.
+
+The assessment list and detail pages, the candidate/eligibility view and a
+session calendar are roadmap items. Assessment definitions and eligibility
+exist in the application layer but have no page yet.
+
 ## 7. Results
 
 ### Purpose
@@ -150,6 +159,16 @@ Record, validate, and consult assessment results.
 - Validate input on the server.
 - Make the difference between saving a draft and validating/publishing results explicit.
 - Do not introduce averages, weighting, ranking, or retake workflows unless they are explicitly included in the release scope.
+
+### Implementation status
+`/app/results` lists each exam session with the number of results recorded for
+its assessment, using `ResultService`. The page never shows a mark that was not
+stored.
+
+Result entry, correction and a candidate-level result list have no page yet.
+The model stores final results only: there is no draft, submitted or validated
+state to display. Those states, averages, weighting and ranking stay out of the
+release until they are explicitly added.
 
 ## 8. Security
 

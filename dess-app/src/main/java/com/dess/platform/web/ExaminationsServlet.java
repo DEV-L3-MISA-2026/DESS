@@ -1,10 +1,12 @@
 package com.dess.platform.web;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
@@ -47,12 +49,18 @@ public class ExaminationsServlet extends HttpServlet
     private void showPage(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
+        Map<UUID, String> roomLabels = roomService.findAll().stream()
+                .collect(Collectors.toMap(room -> room.id(),
+                        room -> room.code() + " - " + room.name()));
+
         List<Map<String, Object>> sessions = examSessionService.findAll().stream()
                 .map(session -> Map.<String, Object>of(
                         "id", session.id().toString(),
-                        "startsAt", DATE_TIME.format(session.startsAt()),
-                        "endsAt", DATE_TIME.format(session.endsAt()),
-                        "room", roomLabel(session.roomId()),
+                        "startsAt", DATE_TIME.format(
+                                session.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
+                        "endsAt", DATE_TIME.format(
+                                session.endsAt().withOffsetSameInstant(ZoneOffset.UTC)),
+                        "room", roomLabels.getOrDefault(session.roomId(), "Unknown room"),
                         "candidateCount", session.candidatePersonIds().size(),
                         "invigilatorCount", session.invigilatorPersonIds().size()))
                 .toList();
@@ -60,12 +68,5 @@ public class ExaminationsServlet extends HttpServlet
         request.setAttribute("sessions", sessions);
         request.setAttribute("activeNav", "examinations");
         request.getRequestDispatcher(VIEW).forward(request, response);
-    }
-
-    private String roomLabel(UUID roomId)
-    {
-        return roomService.findById(roomId)
-                .map(room -> room.code() + " - " + room.name())
-                .orElse("Unknown room");
     }
 }

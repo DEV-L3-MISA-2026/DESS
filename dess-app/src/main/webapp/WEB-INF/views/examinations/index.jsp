@@ -4,49 +4,36 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li><a href="${ctx}/app">Overview</a></li>
-                <li aria-current="page">Examinations</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">Examinations</h1>
-        <p class="dess-page-description">
-            Exam sessions: one exam, in one room, at one time, with its candidates and
-            invigilators. Sessions are created by the exam scheduling flow; the booking
-            contract that reserves their room, group and invigilators is frozen.
-        </p>
-    </div>
-    <div class="header-actions">
-        <a class="btn" href="${ctx}/app/exam-sessions">Manage sessions</a>
-    </div>
-</div>
+<c:set var="pageDescription" value="Exam sessions: one assessment, in one room, at one time, with its candidates and invigilators. Sessions are created on the management page."/>
+<c:set var="breadcrumbParentLabel" value="Overview"/>
+<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
+<c:set var="headerActionLabel" value="Manage sessions"/>
+<c:set var="headerActionHref" value="${ctx}/app/exam-sessions"/>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="sessions-title">
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="sessions-title">Exam sessions</h2>
-            <p class="panel-note"><c:out value="${fn:length(sessions)}"/> session(s).</p>
+            <p class="panel-note"><c:out value="${fn:length(sessions)}"/> session(s). Times are in UTC.</p>
         </div>
     </div>
 
     <c:choose>
         <c:when test="${empty sessions}">
-            <div class="empty">
-                <strong>No exam session yet.</strong>
-                <p>Exam sessions will appear here once they are scheduled. Candidates are
-                linked once eligibility is known, and invigilators are assigned afterwards.</p>
-            </div>
+            <c:set var="emptyTitle" value="No exam session yet."/>
+            <c:set var="emptyMessage" value="Exam sessions appear here once they are scheduled. Candidates are linked once eligibility is known, and invigilators are assigned afterwards."/>
+            <c:set var="emptyActionLabel" value="Manage sessions"/>
+            <c:set var="emptyActionHref" value="${ctx}/app/exam-sessions"/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Exam sessions">
                 <table>
                     <thead>
                     <tr>
-                        <th scope="col">Starts</th>
-                        <th scope="col">Ends</th>
+                        <th scope="col">Starts (UTC)</th>
+                        <th scope="col">Ends (UTC)</th>
                         <th scope="col">Room</th>
                         <th scope="col">Candidates</th>
                         <th scope="col">Invigilators</th>

@@ -1,10 +1,13 @@
 package com.dess.platform.web;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
@@ -14,17 +17,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import com.dess.assessment.application.ExamSessionService;
+import com.dess.assessment.application.ResultService;
+import com.dess.assessment.domain.ExamSession;
 import com.dess.scheduling.application.RoomService;
 
 /**
- * Results by candidate.
+ * Results by assessment.
  *
- * <p>Read-only for now, and the results themselves are not entered yet:
- * the Result model does not exist, it is the next step of the assessment
- * module, after the assessment definitions and the eligibility of
- * candidates. This page therefore shows each session with the number
- * of candidates and the state of its results, without inventing any
- * mark.</p>
+ * <p>The page lists each exam session with the number of results recorded for
+ * its assessment. Result entry and correction exist in the application layer,
+ * but this page has no entry form yet, so it never invents a mark or claims that
+ * a session has been validated.</p>
  */
 @WebServlet("/app/results")
 public class ResultsServlet extends HttpServlet
@@ -39,6 +42,9 @@ public class ResultsServlet extends HttpServlet
     @Inject
     private RoomService roomService;
 
+    @Inject
+    private ResultService resultService;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
@@ -50,25 +56,41 @@ public class ResultsServlet extends HttpServlet
     private void showPage(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
-        List<Map<String, Object>> sessions = examSessionService.findAll().stream()
-                .map(session -> Map.<String, Object>of(
-                        "id", session.id().toString(),
-                        "startsAt", DATE_TIME.format(session.startsAt()),
-                        "endsAt", DATE_TIME.format(session.endsAt()),
-                        "room", roomLabel(session.roomId()),
-                        "candidateCount", session.candidatePersonIds().size(),
-                        "results", "Not entered yet"))
+        List<ExamSession> allSessions = examSessionService.findAll();
+
+        Map<UUID, String> roomLabels = roomService.findAll().stream()
+                .collect(Collectors.toMap(room -> room.id(),
+                        room -> room.code() + " - " + room.name()));
+
+        // Results belong to an assessment, not to a session. Count once per
+        // assessment so two sessions of the same assessment share the number.
+        Map<UUID, Integer> recordedByAssessment = new HashMap<>();
+        for (ExamSession session : allSessions)
+        {
+            recordedByAssessment.computeIfAbsent(session.assessmentId(),
+                    assessmentId -> resultService.listByAssessment(assessmentId).size());
+        }
+
+        List<Map<String, Object>> sessions = allSessions.stream()
+                .map(session -> {
+                    ResultProgress progress = ResultProgress.of(
+                            session.candidatePersonIds().size(),
+                            recordedByAssessment.get(session.assessmentId()));
+                    return Map.<String, Object>of(
+                            "id", session.id().toString(),
+                            "startsAt", DATE_TIME.format(
+                                    session.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
+                            "endsAt", DATE_TIME.format(
+                                    session.endsAt().withOffsetSameInstant(ZoneOffset.UTC)),
+                            "room", roomLabels.getOrDefault(session.roomId(), "Unknown room"),
+                            "candidateCount", session.candidatePersonIds().size(),
+                            "resultLabel", progress.label(),
+                            "resultTone", progress.tone());
+                })
                 .toList();
 
         request.setAttribute("sessions", sessions);
         request.setAttribute("activeNav", "results");
         request.getRequestDispatcher(VIEW).forward(request, response);
-    }
-
-    private String roomLabel(UUID roomId)
-    {
-        return roomService.findById(roomId)
-                .map(room -> room.code() + " - " + room.name())
-                .orElse("Unknown room");
     }
 }
