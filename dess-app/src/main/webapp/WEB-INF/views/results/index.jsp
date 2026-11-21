@@ -15,7 +15,8 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="sessions-title">Exam sessions</h2>
-            <p class="panel-note"><c:out value="${fn:length(sessions)}"/> session(s). Times are in UTC. Results are counted per assessment.</p>
+            <p class="panel-note"><c:out value="${fn:length(sessions)}"/>
+                <c:out value="${fn:length(sessions) == 1 ? 'session' : 'sessions'}"/>. Times are in UTC. Results are counted per assessment.</p>
         </div>
     </div>
 

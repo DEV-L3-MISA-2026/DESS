@@ -13,7 +13,8 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="accounts-title">Accounts</h2>
-            <p class="panel-note"><c:out value="${fn:length(accounts)}"/> account(s).</p>
+            <p class="panel-note"><c:out value="${fn:length(accounts)}"/>
+                <c:out value="${fn:length(accounts) == 1 ? 'account' : 'accounts'}"/>.</p>
         </div>
     </div>
 
@@ -65,6 +66,8 @@
     <c:if test="${not empty errors.form}">
         <div class="flash error" role="alert"><c:out value="${errors.form}"/></div>
     </c:if>
+    <c:set var="validationErrors" value="${errors}"/>
+    <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
 
     <form method="post" action="${ctx}/app/security" class="stack">
         <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -72,7 +75,7 @@
 
         <div class="field-grid">
             <div class="field">
-                <label for="username">Username <span class="req" aria-hidden="true">*</span></label>
+                <label for="username">Username <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="username" name="username" type="text" required autocomplete="off"
                        value="<c:out value='${form.username}'/>"
                        <c:if test="${not empty errors.username}">aria-invalid="true" aria-describedby="username-error"</c:if>>
@@ -82,7 +85,7 @@
             </div>
 
             <div class="field">
-                <label for="displayName">Display name <span class="req" aria-hidden="true">*</span></label>
+                <label for="displayName">Display name <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="displayName" name="displayName" type="text" required
                        value="<c:out value='${form.displayName}'/>"
                        <c:if test="${not empty errors.displayName}">aria-invalid="true" aria-describedby="displayName-error"</c:if>>
@@ -92,7 +95,7 @@
             </div>
 
             <div class="field">
-                <label for="role">Role <span class="req" aria-hidden="true">*</span></label>
+                <label for="role">Role <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <select id="role" name="role" required
                         <c:if test="${not empty errors.role}">aria-invalid="true" aria-describedby="role-error"</c:if>>
                     <c:forEach var="role" items="${roles}">
@@ -107,7 +110,7 @@
             </div>
 
             <div class="field">
-                <label for="password">Initial password <span class="req" aria-hidden="true">*</span></label>
+                <label for="password">Initial password <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="password" name="password" type="password" required autocomplete="new-password"
                        <c:if test="${not empty errors.password}">aria-invalid="true" aria-describedby="password-error"</c:if>>
                 <c:if test="${not empty errors.password}">
@@ -116,8 +119,11 @@
             </div>
         </div>
 
+        <p class="hint">All fields are required.</p>
+
         <div class="form-actions">
             <button class="btn" type="submit">Create account</button>
+            <a class="btn btn-ghost" href="${ctx}/app/security">Cancel</a>
         </div>
     </form>
 </section>

@@ -51,8 +51,14 @@
         </c:if>
 
         <div class="form-actions">
-            <a class="btn" href="${ctx}/app">Back to overview</a>
-            <a class="btn btn-ghost" href="${ctx}/login">Sign in</a>
+            <c:choose>
+                <c:when test="${not empty sessionScope.sessionUser}">
+                    <a class="btn" href="${ctx}/app">Back to overview</a>
+                </c:when>
+                <c:otherwise>
+                    <a class="btn" href="${ctx}/login">Sign in</a>
+                </c:otherwise>
+            </c:choose>
         </div>
     </section>
 </main>

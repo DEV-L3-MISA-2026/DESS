@@ -116,7 +116,7 @@ Variants: draft, pending, confirmed, conflict, inactive, cancelled. Always inclu
 Used for irreversible or consequential actions. State the object and consequence explicitly. Destructive action must not be the default focused action. Use a native `<dialog>`: it traps focus, closes on Escape, and returns focus to the control that opened it. Use the shared head, body and foot parts.
 
 ### Validation summary
-Summarizes form errors and links/focuses the corresponding fields where practical.
+Summarizes form errors and links/focuses the corresponding fields where practical. Implemented as `validation-summary.jspf`. Servlets use the field's DOM id as the error-map key, so each message links to `#<key>`. A `form` key is reserved for a form-level message and stays in the page's own alert.
 
 ## 8. Scheduling components
 

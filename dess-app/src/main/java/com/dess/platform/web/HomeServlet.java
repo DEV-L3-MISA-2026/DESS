@@ -20,6 +20,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Overview page.
@@ -68,12 +70,16 @@ public class HomeServlet extends HttpServlet
         request.setAttribute("roomCount", roomService.findAll().size());
 
         var allBookings = bookingService.findAll();
+        Map<UUID, String> roomCodes = roomService.findAll().stream()
+                .collect(Collectors.toMap(room -> room.id(), room -> room.code()));
         List<Map<String, Object>> upcoming = BookingPresentation
                 .upcoming(allBookings, OffsetDateTime.now(ZoneOffset.UTC), 6)
                 .stream()
                 .map(booking -> Map.<String, Object>of(
                         "id", booking.id().toString(),
                         "ownerType", BookingPresentation.ownerLabel(booking.ownerType()),
+                        "resources", BookingPresentation.resources(
+                                bookingService.findSlotsByBookingId(booking.id()), roomCodes),
                         "startsAt", DATE_TIME.format(booking.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
                         "endsAt", DATE_TIME.format(booking.endsAt().withOffsetSameInstant(ZoneOffset.UTC))))
                 .toList();

@@ -13,7 +13,8 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="rooms-title">Rooms</h2>
-            <p class="panel-note"><c:out value="${fn:length(rooms)}"/> room(s).</p>
+            <p class="panel-note"><c:out value="${fn:length(rooms)}"/>
+                <c:out value="${fn:length(rooms) == 1 ? 'room' : 'rooms'}"/>.</p>
         </div>
     </div>
 
@@ -52,34 +53,36 @@
         <c:if test="${not empty roomErrors.form}">
             <div class="flash error" role="alert"><c:out value="${roomErrors.form}"/></div>
         </c:if>
+        <c:set var="validationErrors" value="${roomErrors}"/>
+        <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/scheduling" class="form-row">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
             <input type="hidden" name="action" value="createRoom">
             <div class="field">
-                <label for="roomCode">Code <span class="req" aria-hidden="true">*</span></label>
+                <label for="roomCode">Code <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="roomCode" name="code" type="text" required
                        value="<c:out value='${roomForm.code}'/>"
-                       <c:if test="${not empty roomErrors.code}">aria-invalid="true" aria-describedby="roomCode-error"</c:if>>
-                <c:if test="${not empty roomErrors.code}">
-                    <p class="field-error" id="roomCode-error"><c:out value="${roomErrors.code}"/></p>
+                       <c:if test="${not empty roomErrors.roomCode}">aria-invalid="true" aria-describedby="roomCode-error"</c:if>>
+                <c:if test="${not empty roomErrors.roomCode}">
+                    <p class="field-error" id="roomCode-error"><c:out value="${roomErrors.roomCode}"/></p>
                 </c:if>
             </div>
             <div class="field grow">
-                <label for="roomName">Name <span class="req" aria-hidden="true">*</span></label>
+                <label for="roomName">Name <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="roomName" name="name" type="text" required
                        value="<c:out value='${roomForm.name}'/>"
-                       <c:if test="${not empty roomErrors.name}">aria-invalid="true" aria-describedby="roomName-error"</c:if>>
-                <c:if test="${not empty roomErrors.name}">
-                    <p class="field-error" id="roomName-error"><c:out value="${roomErrors.name}"/></p>
+                       <c:if test="${not empty roomErrors.roomName}">aria-invalid="true" aria-describedby="roomName-error"</c:if>>
+                <c:if test="${not empty roomErrors.roomName}">
+                    <p class="field-error" id="roomName-error"><c:out value="${roomErrors.roomName}"/></p>
                 </c:if>
             </div>
             <div class="field field-small">
-                <label for="roomCapacity">Capacity <span class="req" aria-hidden="true">*</span></label>
+                <label for="roomCapacity">Capacity <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="roomCapacity" name="capacity" type="number" min="1" step="1" required
                        value="<c:out value='${roomForm.capacity}'/>"
-                       <c:if test="${not empty roomErrors.capacity}">aria-invalid="true" aria-describedby="roomCapacity-error"</c:if>>
-                <c:if test="${not empty roomErrors.capacity}">
-                    <p class="field-error" id="roomCapacity-error"><c:out value="${roomErrors.capacity}"/></p>
+                       <c:if test="${not empty roomErrors.roomCapacity}">aria-invalid="true" aria-describedby="roomCapacity-error"</c:if>>
+                <c:if test="${not empty roomErrors.roomCapacity}">
+                    <p class="field-error" id="roomCapacity-error"><c:out value="${roomErrors.roomCapacity}"/></p>
                 </c:if>
             </div>
             <div class="form-actions compact">

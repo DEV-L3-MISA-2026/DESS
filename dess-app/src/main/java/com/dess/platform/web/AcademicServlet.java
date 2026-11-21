@@ -102,18 +102,18 @@ public class AcademicServlet extends HttpServlet
         }
         catch (DuplicateCourseCodeException exception)
         {
-            errors.put("code", "This course code is already in use.");
+            errors.put("courseCode", "This course code is already in use.");
             renderError(request, response, "course", form, errors);
         }
         catch (IllegalArgumentException exception)
         {
             if (form.get("code").isBlank())
             {
-                errors.put("code", "Enter a course code.");
+                errors.put("courseCode", "Enter a course code.");
             }
             if (form.get("title").isBlank())
             {
-                errors.put("title", "Enter a course title.");
+                errors.put("courseTitle", "Enter a course title.");
             }
             errors.putIfAbsent("form", exception.getMessage());
             renderError(request, response, "course", form, errors);
@@ -172,11 +172,11 @@ public class AcademicServlet extends HttpServlet
         {
             if (form.get("code").isBlank())
             {
-                errors.put("code", "Enter a program code.");
+                errors.put("programCode", "Enter a program code.");
             }
             if (form.get("name").isBlank())
             {
-                errors.put("name", "Enter a program name.");
+                errors.put("programName", "Enter a program name.");
             }
             errors.putIfAbsent("form", exception.getMessage());
             renderError(request, response, "program", form, errors);

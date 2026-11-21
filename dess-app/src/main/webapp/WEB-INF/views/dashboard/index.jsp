@@ -84,6 +84,7 @@
                     <thead>
                     <tr>
                         <th scope="col">Owner</th>
+                        <th scope="col">Reserved resources</th>
                         <th scope="col">Starts (UTC)</th>
                         <th scope="col">Ends (UTC)</th>
                     </tr>
@@ -92,6 +93,7 @@
                     <c:forEach var="booking" items="${upcomingBookings}">
                         <tr>
                             <td><c:out value="${booking.ownerType}"/></td>
+                            <td><c:out value="${booking.resources}"/></td>
                             <td class="mono"><c:out value="${booking.startsAt}"/></td>
                             <td class="mono"><c:out value="${booking.endsAt}"/></td>
                         </tr>

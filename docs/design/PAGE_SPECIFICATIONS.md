@@ -21,10 +21,10 @@ Give staff a concise view of the current academic context and actions requiring 
 
 ### Implementation status
 The page shows the counts the module services can provide and the next six
-active bookings, earliest first, with UTC times. The current period, pending
-tasks and scheduling conflicts remain roadmap items: the academic module has no
-notion of a current period, and no task or conflict query exists. Do not fake
-those blocks.
+active bookings, earliest first, with UTC times and the resources each booking
+reserves. The current period, pending tasks and scheduling conflicts remain
+roadmap items: the academic module has no notion of a current period, and no
+task or conflict query exists. Do not fake those blocks.
 
 ## 2. Institution structure
 
@@ -136,7 +136,9 @@ Capture the assessment, date, start/end time, room, supervisors, and candidate s
 
 ### Implementation status
 Exam sessions persist and `/app/exam-sessions` can schedule, search, replace
-invigilators and cancel them. `/app/examinations` is a read-only session list
+invigilators and cancel them. The schedule form offers the known assessment
+definitions and the list resolves each stored id to its title, marking an id
+with no definition as unknown. `/app/examinations` is a read-only session list
 with UTC times.
 
 The assessment list and detail pages, the candidate/eligibility view and a

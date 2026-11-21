@@ -1,9 +1,13 @@
 <%-- Breadcrumb for the current page. Set breadcrumbParentLabel and
-     breadcrumbParentHref before including. Omit both on a root page. --%>
+     breadcrumbParentHref before including. Omit both on a root page. Set
+     breadcrumbSectionLabel and breadcrumbSectionHref for a three-level trail. --%>
 <nav class="dess-breadcrumb" aria-label="Breadcrumb">
     <ol>
         <c:if test="${not empty breadcrumbParentLabel}">
             <li><a href="${breadcrumbParentHref}"><c:out value="${breadcrumbParentLabel}"/></a></li>
+        </c:if>
+        <c:if test="${not empty breadcrumbSectionLabel}">
+            <li><a href="${breadcrumbSectionHref}"><c:out value="${breadcrumbSectionLabel}"/></a></li>
         </c:if>
         <li aria-current="page"><c:out value="${pageTitle}"/></li>
     </ol>

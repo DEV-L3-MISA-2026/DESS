@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import com.dess.assessment.application.AssessmentService;
 import com.dess.assessment.application.ExamSessionService;
 import com.dess.assessment.domain.ExamSession;
 import com.dess.assessment.domain.ExamSessionConflictException;
@@ -44,6 +45,9 @@ public class ExamSessionsServlet extends HttpServlet
 
     @Inject
     private ExamSessionService examSessionService;
+
+    @Inject
+    private AssessmentService assessmentService;
 
     @Inject
     private RoomService roomService;
@@ -307,9 +311,19 @@ public class ExamSessionsServlet extends HttpServlet
                         "label", room.code() + " - " + room.name()))
                 .toList();
 
+        Map<UUID, String> assessmentLabels =
+                AssessmentPresentation.labels(assessmentService.list());
+        List<Map<String, Object>> assessments = assessmentLabels.entrySet().stream()
+                .map(entry -> Map.<String, Object>of(
+                        "id", entry.getKey().toString(),
+                        "title", entry.getValue()))
+                .toList();
+
         List<Map<String, Object>> allSessions = examSessionService.findAll().stream()
                 .map(session -> Map.<String, Object>of(
                         "id", session.id().toString(),
+                        "assessment", AssessmentPresentation.label(session.assessmentId(),
+                                assessmentLabels),
                         "startsAt", DATE_TIME.format(session.startsAt()),
                         "endsAt", DATE_TIME.format(session.endsAt()),
                         "room", roomLabel(session.roomId()),
@@ -326,6 +340,7 @@ public class ExamSessionsServlet extends HttpServlet
 
         request.setAttribute("query", query);
         request.setAttribute("rooms", rooms);
+        request.setAttribute("assessments", assessments);
         request.setAttribute("sessions", sessions);
         request.setAttribute("selectableSessions", allSessions);
         request.setAttribute("sessionForm", sessionForm);

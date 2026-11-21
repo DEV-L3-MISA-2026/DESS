@@ -4,30 +4,22 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li><a href="${ctx}/app">Overview</a></li>
-                <li><a href="${ctx}/app/examinations">Examinations</a></li>
-                <li aria-current="page">Manage sessions</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">Manage exam sessions</h1>
-        <p class="dess-page-description">
-            Schedule sessions, find one by its id, change its invigilators or cancel it. A
-            session is stored only after the booking service confirmed the room and the
-            invigilators for that time range. Times are entered and shown in UTC.
-        </p>
-    </div>
-</div>
+<c:set var="pageDescription" value="Schedule sessions, find one by its id, change its invigilators or cancel it. A session is stored only after the booking service confirmed the room and the invigilators for that time range. Times are entered and shown in UTC."/>
+<c:set var="breadcrumbParentLabel" value="Overview"/>
+<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
+<c:set var="breadcrumbSectionLabel" value="Examinations"/>
+<c:set var="breadcrumbSectionHref" value="${ctx}/app/examinations"/>
+<c:set var="headerActionLabel" value="View examinations"/>
+<c:set var="headerActionHref" value="${ctx}/app/examinations"/>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="sessions-title">
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="sessions-title">Exam sessions</h2>
             <p class="panel-note"><c:out value="${fn:length(sessions)}"/> of
-                <c:out value="${fn:length(selectableSessions)}"/> session(s) shown.</p>
+                <c:out value="${fn:length(selectableSessions)}"/>
+                <c:out value="${fn:length(selectableSessions) == 1 ? 'session' : 'sessions'}"/> shown.</p>
         </div>
     </div>
 
@@ -49,18 +41,19 @@
 
     <c:choose>
         <c:when test="${empty sessions}">
-            <div class="empty">
-                <c:choose>
-                    <c:when test="${not empty query}">
-                        <strong>No session matches this id.</strong>
-                        <p>Try a shorter id or <a href="${ctx}/app/exam-sessions">clear the search</a>.</p>
-                    </c:when>
-                    <c:otherwise>
-                        <strong>No exam session yet.</strong>
-                        <p>Schedule the first session below.</p>
-                    </c:otherwise>
-                </c:choose>
-            </div>
+            <c:choose>
+                <c:when test="${not empty query}">
+                    <c:set var="emptyTitle" value="No session matches this id."/>
+                    <c:set var="emptyMessage" value="Try a shorter id or clear the search."/>
+                    <c:set var="emptyActionLabel" value="Clear search"/>
+                    <c:set var="emptyActionHref" value="${ctx}/app/exam-sessions"/>
+                </c:when>
+                <c:otherwise>
+                    <c:set var="emptyTitle" value="No exam session yet."/>
+                    <c:set var="emptyMessage" value="Schedule the first session below."/>
+                </c:otherwise>
+            </c:choose>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Exam sessions">
@@ -68,8 +61,9 @@
                     <thead>
                     <tr>
                         <th scope="col">Session id</th>
-                        <th scope="col">Starts</th>
-                        <th scope="col">Ends</th>
+                        <th scope="col">Assessment</th>
+                        <th scope="col">Starts (UTC)</th>
+                        <th scope="col">Ends (UTC)</th>
                         <th scope="col">Room</th>
                         <th scope="col">Candidates</th>
                         <th scope="col">Invigilators</th>
@@ -81,12 +75,17 @@
                     <c:forEach var="session" items="${sessions}">
                         <tr>
                             <td class="mono"><c:out value="${session.id}"/></td>
+                            <td><c:out value="${session.assessment}"/></td>
                             <td class="mono"><c:out value="${session.startsAt}"/></td>
                             <td class="mono"><c:out value="${session.endsAt}"/></td>
                             <td><c:out value="${session.room}"/></td>
                             <td><c:out value="${session.candidateCount}"/></td>
                             <td><c:out value="${session.invigilators}"/></td>
-                            <td><span class="badge ok">Confirmed</span></td>
+                            <td>
+                                <c:set var="badgeTone" value="ok"/>
+                                <c:set var="badgeLabel" value="Confirmed"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
+                            </td>
                             <td>
                                 <c:if test="${canWrite}">
                                     <button type="button" class="btn btn-danger btn-sm"
@@ -108,22 +107,30 @@
         <c:if test="${not empty sessionErrors.form}">
             <div class="flash error" role="alert"><c:out value="${sessionErrors.form}"/></div>
         </c:if>
+        <c:set var="validationErrors" value="${sessionErrors}"/>
+        <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <form method="post" action="${ctx}/app/exam-sessions" class="grid">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
             <input type="hidden" name="action" value="createSession">
             <div class="field">
-                <label for="assessmentId">Assessment id <span class="req" aria-hidden="true">*</span></label>
+                <label for="assessmentId">Assessment <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="assessmentId" name="assessmentId" type="text" required
+                       list="assessment-options"
                        value="<c:out value='${sessionForm.assessmentId}'/>"
                        <c:if test="${not empty sessionErrors.assessmentId}">aria-invalid="true" aria-describedby="assessmentId-error"</c:if>>
-                <p class="hint">UUID of the assessment definition. The assessment catalogue
-                is not implemented yet.</p>
+                <datalist id="assessment-options">
+                    <c:forEach var="assessment" items="${assessments}">
+                        <option value="<c:out value='${assessment.id}'/>"><c:out value="${assessment.title}"/></option>
+                    </c:forEach>
+                </datalist>
+                <p class="hint">Pick a known assessment or paste its id. The title is shown
+                in the session list; an id with no definition is marked as unknown.</p>
                 <c:if test="${not empty sessionErrors.assessmentId}">
                     <p class="field-error" id="assessmentId-error"><c:out value="${sessionErrors.assessmentId}"/></p>
                 </c:if>
             </div>
             <div class="field">
-                <label for="roomId">Room <span class="req" aria-hidden="true">*</span></label>
+                <label for="roomId">Room <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <select id="roomId" name="roomId" required
                         <c:if test="${not empty sessionErrors.roomId}">aria-invalid="true" aria-describedby="roomId-error"</c:if>>
                     <option value="">Choose a room</option>
@@ -139,7 +146,7 @@
                 </c:if>
             </div>
             <div class="field">
-                <label for="startsAt">Starts (UTC) <span class="req" aria-hidden="true">*</span></label>
+                <label for="startsAt">Starts (UTC) <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="startsAt" name="startsAt" type="datetime-local" required
                        value="<c:out value='${sessionForm.startsAt}'/>"
                        <c:if test="${not empty sessionErrors.startsAt}">aria-invalid="true" aria-describedby="startsAt-error"</c:if>>
@@ -148,7 +155,7 @@
                 </c:if>
             </div>
             <div class="field">
-                <label for="endsAt">Ends (UTC) <span class="req" aria-hidden="true">*</span></label>
+                <label for="endsAt">Ends (UTC) <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                 <input id="endsAt" name="endsAt" type="datetime-local" required
                        value="<c:out value='${sessionForm.endsAt}'/>"
                        <c:if test="${not empty sessionErrors.endsAt}">aria-invalid="true" aria-describedby="endsAt-error"</c:if>>
@@ -186,19 +193,22 @@
         <c:if test="${not empty invigilatorErrors.form}">
             <div class="flash error" role="alert"><c:out value="${invigilatorErrors.form}"/></div>
         </c:if>
+        <c:set var="validationErrors" value="${invigilatorErrors}"/>
+        <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
         <c:choose>
             <c:when test="${empty selectableSessions}">
-                <div class="empty">
-                    <strong>No session to update.</strong>
-                    <p>Schedule a session first.</p>
-                </div>
+                <c:set var="emptyTitle" value="No session to update."/>
+                <c:set var="emptyMessage" value="Schedule a session first."/>
+                <c:set var="emptyActionLabel" value=""/>
+                <c:set var="emptyActionHref" value=""/>
+                <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
             </c:when>
             <c:otherwise>
                 <form method="post" action="${ctx}/app/exam-sessions" class="grid">
                     <input type="hidden" name="csrfToken" value="${csrfToken}">
                     <input type="hidden" name="action" value="assignInvigilators">
                     <div class="field">
-                        <label for="sessionId">Session <span class="req" aria-hidden="true">*</span></label>
+                        <label for="sessionId">Session <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                         <select id="sessionId" name="sessionId" required
                                 <c:if test="${not empty invigilatorErrors.sessionId}">aria-invalid="true" aria-describedby="sessionId-error"</c:if>>
                             <option value="">Choose a session</option>
@@ -231,6 +241,17 @@
             </c:otherwise>
         </c:choose>
     </section>
+
+    <c:if test="${not empty cancelErrors}">
+        <div class="flash error" role="alert">
+            <strong>The session was not cancelled.</strong>
+            <ul>
+                <c:forEach var="entry" items="${cancelErrors}">
+                    <li><c:out value="${entry.value}"/></li>
+                </c:forEach>
+            </ul>
+        </div>
+    </c:if>
 
     <dialog id="cancel-session-dialog" aria-labelledby="cancel-session-title">
         <div class="dialog-form">

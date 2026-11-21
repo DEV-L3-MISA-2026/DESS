@@ -81,28 +81,44 @@ public class SchedulingServlet extends HttpServlet
         form.put("capacity", Web.param(request, "capacity"));
         Map<String, String> errors = new LinkedHashMap<>();
 
+        if (form.get("code").isBlank())
+        {
+            errors.put("roomCode", "Enter a room code.");
+        }
+        if (form.get("name").isBlank())
+        {
+            errors.put("roomName", "Enter a room name.");
+        }
+
+        int capacity = 0;
+
         try
         {
-            int capacity = Integer.parseInt(form.get("capacity"));
+            capacity = Integer.parseInt(form.get("capacity"));
+            if (capacity < 1)
+            {
+                errors.put("roomCapacity", "Enter a whole number greater than zero.");
+            }
+        }
+        catch (NumberFormatException exception)
+        {
+            errors.put("roomCapacity", "Enter a whole number greater than zero.");
+        }
+
+        if (!errors.isEmpty())
+        {
+            renderError(request, response, form, errors);
+            return;
+        }
+
+        try
+        {
             Room room = roomService.create(form.get("code"), form.get("name"), capacity);
             Web.flash(request, "success", "Room " + room.code() + " was created.");
             response.sendRedirect(request.getContextPath() + LIST_PATH);
         }
-        catch (NumberFormatException exception)
-        {
-            errors.put("capacity", "Enter a whole number greater than zero.");
-            renderError(request, response, form, errors);
-        }
         catch (IllegalArgumentException exception)
         {
-            if (form.get("code").isBlank())
-            {
-                errors.put("code", "Enter a room code.");
-            }
-            if (form.get("name").isBlank())
-            {
-                errors.put("name", "Enter a room name.");
-            }
             errors.putIfAbsent("form", exception.getMessage());
             renderError(request, response, form, errors);
         }

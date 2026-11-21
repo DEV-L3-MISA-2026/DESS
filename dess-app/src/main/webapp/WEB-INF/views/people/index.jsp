@@ -17,7 +17,8 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="student-list-title">Students</h2>
-            <p class="panel-note"><c:out value="${fn:length(students)}"/> record(s) shown.</p>
+            <p class="panel-note"><c:out value="${fn:length(students)}"/>
+                <c:out value="${fn:length(students) == 1 ? 'record' : 'records'}"/> shown.</p>
         </div>
         <form class="toolbar" method="get" action="${ctx}/app/people" role="search">
             <label class="visually-hidden" for="people-q">Search people</label>
@@ -90,6 +91,8 @@
         <c:if test="${not empty errors.form}">
             <div class="flash error" role="alert"><c:out value="${errors.form}"/></div>
         </c:if>
+        <c:set var="validationErrors" value="${errors}"/>
+        <%@ include file="/WEB-INF/views/components/validation-summary.jspf" %>
 
         <form method="post" action="${ctx}/app/people" class="stack">
             <input type="hidden" name="csrfToken" value="${csrfToken}">
@@ -97,7 +100,7 @@
 
             <div class="field-grid">
                 <div class="field">
-                    <label for="firstName">First name <span class="req" aria-hidden="true">*</span></label>
+                    <label for="firstName">First name <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                     <input id="firstName" name="firstName" type="text" required
                            value="<c:out value='${form.firstName}'/>"
                            <c:if test="${not empty errors.firstName}">aria-invalid="true" aria-describedby="firstName-error"</c:if>>
@@ -107,7 +110,7 @@
                 </div>
 
                 <div class="field">
-                    <label for="lastName">Last name <span class="req" aria-hidden="true">*</span></label>
+                    <label for="lastName">Last name <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                     <input id="lastName" name="lastName" type="text" required
                            value="<c:out value='${form.lastName}'/>"
                            <c:if test="${not empty errors.lastName}">aria-invalid="true" aria-describedby="lastName-error"</c:if>>
@@ -117,7 +120,7 @@
                 </div>
 
                 <div class="field">
-                    <label for="email">Email address <span class="req" aria-hidden="true">*</span></label>
+                    <label for="email">Email address <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                     <input id="email" name="email" type="email" required
                            value="<c:out value='${form.email}'/>"
                            <c:if test="${not empty errors.email}">aria-invalid="true" aria-describedby="email-error"</c:if>>
@@ -127,7 +130,7 @@
                 </div>
 
                 <div class="field">
-                    <label for="registrationNumber">Registration number <span class="req" aria-hidden="true">*</span></label>
+                    <label for="registrationNumber">Registration number <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span></label>
                     <input id="registrationNumber" name="registrationNumber" type="text" required
                            value="<c:out value='${form.registrationNumber}'/>"
                            <c:if test="${not empty errors.registrationNumber}">aria-invalid="true" aria-describedby="registrationNumber-error"</c:if>>
@@ -137,7 +140,7 @@
                 </div>
             </div>
 
-            <p class="hint">Fields marked <span class="req" aria-hidden="true">*</span> are required.</p>
+            <p class="hint">All fields are required.</p>
 
             <div class="form-actions">
                 <button class="btn" type="submit">Create student</button>
