@@ -1,21 +1,10 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="Overview"/>
 <c:set var="topbarContext" value="Academic operations"/>
+<c:set var="pageDescription" value="Current counts and the latest bookings. Each figure links to the list it summarises."/>
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li aria-current="page">Overview</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">Overview</h1>
-        <p class="dess-page-description">
-            Current counts and the latest bookings. Each figure links to the list it summarises.
-        </p>
-    </div>
-</div>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section aria-labelledby="counts-title">
     <h2 class="section-title" id="counts-title">Current data</h2>
@@ -85,11 +74,11 @@
 
     <c:choose>
         <c:when test="${empty recentBookings}">
-            <div class="empty">
-                <strong>No bookings yet.</strong>
-                <p>Bookings appear here after a teaching session or another resource is scheduled.</p>
-                <a class="btn" href="${ctx}/app/scheduling">Go to scheduling</a>
-            </div>
+            <c:set var="emptyTitle" value="No bookings yet."/>
+            <c:set var="emptyMessage" value="Bookings appear here after a teaching session or another resource is scheduled."/>
+            <c:set var="emptyActionLabel" value="Go to scheduling"/>
+            <c:set var="emptyActionHref" value="${ctx}/app/scheduling"/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Latest bookings">
@@ -109,9 +98,9 @@
                             <td class="mono"><c:out value="${booking.startsAt}"/></td>
                             <td class="mono"><c:out value="${booking.endsAt}"/></td>
                             <td>
-                                <span class="badge ${booking.status == 'ACTIVE' ? 'ok' : 'off'}">
-                                    <c:out value="${booking.status == 'ACTIVE' ? 'Active' : 'Cancelled'}"/>
-                                </span>
+                                <c:set var="badgeTone" value="${booking.status == 'ACTIVE' ? 'ok' : 'off'}"/>
+                                <c:set var="badgeLabel" value="${booking.status == 'ACTIVE' ? 'Active' : 'Cancelled'}"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
                     </c:forEach>

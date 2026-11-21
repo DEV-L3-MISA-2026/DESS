@@ -50,16 +50,12 @@
                    ${active == 'scheduling' ? 'aria-current="page"' : ''}>Scheduling</a>
             </li>
             <li>
-                <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    Examinations
-                    <span class="dess-nav-soon">Soon</span>
-                </span>
+                <a class="dess-nav-link" href="${ctx}/app/examinations"
+                   ${active == 'examinations' ? 'aria-current="page"' : ''}>Examinations</a>
             </li>
             <li>
-                <span class="dess-nav-link is-disabled" aria-disabled="true">
-                    Results
-                    <span class="dess-nav-soon">Soon</span>
-                </span>
+                <a class="dess-nav-link" href="${ctx}/app/results"
+                   ${active == 'results' ? 'aria-current="page"' : ''}>Results</a>
             </li>
         </ul>
 

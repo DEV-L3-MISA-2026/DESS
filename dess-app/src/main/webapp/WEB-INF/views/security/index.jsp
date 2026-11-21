@@ -4,21 +4,10 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li><a href="${ctx}/app">Overview</a></li>
-                <li aria-current="page">Security</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">Security</h1>
-        <p class="dess-page-description">
-            Sign-in accounts and their roles. Accounts are separate from people records, and
-            password values and hashes are never displayed.
-        </p>
-    </div>
-</div>
+<c:set var="pageDescription" value="Sign-in accounts and their roles. Accounts are separate from people records, and password values and hashes are never displayed."/>
+<c:set var="breadcrumbParentLabel" value="Overview"/>
+<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="accounts-title">
     <div class="panel-head">
@@ -30,13 +19,9 @@
 
     <c:choose>
         <c:when test="${empty accounts}">
-            <div class="empty">
-                <strong>No account exists.</strong>
-                <p>
-                    Set <span class="mono">DESS_ADMIN_PASSWORD</span> before starting the
-                    application to seed the administrator account, or create one below.
-                </p>
-            </div>
+            <c:set var="emptyTitle" value="No account exists."/>
+            <c:set var="emptyMessage" value="Set DESS_ADMIN_PASSWORD before starting the application to seed the administrator account, or create one below."/>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="User accounts">
@@ -56,9 +41,9 @@
                             <td><c:out value="${account.displayName}"/></td>
                             <td><c:out value="${account.roles}"/></td>
                             <td>
-                                <span class="badge ${account.active ? 'ok' : 'off'}">
-                                    <c:out value="${account.active ? 'Active' : 'Inactive'}"/>
-                                </span>
+                                <c:set var="badgeTone" value="${account.active ? 'ok' : 'off'}"/>
+                                <c:set var="badgeLabel" value="${account.active ? 'Active' : 'Inactive'}"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
                     </c:forEach>

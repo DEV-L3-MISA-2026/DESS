@@ -1,0 +1,11 @@
+<%-- Empty state. Set emptyTitle and emptyMessage. For an action, also set
+     emptyActionLabel and emptyActionHref. --%>
+<div class="empty">
+    <strong><c:out value="${emptyTitle}"/></strong>
+    <c:if test="${not empty emptyMessage}">
+        <p><c:out value="${emptyMessage}"/></p>
+    </c:if>
+    <c:if test="${not empty emptyActionLabel}">
+        <a class="btn" href="${emptyActionHref}"><c:out value="${emptyActionLabel}"/></a>
+    </c:if>
+</div>

@@ -4,25 +4,14 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<div class="dess-page-header">
-    <div class="dess-page-heading">
-        <nav class="dess-breadcrumb" aria-label="Breadcrumb">
-            <ol>
-                <li><a href="${ctx}/app">Overview</a></li>
-                <li aria-current="page">People</li>
-            </ol>
-        </nav>
-        <h1 class="dess-page-title">People</h1>
-        <p class="dess-page-description">
-            Students and their registration numbers. A person record is not a sign-in account.
-        </p>
-    </div>
-    <c:if test="${canWrite}">
-        <div class="header-actions">
-            <a class="btn" href="#create-student">Add student</a>
-        </div>
-    </c:if>
-</div>
+<c:set var="pageDescription" value="Students and their registration numbers. A person record is not a sign-in account."/>
+<c:set var="breadcrumbParentLabel" value="Overview"/>
+<c:set var="breadcrumbParentHref" value="${ctx}/app"/>
+<c:if test="${canWrite}">
+    <c:set var="headerActionLabel" value="Add student"/>
+    <c:set var="headerActionHref" value="#create-student"/>
+</c:if>
+<%@ include file="/WEB-INF/views/components/page-header.jspf" %>
 
 <section class="panel" aria-labelledby="student-list-title">
     <div class="panel-head">
@@ -43,18 +32,20 @@
 
     <c:choose>
         <c:when test="${empty students}">
-            <div class="empty">
-                <strong>No student matches this view.</strong>
-                <p>
-                    <c:choose>
-                        <c:when test="${not empty q}">Try a shorter search or clear the filter.</c:when>
-                        <c:otherwise>Create the first student to start the directory.</c:otherwise>
-                    </c:choose>
-                </p>
-                <c:if test="${canWrite and empty q}">
-                    <a class="btn" href="#create-student">Add student</a>
-                </c:if>
-            </div>
+            <c:set var="emptyTitle" value="No student matches this view."/>
+            <c:choose>
+                <c:when test="${not empty q}">
+                    <c:set var="emptyMessage" value="Try a shorter search or clear the filter."/>
+                </c:when>
+                <c:otherwise>
+                    <c:set var="emptyMessage" value="Create the first student to start the directory."/>
+                </c:otherwise>
+            </c:choose>
+            <c:if test="${canWrite and empty q}">
+                <c:set var="emptyActionLabel" value="Add student"/>
+                <c:set var="emptyActionHref" value="#create-student"/>
+            </c:if>
+            <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
             <div class="table-wrap" tabindex="0" role="region" aria-label="Student list">
@@ -74,9 +65,9 @@
                             <td><c:out value="${student.email}"/></td>
                             <td class="mono"><c:out value="${student.registrationNumber}"/></td>
                             <td>
-                                <span class="badge ${student.active ? 'ok' : 'off'}">
-                                    <c:out value="${student.active ? 'Active' : 'Inactive'}"/>
-                                </span>
+                                <c:set var="badgeTone" value="${student.active ? 'ok' : 'off'}"/>
+                                <c:set var="badgeLabel" value="${student.active ? 'Active' : 'Inactive'}"/>
+                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
                             </td>
                         </tr>
                     </c:forEach>

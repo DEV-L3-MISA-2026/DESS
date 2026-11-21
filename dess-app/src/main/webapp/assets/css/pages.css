@@ -5,52 +5,10 @@
  * colours, type sizes or spacing values.
  */
 
-/* ---------- Panels and section headings ---------- */
+/* ---------- Panels and section headings ----------
 
-.section-title {
-    margin: 0;
-    color: var(--dess-text);
-    font-size: var(--dess-font-size-section-title);
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.panel {
-    margin-top: var(--dess-space-5);
-    padding: var(--dess-space-5);
-    border: var(--dess-border-width) solid var(--dess-border);
-    border-radius: var(--dess-radius-lg);
-    background: var(--dess-surface);
-    box-shadow: var(--dess-shadow-panel);
-}
-
-.panel-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--dess-space-3);
-    margin-bottom: var(--dess-space-4);
-}
-
-.panel-note {
-    margin: var(--dess-space-1) 0 0;
-    color: var(--dess-text-muted);
-    font-size: var(--dess-font-size-label);
-}
-
-.panel .table-wrap {
-    margin-top: var(--dess-space-2);
-}
-
-.form-section-title {
-    margin: var(--dess-space-5) 0 var(--dess-space-3);
-    padding-top: var(--dess-space-4);
-    border-top: var(--dess-border-width) solid var(--dess-border);
-    color: var(--dess-text);
-    font-size: var(--dess-font-size-component-title);
-    font-weight: 600;
-}
+   The panel surface, section title, panel head and form section title are
+   shared components. They live in components.css. */
 
 /* ---------- Overview cards ---------- */
 
@@ -266,10 +224,6 @@
 @media (max-width: 720px) {
     .field-grid {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .panel {
-        padding: var(--dess-space-4);
     }
 
     .auth-card {
