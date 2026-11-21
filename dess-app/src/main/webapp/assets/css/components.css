@@ -282,13 +282,13 @@ hr {
 }
 
 .btn-ghost {
-    border-color: var(--dess-border);
+    border-color: var(--dess-border-control);
     background: var(--dess-surface);
     color: var(--dess-text);
 }
 
 .btn-ghost:hover {
-    border-color: var(--dess-border-strong);
+    border-color: var(--dess-text-muted);
     background: var(--dess-background);
     color: var(--dess-text);
 }
@@ -341,23 +341,6 @@ hr {
 
 .icon-btn:active {
     background: var(--dess-accent-soft);
-}
-
-/* Touch screens need a larger target than a mouse pointer. */
-@media (pointer: coarse) {
-    .btn,
-    .btn-sm,
-    .icon-btn,
-    .dess-content input,
-    .dess-content select,
-    .dess-content textarea {
-        min-height: var(--dess-touch-target);
-    }
-
-    .icon-btn {
-        width: var(--dess-touch-target);
-        height: var(--dess-touch-target);
-    }
 }
 
 /* Badges */
@@ -421,7 +404,7 @@ hr {
 .badge.info {
     border-left-color: var(--dess-info);
     background: var(--dess-info-soft);
-    color: var(--dess-info);
+    color: var(--dess-info-strong);
 }
 
 .badge.info::before {
@@ -485,7 +468,7 @@ hr {
 }
 
 .flash.info strong {
-    color: var(--dess-info);
+    color: var(--dess-info-strong);
 }
 
 .flash ul {
@@ -557,16 +540,23 @@ hr {
     font-weight: 600;
 }
 
+/* Text-like controls share one visual definition. `.field` and `.toolbar`
+   place the control beside its label, so match them explicitly instead of
+   relying on the control being nested inside a label. */
 .dess-content label input,
 .dess-content label select,
 .dess-content label textarea,
+.dess-content .field > input,
+.dess-content .field > select,
+.dess-content .field > textarea,
+.dess-content .toolbar > input,
 .dess-content .row select {
     display: block;
     width: 100%;
     min-height: var(--dess-control-height);
     margin-top: var(--dess-space-1);
     padding: 8px 10px;
-    border: var(--dess-border-width) solid var(--dess-border);
+    border: var(--dess-border-width) solid var(--dess-border-control);
     border-radius: var(--dess-radius-sm);
     background: var(--dess-surface);
     color: var(--dess-text);
@@ -574,7 +564,16 @@ hr {
     font-weight: 400;
 }
 
-.dess-content label textarea {
+/* `.field` already spaces its children, so its control adds no margin. */
+.dess-content .field > input,
+.dess-content .field > select,
+.dess-content .field > textarea,
+.dess-content .toolbar > input {
+    margin-top: 0;
+}
+
+.dess-content label textarea,
+.dess-content .field > textarea {
     min-height: 84px;
     resize: vertical;
 }
@@ -582,7 +581,7 @@ hr {
 .dess-content input:hover,
 .dess-content select:hover,
 .dess-content textarea:hover {
-    border-color: var(--dess-border-strong);
+    border-color: var(--dess-text-muted);
 }
 
 .dess-content input:focus-visible,
@@ -932,15 +931,6 @@ dialog::backdrop {
     overflow: auto;
 }
 
-.dess-content a:not(.btn):not(.dess-nav-link) {
-    color: var(--dess-accent);
-    text-decoration: none;
-}
-
-.dess-content a:not(.btn):not(.dess-nav-link):hover {
-    text-decoration: underline;
-}
-
 .flush {
     margin: 0;
 }
@@ -1001,20 +991,21 @@ dialog::backdrop {
 /* Touch targets: aim for at least 44px on coarse pointers. */
 @media (pointer: coarse) {
     .btn,
+    .btn-sm,
     .icon-btn,
     .dess-nav-link {
-        min-height: 44px;
+        min-height: var(--dess-touch-target);
     }
 
     .icon-btn {
-        width: 44px;
-        height: 44px;
+        width: var(--dess-touch-target);
+        height: var(--dess-touch-target);
     }
 
-    .dess-content input:not([type="checkbox"]),
+    .dess-content input:not([type="checkbox"]):not([type="radio"]),
     .dess-content select,
     .dess-content textarea {
-        min-height: 44px;
+        min-height: var(--dess-touch-target);
     }
 
     .dess-content label.checkbox input[type="checkbox"] {

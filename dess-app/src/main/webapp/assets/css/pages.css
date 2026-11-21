@@ -85,6 +85,13 @@
     text-decoration: none;
 }
 
+/* Muted text falls to 4.4:1 on the accent tint, so darken the secondary
+   lines while the card is hovered. */
+.stat-link:hover .stat-label,
+.stat-link:hover .stat-note {
+    color: var(--dess-text);
+}
+
 .stat-label {
     color: var(--dess-text-muted);
     font-size: var(--dess-font-size-label);

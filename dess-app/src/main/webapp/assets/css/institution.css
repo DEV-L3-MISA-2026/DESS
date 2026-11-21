@@ -311,7 +311,7 @@ svg.graph.picking .gnode {
     gap: var(--dess-space-2);
     margin: 0;
     padding: var(--dess-space-3);
-    border: var(--dess-border-width) solid var(--dess-border);
+    border: var(--dess-border-width) solid var(--dess-border-control);
     border-radius: var(--dess-radius-sm);
     background: var(--dess-surface);
     cursor: pointer;

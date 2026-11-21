@@ -3,6 +3,8 @@ package com.dess.security.domain;
 import java.util.Objects;
 import java.util.Set;
 
+import jakarta.mail.MethodNotSupportedException;
+
 /**
  * A user account.
  *
@@ -34,5 +36,14 @@ public record UserAccount(
             throw new IllegalArgumentException("id, username and displayName are required");
         }
         roles = roles == null ? Set.of() : Set.copyOf(roles);
+    }
+
+    public boolean isSuperUser()
+        throws MethodNotSupportedException
+    {
+        // This is not a suitable choice for this case.
+        // It doesn't solve the problem of static role affectation,
+        // it just push back the problem to another layer.
+        return roles().contains(RoleCatalog.admin());
     }
 }
