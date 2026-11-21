@@ -62,7 +62,7 @@ application without an explicit architecture decision from Sergio.
 | `institution` | Working: XML config, validation, graph editor and export. |
 | `security` | Working for local use: PBKDF2 passwords, login, roles, CSRF and request filters. Accounts are in memory. |
 | `people`, `academic`, `scheduling` | Working through JSP pages and JPA. |
-| `assessment` | Package placeholder. |
+| `assessment` | Working through the application layer and JPA: assessment definitions, eligibility and results. Exam sessions and the Examinations/Results pages are on the unmerged branch `feature/assessment` (PR #12). |
 | Platform and REST | Health and login endpoints only; domain endpoints are not implemented. |
 | JPA entities | People, academic and scheduling. Flyway owns the schema. |
 | Frontend | JSP application pages plus the institution editor. React is a target, not current code. |

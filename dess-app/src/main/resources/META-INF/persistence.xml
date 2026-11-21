@@ -21,6 +21,8 @@
         <class>com.dess.academic.infrastructure.ProgramVersionEntity</class>
         <class>com.dess.academic.infrastructure.ProgramEnrollmentEntity</class>
         <class>com.dess.academic.infrastructure.CourseEntity</class>
+        <class>com.dess.assessment.infrastructure.AssessmentEntity</class>
+        <class>com.dess.assessment.infrastructure.ResultEntity</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>
