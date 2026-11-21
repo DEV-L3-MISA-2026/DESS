@@ -13,10 +13,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Rooms and bookings list.
@@ -108,7 +111,9 @@ public class SchedulingServlet extends HttpServlet
     private void showPage(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
-        List<Map<String, Object>> rooms = roomService.findAll().stream()
+        var allRooms = roomService.findAll();
+
+        List<Map<String, Object>> rooms = allRooms.stream()
                 .map(room -> Map.<String, Object>of(
                         "id", room.id().toString(),
                         "code", room.code(),
@@ -116,13 +121,19 @@ public class SchedulingServlet extends HttpServlet
                         "capacity", room.capacity()))
                 .toList();
 
+        Map<UUID, String> roomCodes = allRooms.stream()
+                .collect(Collectors.toMap(Room::id, Room::code));
+
+        // The service has no bulk slot query yet. The list is small, so one
+        // lookup per booking keeps the resource labels accurate for now.
         List<Map<String, Object>> bookings = bookingService.findAll().stream()
                 .map(booking -> Map.<String, Object>of(
                         "id", booking.id().toString(),
-                        "ownerType", booking.ownerType(),
-                        "ownerId", booking.ownerId().toString(),
-                        "startsAt", DATE_TIME.format(booking.startsAt()),
-                        "endsAt", DATE_TIME.format(booking.endsAt()),
+                        "ownerType", BookingPresentation.ownerLabel(booking.ownerType()),
+                        "resources", BookingPresentation.resources(
+                                bookingService.findSlotsByBookingId(booking.id()), roomCodes),
+                        "startsAt", DATE_TIME.format(booking.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
+                        "endsAt", DATE_TIME.format(booking.endsAt().withOffsetSameInstant(ZoneOffset.UTC)),
                         "status", booking.status().name()))
                 .toList();
 

@@ -19,6 +19,13 @@ Give staff a concise view of the current academic context and actions requiring 
 - Do not show fabricated metrics or placeholder charts in production.
 - Empty states explain when no upcoming events or pending actions exist.
 
+### Implementation status
+The page shows the counts the module services can provide and the next six
+active bookings, earliest first, with UTC times. The current period, pending
+tasks and scheduling conflicts remain roadmap items: the academic module has no
+notion of a current period, and no task or conflict query exists. Do not fake
+those blocks.
+
 ## 2. Institution structure
 
 ### Purpose
@@ -95,6 +102,18 @@ Fields:
 
 ### Validation
 Check room, teacher, and group overlap. Explain each conflict clearly. A failed validation must not create a confirmed booking.
+
+### Implementation status
+The page is currently a room register with a read-only booking list. Rooms can
+be created. Each booking shows its owner, the reserved resources (room codes),
+the UTC time range and the status.
+
+The weekly or daily calendar, the group, teacher and room perspectives, the
+filters, the create/edit session form and the on-page conflict explanation are
+roadmap items. They need course offerings, student groups, teaching sessions and
+a conflict query that the backend does not have yet. Until then the page must
+not imply that a timetable or a booking action exists. Exam sessions already
+create bookings through the scheduling service.
 
 ## 6. Examinations
 

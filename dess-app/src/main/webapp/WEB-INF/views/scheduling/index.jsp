@@ -4,7 +4,7 @@
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageDescription" value="Rooms and the bookings that reserve them. A booking appears as active only after the scheduling service has stored it."/>
+<c:set var="pageDescription" value="Rooms and the bookings that reserve them. A booking appears as active only after the scheduling service has stored it. The weekly timetable is not available yet."/>
 <c:set var="breadcrumbParentLabel" value="Overview"/>
 <c:set var="breadcrumbParentHref" value="${ctx}/app"/>
 <%@ include file="/WEB-INF/views/components/page-header.jspf" %>
@@ -93,7 +93,7 @@
     <div class="panel-head">
         <div>
             <h2 class="section-title" id="bookings-title">Bookings</h2>
-            <p class="panel-note">Newest first. A cancelled booking keeps its record and time range.</p>
+            <p class="panel-note">Newest first. Times are in UTC. A cancelled booking keeps its record and time range.</p>
         </div>
     </div>
 
@@ -109,18 +109,17 @@
                     <thead>
                     <tr>
                         <th scope="col">Owner</th>
-                        <th scope="col">Starts</th>
-                        <th scope="col">Ends</th>
+                        <th scope="col">Reserved resources</th>
+                        <th scope="col">Starts (UTC)</th>
+                        <th scope="col">Ends (UTC)</th>
                         <th scope="col">Status</th>
                     </tr>
                     </thead>
                     <tbody>
                     <c:forEach var="booking" items="${bookings}">
                         <tr>
-                            <td>
-                                <c:out value="${booking.ownerType}"/>
-                                <span class="mono muted"><c:out value="${booking.ownerId}"/></span>
-                            </td>
+                            <td><c:out value="${booking.ownerType}"/></td>
+                            <td><c:out value="${booking.resources}"/></td>
                             <td class="mono"><c:out value="${booking.startsAt}"/></td>
                             <td class="mono"><c:out value="${booking.endsAt}"/></td>
                             <td>

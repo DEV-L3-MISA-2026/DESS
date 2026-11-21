@@ -1,7 +1,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="Overview"/>
 <c:set var="topbarContext" value="Academic operations"/>
-<c:set var="pageDescription" value="Current counts and the latest bookings. Each figure links to the list it summarises."/>
+<c:set var="pageDescription" value="Current counts and the next active bookings. Each figure links to the list it summarises."/>
 <%@ include file="/WEB-INF/views/components/head.jspf" %>
 
 <%@ include file="/WEB-INF/views/components/page-header.jspf" %>
@@ -66,42 +66,34 @@
 <section class="panel" aria-labelledby="bookings-title">
     <div class="panel-head">
         <div>
-            <h2 class="section-title" id="bookings-title">Latest bookings</h2>
-            <p class="panel-note">The six most recent records, newest first.</p>
+            <h2 class="section-title" id="bookings-title">Upcoming bookings</h2>
+            <p class="panel-note">The next six active bookings, earliest first. Times are in UTC.</p>
         </div>
         <a class="btn btn-sm" href="${ctx}/app/scheduling">Open scheduling</a>
     </div>
 
     <c:choose>
-        <c:when test="${empty recentBookings}">
-            <c:set var="emptyTitle" value="No bookings yet."/>
-            <c:set var="emptyMessage" value="Bookings appear here after a teaching session or another resource is scheduled."/>
-            <c:set var="emptyActionLabel" value="Go to scheduling"/>
-            <c:set var="emptyActionHref" value="${ctx}/app/scheduling"/>
+        <c:when test="${empty upcomingBookings}">
+            <c:set var="emptyTitle" value="No upcoming booking."/>
+            <c:set var="emptyMessage" value="Active bookings that start from now on appear here once the scheduling service stores them."/>
             <%@ include file="/WEB-INF/views/components/empty-state.jspf" %>
         </c:when>
         <c:otherwise>
-            <div class="table-wrap" tabindex="0" role="region" aria-label="Latest bookings">
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Upcoming bookings">
                 <table>
                     <thead>
                     <tr>
                         <th scope="col">Owner</th>
-                        <th scope="col">Starts</th>
-                        <th scope="col">Ends</th>
-                        <th scope="col">Status</th>
+                        <th scope="col">Starts (UTC)</th>
+                        <th scope="col">Ends (UTC)</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="booking" items="${recentBookings}">
+                    <c:forEach var="booking" items="${upcomingBookings}">
                         <tr>
                             <td><c:out value="${booking.ownerType}"/></td>
                             <td class="mono"><c:out value="${booking.startsAt}"/></td>
                             <td class="mono"><c:out value="${booking.endsAt}"/></td>
-                            <td>
-                                <c:set var="badgeTone" value="${booking.status == 'ACTIVE' ? 'ok' : 'off'}"/>
-                                <c:set var="badgeLabel" value="${booking.status == 'ACTIVE' ? 'Active' : 'Cancelled'}"/>
-                                <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
-                            </td>
                         </tr>
                     </c:forEach>
                     </tbody>

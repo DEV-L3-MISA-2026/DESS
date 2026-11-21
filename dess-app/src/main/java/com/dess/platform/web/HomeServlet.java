@@ -15,6 +15,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -65,18 +67,19 @@ public class HomeServlet extends HttpServlet
         request.setAttribute("programCount", programService.listAll().size());
         request.setAttribute("roomCount", roomService.findAll().size());
 
-        List<Map<String, Object>> bookings = bookingService.findAll().stream()
-                .limit(6)
+        var allBookings = bookingService.findAll();
+        List<Map<String, Object>> upcoming = BookingPresentation
+                .upcoming(allBookings, OffsetDateTime.now(ZoneOffset.UTC), 6)
+                .stream()
                 .map(booking -> Map.<String, Object>of(
                         "id", booking.id().toString(),
-                        "ownerType", booking.ownerType(),
-                        "startsAt", DATE_TIME.format(booking.startsAt()),
-                        "endsAt", DATE_TIME.format(booking.endsAt()),
-                        "status", booking.status().name()))
+                        "ownerType", BookingPresentation.ownerLabel(booking.ownerType()),
+                        "startsAt", DATE_TIME.format(booking.startsAt().withOffsetSameInstant(ZoneOffset.UTC)),
+                        "endsAt", DATE_TIME.format(booking.endsAt().withOffsetSameInstant(ZoneOffset.UTC))))
                 .toList();
 
-        request.setAttribute("bookingCount", bookingService.findAll().size());
-        request.setAttribute("recentBookings", bookings);
+        request.setAttribute("bookingCount", allBookings.size());
+        request.setAttribute("upcomingBookings", upcoming);
         request.setAttribute("accountCount", userManagementService.findAll().size());
         request.setAttribute("activeNav", "overview");
 
