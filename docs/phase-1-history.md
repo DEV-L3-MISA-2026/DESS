@@ -32,19 +32,26 @@ timeline
 ### Who wrote the 83 commits
 
 ```mermaid
-pie showData
-    title Commits on all refs, 16-22 November 2026
-    "Sergio" : 48
-    "Iavo" : 11
-    "Gilbert" : 8
-    "Tanjona" : 6
-    "Miranto" : 4
-    "Christian" : 4
-    "Vahatra" : 1
-    "Fabien" : 1
+xychart-beta horizontal
+    title "Commits by author, 16-22 November 2026"
+    x-axis [Sergio, Iavo, Gilbert, Tanjona, Miranto, Christian, Vahatra, Fabien, Mikajy]
+    y-axis "Commits" 0 --> 50
+    bar [48, 11, 8, 6, 4, 4, 1, 1, 0]
 ```
 
-Mikajy (`Heriandrisoa`) wrote no commits in phase 1, and a pie chart cannot show a zero slice.
+| Author | Commits |
+| --- | ---: |
+| Sergio | 48 |
+| Iavo | 11 |
+| Gilbert | 8 |
+| Tanjona | 6 |
+| Miranto | 4 |
+| Christian | 4 |
+| Vahatra | 1 |
+| Fabien | 1 |
+| Mikajy | 0 |
+
+Two Git identities each for Sergio and Gilbert are merged into one row each.
 
 ### Branch lifecycle
 
@@ -72,34 +79,22 @@ flowchart LR
 ### What reached `dev`, by module
 
 ```mermaid
-flowchart TB
-    subgraph Delivered["Delivered on dev"]
-        direction LR
-        I["Institution<br/>XML, XSD, graph editor<br/>PR #9"]
-        P["People<br/>PR #7"]
-        A["Academic<br/>periods, programs, versions<br/>PRs #3 #5 #11"]
-        S["Scheduling<br/>rooms, bookings, conflicts<br/>PR #6"]
-        SEC["Security<br/>PBKDF2, roles, CSRF<br/>PR #8"]
-        AS["Assessment<br/>definitions, eligibility, results<br/>PRs #12 #14"]
-        W["Application shell<br/>PR #10"]
-    end
+flowchart TD
+    AC["Academic catalogue<br/>delivered · PRs #3 #5 #11"]
+    AS["Assessment<br/>delivered · PRs #12 #14"]
+    SE["Security<br/>delivered · PR #8"]
 
-    subgraph Missing["Not on dev"]
-        direction LR
-        G["StudentGroup<br/>group enrollment"]
-        O["CourseOffering<br/>teaching assignment"]
-        T["TeachingSession"]
-        RR["Result entry screen"]
-        API["Domain REST endpoints"]
-        ACC["Account persistence"]
-    end
-
-    A -.->|"blocks"| G
-    A -.->|"blocks"| O
-    O -.->|"blocks"| T
-    AS -.->|"blocks"| RR
-    SEC -.->|"blocks"| ACC
+    AC --> G["Missing: StudentGroup"]
+    G --> GE["Missing: group enrollment"]
+    AC --> CO["Missing: CourseOffering"]
+    CO --> TA["Missing: teaching assignment"]
+    TA --> TS["Missing: TeachingSession"]
+    AS --> RE["Missing: result entry screen"]
+    SE --> AP["Missing: account persistence"]
 ```
+
+An arrow means the target cannot start before the source. Domain REST endpoints are also
+missing; they depend on the platform foundation, not on one module.
 
 ### Incidents
 
