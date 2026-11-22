@@ -35,6 +35,7 @@ The plan is in [docs/PMP.md](docs/PMP.md); the architecture summary is in
 | [AGENTS.md](AGENTS.md) | Rules for AI coding agents. |
 | [docs/security-module.md](docs/security-module.md) | Security module layout and current gaps. |
 | [docs/institution-dependency-graph.md](docs/institution-dependency-graph.md) | Institution module dependencies. |
+| [docs/phase-1-history.md](docs/phase-1-history.md) | Phase 1 record: commits, pull requests and branch lifecycle. |
 | [docs/PMP.md](docs/PMP.md) | Two-week MVP plan. |
 | [docs/architecture_farany.md](docs/architecture_farany.md) | Architecture summary. |
 | [docs/design/](docs/design/) | UI/UX design system, tokens, components, page specifications and UX rules. |
