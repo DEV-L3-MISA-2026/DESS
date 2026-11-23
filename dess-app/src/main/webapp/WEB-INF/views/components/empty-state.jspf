@@ -1,0 +1,10 @@
+<%-- Empty state. Set emptyState to a com.dess.platform.web.view.EmptyState. --%>
+<div class="empty">
+    <strong><c:out value="${emptyState.title}"/></strong>
+    <c:if test="${not empty emptyState.message}">
+        <p><c:out value="${emptyState.message}"/></p>
+    </c:if>
+    <c:if test="${not empty emptyState.actionLabel}">
+        <a class="btn" href="${ctx}${emptyState.actionHref}"><c:out value="${emptyState.actionLabel}"/></a>
+    </c:if>
+</div>

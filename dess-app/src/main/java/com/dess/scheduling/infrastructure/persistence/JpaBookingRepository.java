@@ -43,6 +43,15 @@ public class JpaBookingRepository implements BookingRepository
     }
 
     @Override
+    public List<Booking> findAll()
+    {
+        return entityManager.createQuery(
+                        "select b from BookingEntity b order by b.startsAt desc",
+                        BookingEntity.class)
+                .getResultList().stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public List<Booking> findByOwner(String ownerType, UUID ownerId)
     {
         return entityManager.createQuery(

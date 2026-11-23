@@ -1,0 +1,2 @@
+<%-- Status badge. Set badge to a com.dess.platform.web.view.Badge. --%>
+<span class="badge ${badge.tone}"><c:out value="${badge.label}"/></span>

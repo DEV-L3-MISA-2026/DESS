@@ -18,7 +18,7 @@ echo "Database: $(dess_jdbc_url)"
 usage()
 {
     cat <<EOF
-Usage: $(basename "$0") [migrate|info|validate|repair] [maven-arguments...]
+Usage: $(basename "$0") [migrate|info|validate|repair|clean] [maven-arguments...]
 
 Applies the migrations from db-migration/src/main/resources/db/migration to
 the database described by the DESS_DB_* variables. Without an argument, the
@@ -26,6 +26,10 @@ script prints the migration status and then applies the pending migrations.
 
 The repository .env file is loaded automatically. Any extra arguments are
 passed to Maven, for example -Dflyway.target=2.
+
+clean drops every object in the configured schema and clears
+flyway_schema_history. It is destructive; use it only for local development,
+then run ./ops/db/migrate.sh to rebuild the schema.
 EOF
 }
 
@@ -37,7 +41,7 @@ then
 fi
 
 case "$command" in
-    migrate|info|validate|repair)
+    migrate|info|validate|repair|clean)
         ;;
     -h|--help)
         usage

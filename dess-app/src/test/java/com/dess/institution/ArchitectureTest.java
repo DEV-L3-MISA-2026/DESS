@@ -47,6 +47,55 @@ class ArchitectureTest
         assertFalse(mainSources().isEmpty());
     }
 
+    /**
+     * @brief Sources of one module, for guards that must look beyond institution.
+     */
+    private static List<Path> moduleSources(String module) throws IOException
+    {
+        try (Stream<Path> files = Files.walk(Path.of("src", "main", "java", "com", "dess", module)))
+        {
+            return files.filter(path -> path.toString().endsWith(".java")).collect(Collectors.toList());
+        }
+    }
+
+    @Test
+    void peopleDoesNotImportAcademic() throws IOException
+    {
+        for (Path source : moduleSources("people"))
+        {
+            for (String line : Files.readAllLines(source))
+            {
+                assertFalse(line.trim().startsWith("import com.dess.academic"),
+                        source + " imports the academic module");
+            }
+        }
+    }
+
+    @Test
+    void domainPackagesHaveNoTechnicalDependencies() throws IOException
+    {
+        for (String module : List.of("institution", "people"))
+        {
+            for (Path source : moduleSources(module))
+            {
+                if (!source.toString().contains("/domain/"))
+                {
+                    continue;
+                }
+
+                for (String line : Files.readAllLines(source))
+                {
+                    String trimmed = line.trim();
+                    assertFalse(trimmed.startsWith("import jakarta.persistence"), source + " imports JPA");
+                    assertFalse(trimmed.startsWith("import jakarta.ws.rs"), source + " imports REST");
+                    assertFalse(trimmed.startsWith("import jakarta.servlet"), source + " imports Servlet");
+                    assertFalse(trimmed.contains("com.dess." + module + ".infrastructure"),
+                            source + " depends on infrastructure");
+                }
+            }
+        }
+    }
+
     @Test
     void noImportOfSqlJpaRestServletOrOtherBusinessModules() throws IOException
     {
@@ -173,11 +222,26 @@ class ArchitectureTest
             coordinates.add(matcher.group(2).toLowerCase());
         }
 
-        for (String banned : List.of("postgresql", "hibernate", "flyway", "persistence", "ws.rs", "resteasy",
+        for (String banned : List.of("persistence", "ws.rs", "resteasy",
                                      "dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
         {
             assertTrue(coordinates.stream().noneMatch(c -> c.contains(banned)),
                        "pom.xml declares a forbidden dependency: " + banned);
+        }
+
+        // The JDBC driver and the ORM may appear only as test dependencies; WildFly supplies
+        // them at runtime and Hibernate must never manage the schema.
+        Pattern dependency = Pattern.compile(
+                "<dependency>(.*?)</dependency>", Pattern.DOTALL);
+
+        for (Matcher block = dependency.matcher(Files.readString(Path.of("pom.xml"))); block.find(); )
+        {
+            String body = block.group(1).toLowerCase();
+            if (body.contains("postgresql") || body.contains("hibernate") || body.contains("flyway"))
+            {
+                assertTrue(body.contains("<scope>test</scope>"),
+                           "database drivers and ORM must stay test-scoped");
+            }
         }
 
         // Note pour l'équipe (Iavo / Platform) :
@@ -186,5 +250,55 @@ class ArchitectureTest
         assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")
                                              || c.contains("jakartaee-api")),
                    "CDI or Jakarta EE API is the expected Jakarta API");
+    }
+
+    @Test
+    void academicDomainHasNoTechnicalDependencies() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            if (!source.toString().contains("/domain/")) continue;
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                assertFalse(trimmed.startsWith("import jakarta.persistence"), source + " imports JPA");
+                assertFalse(trimmed.startsWith("import jakarta.ws.rs"), source + " imports REST");
+                assertFalse(trimmed.startsWith("import jakarta.servlet"), source + " imports Servlet");
+                assertFalse(trimmed.contains("com.dess.academic.infrastructure"),
+                        source + " depends on infrastructure");
+            }
+        }
+    }
+
+    @Test
+    void academicPersistenceOnlyInInfrastructure() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            boolean infrastructure = source.toString().contains("/academic/infrastructure/");
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("import jakarta.persistence"))
+                {
+                    assertTrue(infrastructure, source + " uses JPA outside infrastructure");
+                }
+            }
+        }
+
+        for (Path source : moduleSources("academic"))
+        {
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*")) continue;
+                if (trimmed.contains("@Transactional"))
+                {
+                    boolean allowed = source.toString().contains("/application/impl/")
+                            || source.toString().contains("/academic/infrastructure/");
+                    assertTrue(allowed, source + " uses @Transactional outside application/impl or infrastructure");
+                }
+            }
+        }
     }
 }

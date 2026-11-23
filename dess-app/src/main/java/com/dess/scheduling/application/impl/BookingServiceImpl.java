@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import com.dess.scheduling.application.BookingService;
@@ -13,12 +15,14 @@ import com.dess.scheduling.application.spi.BookingSlotRepository;
 import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 
+@ApplicationScoped
 @Transactional
 public class BookingServiceImpl implements BookingService
 {
     private final BookingRepository bookings;
     private final BookingSlotRepository slots;
 
+    @Inject
     public BookingServiceImpl(BookingRepository bookings, BookingSlotRepository slots)
     {
         this.bookings = bookings;
@@ -74,6 +78,12 @@ public class BookingServiceImpl implements BookingService
     public Optional<Booking> findById(UUID id)
     {
         return bookings.findById(id);
+    }
+
+    @Override
+    public List<Booking> findAll()
+    {
+        return bookings.findAll();
     }
 
     @Override

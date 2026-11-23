@@ -3,6 +3,7 @@ package com.dess.security.web.controller;
 import com.dess.security.application.AuthenticationService;
 import com.dess.security.domain.Role;
 import com.dess.security.domain.UserAccount;
+import com.dess.security.web.SessionUser;
 import com.dess.shared.ApiError;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -26,7 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Contrôleur REST pour l'authentification.
+ * REST controller for authentication.
  *
  * Endpoints :
  *   POST /api/auth/login  — connexion (crée une session HTTP)
@@ -44,13 +45,11 @@ import java.util.stream.Collectors;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class AuthResource {
-
+public class AuthResource
+{
     @Inject
     private AuthenticationService authenticationService;
 
-    // La requête HTTP courante, injectée par JAX-RS
-    // Utilisée pour accéder à la session HTTP
     @Context
     private HttpServletRequest httpRequest;
 
@@ -74,16 +73,22 @@ public class AuthResource {
         Set<String> roles
     ) {}
 
-    public AuthResource() {
+    public record LogoutResponse(String message)
+    {
     }
 
-    // Constructeur pour faciliter les tests unitaires sans CDI
-    public AuthResource(AuthenticationService authenticationService) {
+    public AuthResource()
+    {
+    }
+
+    public AuthResource(AuthenticationService authenticationService)
+    {
         this.authenticationService = authenticationService;
     }
 
-    // Constructeur complet pour les tests (avec session HTTP mockée)
-    public AuthResource(AuthenticationService authenticationService, HttpServletRequest httpRequest) {
+    public AuthResource(AuthenticationService authenticationService,
+                        HttpServletRequest httpRequest)
+    {
         this.authenticationService = authenticationService;
         this.httpRequest = httpRequest;
     }
@@ -112,40 +117,39 @@ public class AuthResource {
     public Response login(LoginRequest request) {
         if (request == null || request.username() == null || request.password() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ApiError("INVALID_INPUT", "Le nom d'utilisateur et le mot de passe sont requis"))
+                    .entity(new ApiError("INVALID_INPUT",
+                            "Username and password are required"))
                     .build();
         }
 
-        Optional<UserAccount> accountOpt = authenticationService.authenticate(
-                request.username(),
-                request.password()
-        );
+        Optional<UserAccount> account = authenticationService.authenticate(
+                request.username(), request.password());
 
-        if (accountOpt.isEmpty()) {
+        if (account.isEmpty())
+        {
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(new ApiError("UNAUTHORIZED", "Identifiants invalides"))
+                    .entity(new ApiError("UNAUTHORIZED", "Invalid credentials"))
                     .build();
         }
 
-        UserAccount account = accountOpt.get();
+        UserAccount authenticated = account.get();
 
-        // Stocker l'utilisateur dans la session HTTP
-        // true = créer une session si elle n'existe pas encore
-        if (httpRequest != null) {
-            httpRequest.getSession(true).setAttribute("currentUser", account);
+        if (httpRequest != null)
+        {
+            HttpSession session = httpRequest.getSession(true);
+
+            // Rotate the identifier so a session fixed before login cannot be reused.
+            httpRequest.changeSessionId();
+            session.setAttribute(SessionUser.SESSION_ATTRIBUTE,
+                    SessionUser.from(authenticated));
         }
 
-        Set<String> roleCodes = account.roles().stream()
+        Set<String> roleCodes = authenticated.roles().stream()
                 .map(Role::code)
                 .collect(Collectors.toSet());
 
-        LoginResponse response = new LoginResponse(
-                account.username(),
-                account.displayName(),
-                roleCodes
-        );
-
-        return Response.ok(response).build();
+        return Response.ok(new LoginResponse(authenticated.username(),
+                authenticated.displayName(), roleCodes)).build();
     }
 
     @POST
@@ -162,10 +166,11 @@ public class AuthResource {
         // Récupérer la session existante sans en créer une nouvelle
         HttpSession session = httpRequest != null ? httpRequest.getSession(false) : null;
 
-        if (session != null) {
-            session.invalidate(); // Supprimer toutes les données de session
+        if (session != null)
+        {
+            session.invalidate();
         }
 
-        return Response.ok("{\"message\":\"Déconnexion réussie\"}").build();
+        return Response.ok(new LogoutResponse("Signed out")).build();
     }
 }

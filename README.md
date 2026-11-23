@@ -1,22 +1,31 @@
+<p align="center">
+  <img src="dess-app/src/main/webapp/assets/img/app-icon-192.png" alt="DESS app icon" width="96" height="96">
+</p>
+
 # DESS - academic management app
 
 DESS manages the academic activities of one institution. It is a Jakarta EE application that
 runs locally on WildFly with PostgreSQL. The institution structure is stored in XML. The current
-frontend is a JSP graph editor used for local development.
+frontend is a set of JSP pages: an authenticated application shell with working people, academic,
+scheduling and security pages, plus the institution graph editor.
 
 The team plan targets a REST API and a React frontend. This repository does not have them yet.
 The plan is in [docs/PMP.md](docs/PMP.md); the architecture summary is in
-[docs/architecture_farany.md](docs/architecture_farany.md).
+[docs/architecture_farany.md](docs/architecture_farany.md). The UI/UX baseline is in
+[docs/design/](docs/design/).
 
 ## Current status
 
 | Area | State |
 | --- | --- |
 | Institution module | Working: XML config, validation, graph editor and export. |
-| Security module | Scaffold only: records and interfaces, no behavior. |
-| People, academic, scheduling, assessment | Package placeholders. |
-| REST API and JPA entities | Not implemented. |
-| Frontend | JSP editor only. React is a target, not current code. |
+| Security module | Working for local use: PBKDF2 passwords, login, roles, CSRF checks and request filtering. Accounts are held in memory. |
+| People, academic, scheduling | Working through JSP pages: lists and create forms backed by JPA. |
+| Assessment | Package placeholder. |
+| REST API | Health endpoint only; domain endpoints are not implemented. |
+| JPA entities | Implemented for people, academic and scheduling. Flyway owns the schema. |
+| Frontend | JSP pages under `WEB-INF/views/` plus the institution editor. React is a target, not current code. |
+| Design system | Baseline in `docs/design/`; implemented on the application pages and the institution page. |
 
 ## Documentation
 
@@ -26,8 +35,10 @@ The plan is in [docs/PMP.md](docs/PMP.md); the architecture summary is in
 | [AGENTS.md](AGENTS.md) | Rules for AI coding agents. |
 | [docs/security-module.md](docs/security-module.md) | Security module layout and current gaps. |
 | [docs/institution-dependency-graph.md](docs/institution-dependency-graph.md) | Institution module dependencies. |
+| [docs/phase-1-history.md](docs/phase-1-history.md) | Phase 1 record: commits, pull requests and branch lifecycle. |
 | [docs/PMP.md](docs/PMP.md) | Two-week MVP plan. |
 | [docs/architecture_farany.md](docs/architecture_farany.md) | Architecture summary. |
+| [docs/design/](docs/design/) | UI/UX design system, tokens, components, page specifications and UX rules. |
 
 ## Repository layout
 
@@ -38,16 +49,20 @@ DESS/
 ├── README.md
 ├── dess-app/                  # WAR deployed to WildFly
 │   ├── src/main/java/com/dess/
-│   │   ├── institution/       # Working module
-│   │   ├── security/          # Scaffold only
-│   │   ├── people/
-│   │   ├── academic/
-│   │   ├── assessment/
-│   │   ├── scheduling/
+│   │   ├── institution/       # XML configuration, validation and graph
+│   │   ├── security/          # Accounts, roles, filters and servlets
+│   │   ├── people/            # JPA entities and services
+│   │   ├── academic/          # JPA entities and services
+│   │   ├── assessment/        # Package placeholder
+│   │   ├── scheduling/        # JPA entities and services
 │   │   └── shared/
-│   └── src/main/webapp/       # index.jsp, export.jsp
+│   └── src/main/webapp/
+│       ├── index.jsp          # Institution graph editor
+│       ├── export.jsp         # Configuration download
+│       └── WEB-INF/views/     # Application pages and shared fragments
 ├── db-migration/              # Flyway migrations
-├── docs/                      # Architecture and module notes
+├── docs/                      # Architecture, module notes and design system
+│   └── design/                # UI/UX baseline
 ├── ops/
 │   ├── db/                    # Flyway helper
 │   ├── lib/                   # Shared shell helpers
@@ -56,19 +71,23 @@ DESS/
 └── .env.example               # Local configuration template
 ```
 
+The `.agents/` and `.opencode/agents/` directories hold local agent skills and subagents. They
+are ignored by Git and do not ship with the repository.
+
 ## Stack
 
 - Java 21 and Jakarta EE 11.
 - WildFly 42.
 - CDI for dependency injection.
-- JSP for the current frontend.
+- JSP with JSTL and Expression Language for the current frontend.
+- Bootstrap 5, custom CSS and vanilla JavaScript for the design baseline.
 - PostgreSQL for operational data.
 - Flyway for database migrations.
 - JUnit 5 for tests.
 - Maven for the build.
 
-JPA is configured but no entities exist yet. Hibernate is supplied by WildFly. Do not bundle a
-second Hibernate version.
+JPA is configured and used by the people, academic and scheduling modules. Hibernate is
+supplied by WildFly. Do not bundle a second Hibernate version.
 
 ## Prerequisites
 
@@ -104,6 +123,23 @@ cp .env.example .env
 | `WILDFLY_HOME` | none | WildFly installation directory |
 | `WILDFLY_PORT_OFFSET` | `0` | Shifts every WildFly port; `100` moves HTTP 8080 to 8180 and management 9990 to 10090 |
 | `POSTGRES_JDBC_VERSION` | `42.7.7` | Optional JDBC driver version for the WildFly module installer |
+| `DESS_ADMIN_PASSWORD` | none | Password of the initial `admin` account. No account is created when it is unset |
+| `DESS_PROFESSOR_PASSWORD` | none | Password of the initial `professor` account. No account is created when it is unset |
+| `DESS_INSTITUTION_CONFIG` | `config/institution.xml` | Institution XML file used by the graph editor |
+
+Initial accounts live in memory. They are recreated on every restart, and accounts created from
+the security page are lost when the application restarts.
+
+For local testing, seed one account per role with:
+
+```bash
+./ops/dev/seed-accounts.sh                  # generate two passwords
+./ops/dev/seed-accounts.sh admin123 prof123  # use known passwords
+```
+
+The helper writes `DESS_ADMIN_PASSWORD` and `DESS_PROFESSOR_PASSWORD` to `.env` only. It does
+not commit passwords and does not create accounts by itself: restart WildFly so the application
+reads the new values.
 
 The scripts load `.env` from the repository root. Variables already exported in the shell are
 used when `.env` does not define them.
@@ -141,7 +177,11 @@ Then run the script again:
 7. Deploys the WAR with `deploy --force`.
 
 The application is available at <http://localhost:8080/dess-app/> (port 8080 plus
-`WILDFLY_PORT_OFFSET`). The root URL serves the institution graph editor described below.
+`WILDFLY_PORT_OFFSET`). The root URL redirects to the sign-in page; after signing in, the
+overview page is at `/app` and the institution graph editor is at `/`.
+
+Sign in with `admin` or `professor` and the passwords you put in `.env`. When no password is
+configured, the login page explains which variables to set.
 
 Stop WildFly and the local database:
 
@@ -162,6 +202,44 @@ Omit `--with-db` when PostgreSQL is external.
 
 WildFly runs in the background. Its console output goes to `.run/wildfly.out`; the server log
 stays in `$WILDFLY_HOME/standalone/log/server.log`.
+
+## Application pages and access control
+
+Every page except the login page, the error pages and `/api/health` requires a session. The
+shared shell is made of JSP fragments under `WEB-INF/views/components/`, and each page declares
+the JSTL core library once.
+
+| Route | Page | Who may open it |
+| --- | --- | --- |
+| `/login` | Sign in | Everyone |
+| `/logout` | Ends the session (POST with a CSRF token) | Signed-in users |
+| `/` and `/index.jsp` | Institution structure editor | Signed-in users; only administrators can change it |
+| `/app` | Overview with counts | Signed-in users |
+| `/app/people` | Student and teacher lists, create form | Signed-in users; only administrators can create |
+| `/app/academic` | Periods, programs and courses | Signed-in users; only administrators can create |
+| `/app/scheduling` | Rooms and bookings | Signed-in users; only administrators can create |
+| `/app/security` | Account management | Administrators only |
+| `/api/health` | Health check | Everyone |
+| `/api/auth/login` | JSON login | Everyone |
+| `/api/*` other paths | JSON API | Signed-in users |
+
+Behaviour:
+
+- Passwords are stored as PBKDF2 hashes with a per-account salt. The session holds the account
+  id, username, display name and roles, never the password hash.
+- `SecurityFilter` redirects anonymous page requests to `/login` and keeps the original path in
+  `next`. API requests receive a JSON `401` instead of a redirect.
+- `CsrfFilter` runs before `SecurityFilter` and rejects any POST without a valid token with
+  `403`. Every POST form in the application carries `csrfToken`.
+- The session id is changed after sign-in, cookies are HTTP-only and the session expires after
+  30 minutes.
+- The sidebar hides the administration section from professors. That is navigation only; the
+  server enforces the same rule on every request.
+- The institution editor requires `institution:write` for every non-GET request. Professors see a
+  read-only page and receive `403` for a write attempt, including paths that map to the editor
+  through a path parameter or an encoded segment.
+- A failed sign-in returns `401` and a generic message. Five failures in five minutes lock that
+  username and client address for five minutes.
 
 ## Institution graph editor
 
@@ -185,8 +263,8 @@ configuration, including allowed relations, cycles, required attributes and acti
 before it saves. A rejected edit is shown at the top of the page and leaves the old
 configuration untouched.
 
-The page has no authentication or CSRF protection. It is meant for a local WildFly instance
-bound to localhost. Do not expose it on a network.
+The page requires a signed-in session and every POST form carries a CSRF token. It still
+assumes a local WildFly instance bound to localhost. Do not expose it on a network.
 
 The XML file path is resolved in this order:
 
@@ -205,6 +283,33 @@ The frontend is a JSP on purpose: the architecture guard forbids servlet and JPA
 and never uses the XML infrastructure directly. `export.jsp` streams the saved configuration as
 an attachment and uses the tree code as the file name.
 
+## Design system
+
+The UI/UX baseline is in [`docs/design/`](docs/design/). Read all five files before any frontend
+work.
+
+| File | What it covers |
+| --- | --- |
+| [UI_UX_DESIGN_SYSTEM.md](docs/design/UI_UX_DESIGN_SYSTEM.md) | Product experience, visual direction and design principles. |
+| [DESIGN_TOKENS.md](docs/design/DESIGN_TOKENS.md) | Color, typography, spacing, radius, shadow and layout tokens. |
+| [COMPONENT_CATALOG.md](docs/design/COMPONENT_CATALOG.md) | Shared components and their states. |
+| [PAGE_SPECIFICATIONS.md](docs/design/PAGE_SPECIFICATIONS.md) | Page layouts and required content. |
+| [UX_RULES.md](docs/design/UX_RULES.md) | UX rules and the acceptance checklist. |
+
+The baseline targets Bootstrap 5, custom CSS and vanilla JavaScript. The application pages under
+`WEB-INF/views/` and the institution structure page are implemented with it.
+
+Two OpenCode subagents support the work. They are local only: the files are ignored by Git and
+are not part of the repository.
+
+- `.opencode/agents/frontend-developer.md` implements pages with the design system.
+- `.opencode/agents/ui-reviewer.md` reviews JSP, CSS and JavaScript changes against it.
+
+Use the named tokens and shared components. Do not invent a palette, type scale, spacing scale,
+radius or shadow convention. Frontend changes must keep keyboard access, visible focus, contrast,
+responsive behavior and loading, empty, error and success states. Do not claim that visual
+behavior was verified unless the application was run and the page was inspected.
+
 ## Database migrations
 
 Run Flyway at any time:
@@ -214,7 +319,16 @@ Run Flyway at any time:
 ./ops/db/migrate.sh info       # status only
 ./ops/db/migrate.sh validate   # check applied migrations
 ./ops/db/migrate.sh repair     # repair the schema history after a failed migration
+./ops/db/migrate.sh clean      # drop every object in the schema (local development only)
 ```
+
+`clean` is destructive. It drops the application tables and `flyway_schema_history`, so run
+`./ops/db/migrate.sh` afterwards to rebuild the schema. It exists for local development only.
+
+Applied migrations are immutable. Never edit a file that a database has already applied: Flyway
+stores a checksum and rejects the changed file with a validation error. Add a new migration
+instead. If a local database was already migrated from an older version of the files, run
+`./ops/db/migrate.sh clean` once and then `./ops/db/migrate.sh`.
 
 Extra arguments are passed to Maven:
 
@@ -254,7 +368,9 @@ from Bash.
   `jakarta.persistence.schema-generation.database.action=none` and
   `hibernate.hbm2ddl.auto=none`.
 
-No JPA entities are declared yet. Flyway is the only component that changes the database schema.
+Entities exist for the people, academic and scheduling modules under their `infrastructure`
+packages. Security accounts are still held in memory. Request account persistence before adding
+an entity or migration for them. Flyway is the only component that changes the database schema.
 
 ## Branches and contributions
 
@@ -290,6 +406,9 @@ full workflow.
 
 ## Boundaries
 
+- JSP is presentation only. New pages use JSTL and Expression Language under `WEB-INF/views/`.
+- Frontend changes follow `docs/design/`. Do not add a framework or build tool without an
+  explicit architecture decision.
 - Modules call each other through their `application` layer, not through repositories.
 - `academic` owns teaching sessions; `assessment` owns exam sessions; `scheduling` owns rooms,
   bookings and conflict checks. Assessment and academic call scheduling to reserve resources.
