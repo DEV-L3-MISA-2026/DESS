@@ -1,0 +1,22 @@
+stateDiagram-v2
+    [*] --> Backlog: Issue created and triaged
+    Backlog --> Ready: Owner, priority, milestone and acceptance criteria
+    Ready --> InProgress: Branch and pull request opened
+    InProgress --> InReview: Review requested and CI starts
+    InReview --> InProgress: Changes requested
+    InReview --> Done: Approved, CI green and merged to dev
+    Done --> Blocked: Regression found after merge
+    Blocked --> Ready: Reopened with a fix plan
+    Done --> [*]
+
+    state "Backlog" as Backlog
+    state "Ready" as Ready
+    state "In progress" as InProgress
+    state "In review" as InReview
+    state "Done" as Done
+    state "Blocked" as Blocked
+
+    note right of Done
+        Only Sergio merges into main.
+        A release is cut from main, not from dev.
+    end note
