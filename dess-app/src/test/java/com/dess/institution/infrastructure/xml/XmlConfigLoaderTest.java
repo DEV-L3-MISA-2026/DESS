@@ -179,6 +179,14 @@ class XmlConfigLoaderTest
     }
 
     @Test
+    void duplicateTypeKeyInXmlIsRejectedWithTheKeyNamed()
+    {
+        List<String> errors = InstitutionValidator.validate(load("invalid/duplicate-type-code.xml"));
+
+        assertEquals(List.of("Type 'Faculty': duplicate type key (same key as 'FACULTY')"), errors);
+    }
+
+    @Test
     void invalidAttributeValueIsRejected()
     {
         List<String> errors = InstitutionValidator.validate(load("invalid/invalid-attribute-value.xml"));
