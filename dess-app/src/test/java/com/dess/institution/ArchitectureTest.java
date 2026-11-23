@@ -301,4 +301,19 @@ class ArchitectureTest
             }
         }
     }
+
+    @Test
+    void academicCallsPeopleOnlyThroughApplication() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (!trimmed.startsWith("import com.dess.people")) continue;
+                assertTrue(trimmed.startsWith("import com.dess.people.application"),
+                        source + " accède à people hors de com.dess.people.application");
+            }
+        }
+    }
 }
