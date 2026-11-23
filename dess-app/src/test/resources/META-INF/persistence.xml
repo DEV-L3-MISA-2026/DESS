@@ -18,6 +18,9 @@
         <class>com.dess.academic.infrastructure.PeriodEntity</class>
         <class>com.dess.academic.infrastructure.AcademicProgramEntity</class>
         <class>com.dess.academic.infrastructure.ProgramVersionEntity</class>
+        <class>com.dess.academic.infrastructure.ProgramEnrollmentEntity</class>
+        <class>com.dess.people.infrastructure.AppUserEntity</class>
+        <class>com.dess.people.infrastructure.StudentEntity</class>
     </persistence-unit>
     <persistence-unit name="assessmentTestPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
