@@ -9,10 +9,12 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.PersistenceException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -23,9 +25,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** Tests d'intégration JPA de PostgreSQL pour les groupes d'étudiants. */
+/** Tests d'intégration JPA PostgreSQL pour les groupes d'étudiants. */
 @Testcontainers(disabledWithoutDocker = true)
-class StudentGroupRepositoryTest {
+class StudentGroupRepositoryTest
+{
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("dess_test")
@@ -38,7 +41,8 @@ class StudentGroupRepositoryTest {
     private StudentGroupService service;
 
     @BeforeAll
-    static void migrateAndStartJpa() {
+    static void migrateAndStartJpa()
+    {
         Flyway.configure()
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                 .locations("filesystem:../db-migration/src/main/resources/db/migration")
@@ -55,12 +59,14 @@ class StudentGroupRepositoryTest {
     }
 
     @AfterAll
-    static void closeJpa() {
+    static void closeJpa()
+    {
         if (entityManagerFactory != null) entityManagerFactory.close();
     }
 
     @BeforeEach
-    void open() {
+    void open()
+    {
         entityManager = entityManagerFactory.createEntityManager();
         entityManager.getTransaction().begin();
         repository = new StudentGroupRepository(entityManager);
@@ -68,82 +74,105 @@ class StudentGroupRepositoryTest {
     }
 
     @AfterEach
-    void close() {
+    void close()
+    {
         if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
         entityManager.close();
     }
 
-    @Test
-    void createsAndReloadsStudentGroup() {
-        UUID periodId = UUID.randomUUID();
-        UUID unitId = UUID.randomUUID();
-
-        StudentGroup created = service.create(" ta ", " Terminale A ", unitId, periodId);
+    private long createPeriod()
+    {
+        PeriodEntity period = new PeriodEntity("2026-2027", 1);
+        entityManager.persist(period);
         entityManager.flush();
-
-        StudentGroup found = repository.findById(created.getId()).orElseThrow();
-        assertEquals("TA", found.getCode());
-        assertEquals("Terminale A", found.getName());
-        assertTrue(found.isActive());
-        assertNotNull(found.getCreatedAt());
+        return period.getId();
     }
 
     @Test
-    void rejectsDuplicateCodeInSamePeriod() {
-        UUID periodId = UUID.randomUUID();
-        UUID unitId = UUID.randomUUID();
-        service.create("A1", "Première A", unitId, periodId);
+    void createsAndReloadsStudentGroup()
+    {
+        long periodId = createPeriod();
+        StudentGroup created = service.create(" ta ", " Terminale A ", "UNIT-SCI", periodId);
+        entityManager.flush();
+
+        StudentGroup found = repository.findById(created.id()).orElseThrow();
+        assertEquals("TA", found.code());
+        assertEquals("Terminale A", found.name());
+        assertEquals("UNIT-SCI", found.owningUnitId());
+        assertTrue(found.active());
+        assertNotNull(found.createdAt());
+    }
+
+    @Test
+    void rejectsDuplicateCodeInSamePeriod()
+    {
+        long periodId = createPeriod();
+        service.create("A1", "Première A", "UNIT-SCI", periodId);
 
         assertThrows(DuplicateStudentGroupException.class,
-                () -> service.create(" a1 ", "Autre groupe", unitId, periodId));
+                () -> service.create(" a1 ", "Autre groupe", "UNIT-SCI", periodId));
     }
 
     @Test
-    void acceptsSameCodeInAnotherPeriod() {
-        UUID unitId = UUID.randomUUID();
-        service.create("A1", "Première A", unitId, UUID.randomUUID());
-
-        assertDoesNotThrow(() -> service.create("A1", "Première A",
-                unitId, UUID.randomUUID()));
-    }
-
-    @Test
-    void rejectsBlankCodeOrName() {
-        UUID unitId = UUID.randomUUID();
-        UUID periodId = UUID.randomUUID();
-
-        assertThrows(IllegalArgumentException.class,
-                () -> service.create("  ", "Terminale A", unitId, periodId));
-        assertThrows(IllegalArgumentException.class,
-                () -> service.create("TA", "  ", unitId, periodId));
-    }
-
-    @Test
-    void databaseRejectsDuplicateCodeAndPeriod() {
-        UUID unitId = UUID.randomUUID();
-        UUID periodId = UUID.randomUUID();
-        repository.save(new StudentGroup("A1", "Groupe A", unitId, periodId));
+    void acceptsSameCodeInAnotherPeriod()
+    {
+        long periodOne = createPeriod();
+        PeriodEntity periodTwo = new PeriodEntity("2026-2027", 2);
+        entityManager.persist(periodTwo);
         entityManager.flush();
 
-        repository.save(new StudentGroup("A1", "Groupe identique", unitId, periodId));
+        service.create("A1", "Première A", "UNIT-SCI", periodOne);
+        assertDoesNotThrow(() -> service.create("A1", "Première A", "UNIT-SCI", periodTwo.getId()));
+    }
 
+    @Test
+    void rejectsBlankCodeOrName()
+    {
+        long periodId = createPeriod();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create("  ", "Terminale A", "UNIT-SCI", periodId));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create("TA", "  ", "UNIT-SCI", periodId));
+    }
+
+    @Test
+    void rejectsMissingOwningUnit()
+    {
+        long periodId = createPeriod();
+        StudentGroupService validatingService = new StudentGroupService(repository, null, null,
+                unitId -> false);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> validatingService.create("TA", "Terminale A", "UNIT-MISSING", periodId));
+    }
+
+    @Test
+    void databaseRejectsDuplicateCodeAndPeriod()
+    {
+        long periodId = createPeriod();
+        repository.save(new StudentGroup("A1", "Groupe A", "UNIT-SCI", periodId));
+        entityManager.flush();
+
+        repository.save(new StudentGroup("A1", "Groupe identique", "UNIT-SCI", periodId));
         assertThrows(PersistenceException.class, () -> entityManager.flush());
     }
 
     @Test
-    void listsOnlyRequestedPeriodSortedByCode() {
-        UUID requestedPeriod = UUID.randomUUID();
-        UUID otherPeriod = UUID.randomUUID();
-        UUID unitId = UUID.randomUUID();
-
-        service.create("C", "Groupe C", unitId, requestedPeriod);
-        service.create("A", "Groupe A", unitId, requestedPeriod);
-        service.create("B", "Groupe B", unitId, otherPeriod);
+    void listsOnlyRequestedPeriodSortedByCode()
+    {
+        long periodOne = createPeriod();
+        PeriodEntity periodTwo = new PeriodEntity("2026-2027", 2);
+        entityManager.persist(periodTwo);
         entityManager.flush();
 
-        List<StudentGroup> found = service.listByPeriod(requestedPeriod);
+        service.create("C", "Groupe C", "UNIT-SCI", periodOne);
+        service.create("A", "Groupe A", "UNIT-SCI", periodOne);
+        service.create("B", "Groupe B", "UNIT-SCI", periodTwo.getId());
+        entityManager.flush();
 
-        assertEquals(List.of("A", "C"), found.stream().map(StudentGroup::getCode).toList());
-        assertTrue(found.stream().noneMatch(group -> group.getAcademicPeriodId().equals(otherPeriod)));
+        List<StudentGroup> found = service.listByPeriod(periodOne);
+        assertEquals(List.of("A", "C"), found.stream().map(StudentGroup::code).toList());
+        assertTrue(found.stream().noneMatch(group -> group.academicPeriodId() == periodTwo.getId()));
     }
 }

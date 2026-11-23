@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import java.util.List;
+import java.util.Optional;
 
 /** Implémentation JPA du port des périodes. */
 @ApplicationScoped
@@ -41,5 +42,14 @@ public class JpaPeriodRepository implements PeriodRepository {
                 .getResultList().stream()
                 .map(entity -> new AcademicPeriod(entity.getId(), entity.getAcademicYear(), entity.getTerm()))
                 .toList();
+    }
+
+    @Override
+    public Optional<AcademicPeriod> findById(long id) {
+        PeriodEntity entity = entityManager.find(PeriodEntity.class, id);
+        if (entity == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new AcademicPeriod(entity.getId(), entity.getAcademicYear(), entity.getTerm()));
     }
 }
