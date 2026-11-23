@@ -42,7 +42,7 @@ public class SecurityFilter implements Filter {
         String chemin = request.getRequestURI();
 
         // Vérifier si la route est publique (pas besoin d'être connecté)
-        if (estRoutePublique(chemin)) {
+        if (isRoutePublic(chemin)) {
             chain.doFilter(req, res); // laisser passer
             return;
         }
@@ -61,13 +61,18 @@ public class SecurityFilter implements Filter {
 
     // Vérifie si l'URL correspond à une route publique
     // Extrait pour faciliter les tests unitaires
-    public boolean estRoutePublique(String chemin) {
+    public boolean isRoutePublic(String chemin) {
         for (String route : ROUTES_PUBLIQUES) {
             if (chemin != null && chemin.endsWith(route)) {
                 return true;
             }
         }
         return false;
+    }
+
+    // Alias en français pour compatibilité avec le code de test existant
+    public boolean estRoutePublique(String chemin) {
+        return isRoutePublic(chemin);
     }
 
     // Envoie une réponse 401 en JSON
