@@ -124,8 +124,8 @@ public final class InstitutionValidator
     }
 
     /**
-     * Validates allowed parent-child relations: referenced types must exist and relations must be
-     * unique.
+     * Validates allowed parent-child relations: referenced types must exist, a type cannot be its
+     * own parent, and relations must be unique.
      *
      * @param config configuration being validated
      * @param errors list receiving the detected violations
@@ -146,6 +146,13 @@ public final class InstitutionValidator
             {
                 errors.add("Allowed relation " + pair.parent() + " → " + pair.child()
                            + ": child type '" + pair.child() + "' does not exist");
+            }
+
+            // A self pair would let a unit nest under a unit of its own type without limit.
+            if (!pair.parent().isEmpty() && pair.parent().equals(pair.child()))
+            {
+                errors.add("Allowed relation " + pair.parent() + " → " + pair.child()
+                           + ": a type cannot be its own parent");
             }
 
             if (!seen.add(pair))
