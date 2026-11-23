@@ -29,8 +29,11 @@ public interface HierarchyService
     /**
      * Finds a unit by business code.
      *
-     * @param code unit code
-     * @return the unit, or an empty optional when it does not exist
+     * <p>A code is unique only among the children of one parent. When several units share the code,
+     * the first one in file order is returned; use {@link #getById(String)} for an exact reference.</p>
+     *
+     * @param code unit code, compared exactly
+     * @return the first matching unit, or an empty optional when none exists
      */
     Optional<OrganizationalUnit> getByCode(String code);
 

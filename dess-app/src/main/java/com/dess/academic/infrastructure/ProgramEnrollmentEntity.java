@@ -20,6 +20,10 @@ public class ProgramEnrollmentEntity {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Version
+    @Column(nullable = false)
+    private long version;
+
     protected ProgramEnrollmentEntity() {}
     public ProgramEnrollmentEntity(long studentId, long programVersionId, LocalDate startDate, LocalDate endDate, String status) {
         this.studentId = studentId; this.programVersionId = programVersionId; this.startDate = startDate; this.endDate = endDate; this.status = status;
