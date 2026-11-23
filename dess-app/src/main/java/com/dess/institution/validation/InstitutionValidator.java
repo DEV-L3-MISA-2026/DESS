@@ -102,7 +102,8 @@ public final class InstitutionValidator
      */
     private static void validateTypes(InstitutionConfig config, List<String> errors)
     {
-        Set<String> codes = new HashSet<>();
+        // Keys are compared without case: two keys that differ only by case would name one concept twice.
+        Map<String, String> codes = new HashMap<>();
 
         for (UnitTypeDefinition type : config.unitTypes())
         {
@@ -110,9 +111,14 @@ public final class InstitutionValidator
             {
                 errors.add("Type '" + type.code() + "': invalid code");
             }
-            else if (!codes.add(type.code()))
+            else
             {
-                errors.add("Type '" + type.code() + "': duplicate type code");
+                String existing = codes.putIfAbsent(typeKey(type.code()), type.code());
+
+                if (existing != null)
+                {
+                    errors.add(duplicateTypeMessage(type.code(), existing));
+                }
             }
 
             if (Texts.isBlank(type.label()))
@@ -125,8 +131,8 @@ public final class InstitutionValidator
     }
 
     /**
-     * Validates allowed parent-child relations: referenced types must exist and relations must be
-     * unique.
+     * Validates allowed parent-child relations: referenced types must exist, a type cannot be its
+     * own parent, and relations must be unique.
      *
      * @param config configuration being validated
      * @param errors list receiving the detected violations
@@ -147,6 +153,13 @@ public final class InstitutionValidator
             {
                 errors.add("Allowed relation " + pair.parent() + " → " + pair.child()
                            + ": child type '" + pair.child() + "' does not exist");
+            }
+
+            // A self pair would let a unit nest under a unit of its own type without limit.
+            if (!pair.parent().isEmpty() && pair.parent().equals(pair.child()))
+            {
+                errors.add("Allowed relation " + pair.parent() + " → " + pair.child()
+                           + ": a type cannot be its own parent");
             }
 
             if (!seen.add(pair))
@@ -335,6 +348,31 @@ public final class InstitutionValidator
                 current = unitsById.get(current.parentId());
             }
         }
+    }
+
+    /**
+     * Normalizes a unit type key for the uniqueness check.
+     *
+     * @param code unit type code
+     * @return the code in lower case, independent of the default locale
+     */
+    public static String typeKey(String code)
+    {
+        return code.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Builds the message for a duplicated unit type key.
+     *
+     * @param code     rejected code
+     * @param existing code already present in the configuration
+     * @return a message that names both keys
+     */
+    public static String duplicateTypeMessage(String code, String existing)
+    {
+        String suffix = code.equals(existing) ? "" : " (same key as '" + existing + "')";
+
+        return "Type '" + code + "': duplicate type key" + suffix;
     }
 
     private static String label(OrganizationalUnit unit)

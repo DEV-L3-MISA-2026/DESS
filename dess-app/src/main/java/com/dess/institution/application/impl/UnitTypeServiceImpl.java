@@ -6,6 +6,7 @@ import com.dess.institution.domain.InstitutionConfig;
 import com.dess.institution.domain.UnitTypeDefinition;
 import com.dess.institution.exception.NotFoundException;
 import com.dess.institution.exception.ValidationException;
+import com.dess.institution.validation.InstitutionValidator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +39,17 @@ public final class UnitTypeServiceImpl implements UnitTypeService
     {
         return holder.update(configuration ->
         {
-            if (configuration.findType(type.code()).isPresent())
+            String key = InstitutionValidator.typeKey(type.code());
+            Optional<UnitTypeDefinition> existing = configuration.unitTypes()
+                                                                 .stream()
+                                                                 .filter(current -> InstitutionValidator.typeKey(current.code())
+                                                                                                        .equals(key))
+                                                                 .findFirst();
+
+            if (existing.isPresent())
             {
-                throw new ValidationException("Unit type '" + type.code() + "' already exists");
+                throw new ValidationException(InstitutionValidator.duplicateTypeMessage(type.code(),
+                                                                                        existing.get().code()));
             }
 
             List<UnitTypeDefinition> types = new ArrayList<>(configuration.unitTypes());
