@@ -44,3 +44,4 @@ class OpenApiDocumentationTest {
         assertNotNull(logoutOp, "La méthode logout() de AuthResource doit être documentée avec @Operation");
     }
 }
+
