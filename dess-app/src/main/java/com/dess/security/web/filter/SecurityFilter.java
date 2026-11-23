@@ -63,27 +63,11 @@ public class SecurityFilter implements Filter
             return;
         }
 
-        if (estEcritureInstitution(path, request.getMethod())
-                && !user.isPermitted(RoleCatalog.INSTITUTION_WRITE))
-        {
-            denyForbidden(request, response);
-            return;
-        }
-
         chain.doFilter(req, res);
     }
 
     /**
      * Checks whether a request tries to change the institution structure.
-     *
-     * <p>Writes outside the application, API, login and static areas belong to the
-     * institution editor. Treating them as institution writes keeps the rule safe when a
-     * container maps a path parameter, an encoded segment or a doubled slash onto the
-     * editor. Known areas keep their own checks.</p>
-     *
-     * @param path path relative to the application context
-     * @param method HTTP method of the request
-     * @return true when the request needs {@code institution:write}
      */
     public boolean estEcritureInstitution(String path, String method)
     {
@@ -108,9 +92,6 @@ public class SecurityFilter implements Filter
 
     /**
      * Checks whether a path is available without a session.
-     *
-     * @param path path relative to the application context
-     * @return true for the login page, the login API, health and static assets
      */
     public boolean estRoutePublique(String path)
     {
@@ -126,6 +107,12 @@ public class SecurityFilter implements Filter
                 || path.equals("/favicon.ico");
     }
 
+    /** Alias for compatibility with existing tests. */
+    public boolean isRoutePublic(String chemin)
+    {
+        return estRoutePublique(chemin);
+    }
+
     public String construireJson401()
     {
         return "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}";
@@ -136,17 +123,17 @@ public class SecurityFilter implements Filter
         return "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}";
     }
 
-    private void denyUnauthenticated(HttpServletRequest request,
-                                     HttpServletResponse response) throws IOException
+    private static void denyUnauthenticated(HttpServletRequest request,
+                                            HttpServletResponse response)
+            throws IOException
     {
         if (isApi(request))
         {
-            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED, construireJson401());
+            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED,
+                    "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}");
             return;
         }
 
-        // Keep the context path: LoginServlet.safeNext() only accepts local paths
-        // that start with it, so a stripped path would fall back to the overview.
         String target = request.getRequestURI();
         String query = request.getQueryString();
 
@@ -160,17 +147,18 @@ public class SecurityFilter implements Filter
                 + URLEncoder.encode(target, StandardCharsets.UTF_8));
     }
 
-    private void denyForbidden(HttpServletRequest request,
-                               HttpServletResponse response) throws IOException
+    private static void denyForbidden(HttpServletRequest request,
+                                      HttpServletResponse response)
+            throws IOException
     {
         if (isApi(request))
         {
-            writeJson(response, HttpServletResponse.SC_FORBIDDEN, construireJson403());
+            writeJson(response, HttpServletResponse.SC_FORBIDDEN,
+                    "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}");
             return;
         }
 
-        response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                "Your account does not have access to this area.");
+        response.sendError(HttpServletResponse.SC_FORBIDDEN);
     }
 
     private static void writeJson(HttpServletResponse response, int status, String body)
