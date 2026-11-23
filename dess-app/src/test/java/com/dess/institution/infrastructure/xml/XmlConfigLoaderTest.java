@@ -163,6 +163,14 @@ class XmlConfigLoaderTest
     }
 
     @Test
+    void selfParentPairInXmlIsRejected()
+    {
+        List<String> errors = InstitutionValidator.validate(load("invalid/self-parent-pair.xml"));
+
+        assertEquals(List.of("Allowed relation A → A: a type cannot be its own parent"), errors);
+    }
+
+    @Test
     void forbiddenParentChildIsRejected()
     {
         List<String> errors = InstitutionValidator.validate(load("invalid/forbidden-parent-child.xml"));
