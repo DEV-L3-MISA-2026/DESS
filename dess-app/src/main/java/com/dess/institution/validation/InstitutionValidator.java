@@ -181,7 +181,6 @@ public final class InstitutionValidator
     private static void validateHierarchy(InstitutionConfig config, List<String> errors)
     {
         Map<String, OrganizationalUnit> unitsById = new HashMap<>();
-        Set<String> codes = new HashSet<>();
 
         for (OrganizationalUnit unit : config.units())
         {
@@ -200,16 +199,14 @@ public final class InstitutionValidator
             {
                 errors.add("Unit " + label + ": invalid code");
             }
-            else if (!codes.add(unit.code()))
-            {
-                errors.add("Unit " + label + ": duplicate code '" + unit.code() + "'");
-            }
 
             if (Texts.isBlank(unit.name()))
             {
                 errors.add("Unit " + label + ": name required");
             }
         }
+
+        validateCodeScopes(config, unitsById, errors);
 
         for (OrganizationalUnit unit : config.units())
         {
@@ -256,6 +253,66 @@ public final class InstitutionValidator
         }
 
         detectCycles(unitsById, errors);
+    }
+
+    /**
+     * Checks that unit codes are unique among the children of one parent.
+     *
+     * <p>Codes are compared without case. All root units share one scope. The same code may be used
+     * again under another parent, for example one {@code L1} level per program.</p>
+     *
+     * @param config    configuration being validated
+     * @param unitsById units indexed by identifier, used to name the parent in the message
+     * @param errors    list receiving the detected violations
+     */
+    private static void validateCodeScopes(InstitutionConfig config, Map<String, OrganizationalUnit> unitsById,
+                                           List<String> errors)
+    {
+        Map<String, OrganizationalUnit> seen = new HashMap<>();
+
+        for (OrganizationalUnit unit : config.units())
+        {
+            if (!CODE_PATTERN.matcher(unit.code()).matches())
+            {
+                continue;
+            }
+
+            String scope = unit.parentId() == null ? "" : unit.parentId();
+            OrganizationalUnit existing = seen.putIfAbsent(scope + "\n" + unitCodeKey(unit.code()), unit);
+
+            if (existing != null)
+            {
+                errors.add(duplicateUnitCodeMessage(unit, existing, unitsById.get(unit.parentId())));
+            }
+        }
+    }
+
+    /**
+     * Normalizes a unit code for the uniqueness check.
+     *
+     * @param code unit code
+     * @return the code in lower case, independent of the default locale
+     */
+    public static String unitCodeKey(String code)
+    {
+        return code.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Builds the message for a unit code that is already used under the same parent.
+     *
+     * @param unit     rejected unit
+     * @param existing unit that already uses the code
+     * @param parent   common parent, or {@code null} for root units
+     * @return a message that names the code, the scope and the existing unit
+     */
+    public static String duplicateUnitCodeMessage(OrganizationalUnit unit, OrganizationalUnit existing,
+                                                  OrganizationalUnit parent)
+    {
+        String scope = parent == null ? "among the root units" : "under " + label(parent);
+
+        return "Unit " + label(unit) + ": duplicate code '" + unit.code() + "' " + scope
+               + ", already used by " + label(existing);
     }
 
     /**

@@ -187,6 +187,21 @@ class XmlConfigLoaderTest
     }
 
     @Test
+    void sameUnitCodeUnderAnotherParentIsAccepted()
+    {
+        assertEquals(List.of(), InstitutionValidator.validate(load("valid/same-code-other-parent.xml")));
+    }
+
+    @Test
+    void sameUnitCodeUnderOneParentIsRejectedWithoutCase()
+    {
+        List<String> errors = InstitutionValidator.validate(load("invalid/duplicate-code-same-parent.xml"));
+
+        assertEquals(List.of("Unit 'Law year 1 bis' (l1): duplicate code 'l1' under 'Law' (LAW), "
+                             + "already used by 'Law year 1' (L1)"), errors);
+    }
+
+    @Test
     void duplicateTypeKeyInXmlIsRejectedWithTheKeyNamed()
     {
         List<String> errors = InstitutionValidator.validate(load("invalid/duplicate-type-code.xml"));

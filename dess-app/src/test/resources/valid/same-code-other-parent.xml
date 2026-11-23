@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two programs each have a level with the code L1: allowed, the parents differ -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="PROGRAM" label="Program"/>
+        <type code="YEAR" label="Year"/>
+    </unitTypes>
+    <allowedParentChildPairs>
+        <allow parent="PROGRAM" child="YEAR"/>
+    </allowedParentChildPairs>
+    <units>
+        <unit id="p1" code="LAW" name="Law" type="PROGRAM">
+            <children>
+                <unit id="p1-l1" code="L1" name="Law year 1" type="YEAR"/>
+            </children>
+        </unit>
+        <unit id="p2" code="IT" name="IT" type="PROGRAM">
+            <children>
+                <unit id="p2-l1" code="L1" name="IT year 1" type="YEAR"/>
+            </children>
+        </unit>
+    </units>
+</institution>
