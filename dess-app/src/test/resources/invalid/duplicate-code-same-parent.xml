@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two children of one parent share a code that differs only by case -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="PROGRAM" label="Program"/>
+        <type code="YEAR" label="Year"/>
+    </unitTypes>
+    <allowedParentChildPairs>
+        <allow parent="PROGRAM" child="YEAR"/>
+    </allowedParentChildPairs>
+    <units>
+        <unit id="p1" code="LAW" name="Law" type="PROGRAM">
+            <children>
+                <unit id="p1-l1" code="L1" name="Law year 1" type="YEAR"/>
+                <unit id="p1-l1b" code="l1" name="Law year 1 bis" type="YEAR"/>
+            </children>
+        </unit>
+    </units>
+</institution>

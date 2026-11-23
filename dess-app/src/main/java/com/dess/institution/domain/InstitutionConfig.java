@@ -88,8 +88,11 @@ public record InstitutionConfig(
     /**
      * Finds an organizational unit by business code.
      *
-     * @param unitCode unit code
-     * @return the unit, or an empty optional when it does not exist
+     * <p>A code is unique only among the children of one parent. When several units share the code,
+     * the first one in file order is returned; use the identifier for an exact reference.</p>
+     *
+     * @param unitCode unit code, compared exactly
+     * @return the first matching unit, or an empty optional when none exists
      */
     public Optional<OrganizationalUnit> findUnitByCode(String unitCode)
     {
