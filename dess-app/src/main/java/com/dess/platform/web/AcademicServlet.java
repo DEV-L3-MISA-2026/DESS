@@ -235,9 +235,6 @@ public class AcademicServlet extends HttpServlet
 
     private boolean canWrite(HttpServletRequest request)
     {
-        var user = Web.currentUser(request);
-
-        return user != null && authorizationService.isPermitted(user.toAccount(),
-                RoleCatalog.ACADEMIC_WRITE);
+        return Web.canWrite(request, authorizationService, RoleCatalog.ACADEMIC_WRITE);
     }
 }

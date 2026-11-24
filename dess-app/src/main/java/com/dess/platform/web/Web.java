@@ -107,7 +107,7 @@ public final class Web
             return false;
         }
 
-        if (!authorization.isPermitted(user.toAccount(), permissionCode))
+        if (!canWrite(request, authorization, permissionCode))
         {
             response.sendError(HttpServletResponse.SC_FORBIDDEN,
                     "Your account cannot perform this action.");
@@ -115,6 +115,24 @@ public final class Web
         }
 
         return true;
+    }
+
+    /**
+     * Tells whether the signed-in user holds a write permission. Pages use it to
+     * show or hide their write controls.
+     *
+     * @param request current request
+     * @param authorization authorization service
+     * @param permissionCode permission to test
+     * @return true when a user is signed in and holds the permission
+     */
+    public static boolean canWrite(HttpServletRequest request,
+                                   AuthorizationService authorization,
+                                   String permissionCode)
+    {
+        SessionUser user = currentUser(request);
+
+        return user != null && authorization.isPermitted(user.toAccount(), permissionCode);
     }
 
     /**
