@@ -61,14 +61,14 @@ Critical milestones are Day 2, Day 5, Day 7, Day 8 and Day 10.
 
 | Milestone | Horizon | Issues | Done | Focus |
 | --- | --- | ---: | ---: | --- |
-| M1 Teaching path | MVP | 11 | 1 | StudentGroup, group enrollment, CourseOffering, teaching assignment and TeachingSession. |
+| M1 Teaching path | MVP | 11 | 2 | StudentGroup, group enrollment, CourseOffering, teaching assignment and TeachingSession. |
 | M2 Platform and DevOps | MVP | 21 | 1 | CI, bootstrap, backup, health checks, release rehearsal. |
 | M3 Scheduling hardening | MVP | 10 | 2 | Group booking, conflict boundaries, concurrency and booking contract tests. |
 | M4 Assessment UI | MVP | 18 | 3 | Assessment definitions, eligibility, result entry and exam session pages. |
-| M5 Academic UI and security | MVP | 14 | 1 | People and academic pages, account persistence, permission tests. |
+| M5 Academic UI and security | MVP | 14 | 2 | People and academic pages, account persistence, permission tests. |
 | M6 Institution and configuration | MVP | 9 | 7 | Hierarchy rules, XML import errors, sample configurations, editor accessibility. |
-| M7 Frontend and UX | MVP | 13 | 0 | Responsive pages, empty and error states, accessibility and UI regression. |
-| M8 Testing and quality | MVP | 19 | 4 | MVP regression suite, Testcontainers matrix, coverage and performance baseline. |
+| M7 Frontend and UX | MVP | 13 | 1 | Responsive pages, empty and error states, accessibility and UI regression. |
+| M8 Testing and quality | MVP | 19 | 5 | MVP regression suite, Testcontainers matrix, coverage and performance baseline. |
 | M9 Post-MVP: timetables and curricula | Post-MVP | 9 | 0 | Recurring templates, timetable optimization, curriculum modules, prerequisites. |
 | M10 Post-MVP: grading and assessment | Post-MVP | 3 | 0 | Weighted grading, averages, retakes, rankings and publication. |
 | M11 Post-MVP: platform and operations | Post-MVP | 7 | 0 | Monitoring, API clients, full-stack Compose, failure tests. |
