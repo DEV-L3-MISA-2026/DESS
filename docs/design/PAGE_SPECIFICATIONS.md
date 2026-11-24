@@ -45,6 +45,12 @@ Browse and maintain the institution's organizational hierarchy.
 - Show the affected units and explain invalid parent-child relationships.
 - Require confirmation before applying a valid import.
 
+### Implementation status
+The page shows, in this order and always expanded: unit types, allowed
+relations, the hierarchy with the details of the selected unit, and the
+institution settings. Links at the top lead to each section. Feedback appears in
+the section it concerns. The XML import action is a roadmap item.
+
 ## 3. People
 
 ### Purpose

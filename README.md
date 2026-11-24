@@ -250,18 +250,18 @@ development tool, not a production interface.
 The page lets you:
 
 - create a named tree, or copy one of the bundled XML examples;
-- see the hierarchy as an interactive SVG canvas;
-- click a node to edit its code, name, description and custom attribute values;
-- drag nodes to arrange the canvas, or press `Tidy layout` to restore the automatic tree;
-- move a node with the parent selector or by Shift-dragging it onto another node;
-- add a child with the `+` handle, or a root with `New root`;
+- manage unit types and allowed relations in two panels at the top of the page;
+- see the hierarchy as an SVG tree;
+- select a unit to edit its code, name, description and custom attribute values;
+- move a unit with the parent selector;
+- add a child with the `+` control, or a root with `New root unit`;
 - activate units, or deactivate them together with their descendants;
 - delete leaf units, unit types and allowed relations;
-- reload the XML file, check the configuration, preview the XML and download it as `CODE.xml`.
+- reload the XML file, check the configuration and download it as `CODE.xml`.
 
 Every edit goes through the institution services. The module validates the complete
 configuration, including allowed relations, cycles, required attributes and activation rules,
-before it saves. A rejected edit is shown at the top of the page and leaves the old
+before it saves. A rejected edit is shown in the section it concerns and leaves the old
 configuration untouched.
 
 The page requires a signed-in session and every POST form carries a CSRF token. It still

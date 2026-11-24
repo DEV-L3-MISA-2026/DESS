@@ -5,9 +5,9 @@
     infrastructure directly. Read actions and form submissions follow the post/redirect/get
     pattern; feedback is carried through the session.
 
-    The hierarchy is rendered as a server-side SVG canvas. Nodes can be dragged to arrange the
-    layout (positions are kept in the browser), and Shift-dragging a node onto another one moves it
-    in the tree. Each node has a + handle that opens the create dialog with that node as parent.
+    The page follows the order of the work: unit types, allowed relations, hierarchy, settings.
+    The hierarchy is a server-side SVG tree. Each node is a link to its details and has a + control
+    that opens the create dialog with that node as parent. A unit is moved with the parent selector.
     The page is a development tool, not a production user interface.
 --%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
@@ -39,6 +39,7 @@
 <%@ page import="java.nio.file.Path" %>
 <%@ page import="java.nio.file.StandardCopyOption" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
@@ -92,7 +93,7 @@
     /**
      * @brief One parent-child cable of the display graph.
      *
-     * <p>The identifiers let the page re-route the cable while a node is dragged.</p>
+     * <p>The identifiers mark the cables that touch the selected unit.</p>
      */
     private static final class GraphEdge
     {
@@ -214,16 +215,40 @@
     }
 
     /**
-     * Removes the fragment of a redirect target so error messages at the top stay visible.
+     * Returns the page section named by the fragment of a redirect target.
      *
      * @param target redirect target
-     * @return the target without its fragment
+     * @return the section identifier, or an empty string
      */
-    static String withoutAnchor(String target)
+    static String sectionOf(String target)
     {
         int hash = target.indexOf('#');
 
-        return hash < 0 ? target : target.substring(0, hash);
+        return hash < 0 ? "" : target.substring(hash + 1);
+    }
+
+    /**
+     * Builds the feedback message when it belongs to the given section.
+     *
+     * <p>The browser jumps to the section after a form is sent, so the message must be there too.</p>
+     *
+     * @param section section being rendered
+     * @param target  section that the message belongs to
+     * @param kind    {@code "error"} or {@code "ok"}
+     * @param text    message, or {@code null} when there is none
+     * @return the HTML alert, or an empty string
+     */
+    static String flash(String section, String target, String kind, String text)
+    {
+        if (text == null || !section.equals(target))
+        {
+            return "";
+        }
+
+        boolean error = "error".equals(kind);
+
+        return "<div class=\"flash " + (error ? "error" : "ok") + "\" role=\""
+            + (error ? "alert" : "status") + "\">" + esc(text) + "</div>";
     }
 
     /**
@@ -558,7 +583,7 @@
         }
         else if ("updateInfo".equals(action))
         {
-            redirectTarget = "#tree";
+            redirectTarget = "#settings";
         }
         else if ("reload".equals(action))
         {
@@ -576,29 +601,22 @@
                 : "?parent=" + urlEncode(parent) + "#graph";
         }
         else if ("updateUnit".equals(action) || "activateUnit".equals(action)
-                 || "deactivateUnit".equals(action))
+                 || "deactivateUnit".equals(action) || "deleteUnit".equals(action)
+                 || "moveUnit".equals(action))
         {
             String id = trim(request.getParameter("id"));
             redirectTarget = id == null || id.isEmpty()
                 ? "#editor"
                 : "?node=" + urlEncode(id) + "#editor";
         }
-        else if ("moveUnit".equals(action))
-        {
-            String id = trim(request.getParameter("id"));
-            redirectTarget = id == null || id.isEmpty()
-                ? "#graph"
-                : "?node=" + urlEncode(id) + "#graph";
-        }
-        else if ("deleteUnit".equals(action))
-        {
-            redirectTarget = "#graph";
-        }
         else if ("createType".equals(action) || "activateType".equals(action)
-                 || "deactivateType".equals(action) || "deleteType".equals(action)
-                 || "addPair".equals(action) || "removePair".equals(action))
+                 || "deactivateType".equals(action) || "deleteType".equals(action))
         {
             redirectTarget = "#types";
+        }
+        else if ("addPair".equals(action) || "removePair".equals(action))
+        {
+            redirectTarget = "#relations";
         }
 
         try
@@ -662,7 +680,7 @@
                     trim(request.getParameter("name")),
                     trim(request.getParameter("description"))
                 );
-                message = "Tree '" + updated.name() + "' saved.";
+                message = "Institution '" + updated.name() + "' saved.";
             }
             else if ("createType".equals(action))
             {
@@ -787,7 +805,7 @@
                 message = parentName == null
                     ? "Unit '" + moved.name() + "' is now a root."
                     : "Unit '" + moved.name() + "' moved under '" + parentName + "'.";
-                redirectTarget = "?node=" + urlEncode(moved.id()) + "#graph";
+                redirectTarget = "?node=" + urlEncode(moved.id()) + "#editor";
             }
             else if ("activateUnit".equals(action))
             {
@@ -824,17 +842,30 @@
         {
             kind = "error";
             message = error.getMessage();
-            redirectTarget = withoutAnchor(redirectTarget);
         }
         catch (RuntimeException error)
         {
             kind = "error";
             message = rootMessage(error);
-            redirectTarget = withoutAnchor(redirectTarget);
         }
 
         session.setAttribute("dess.flash.kind", kind);
         session.setAttribute("dess.flash.text", message);
+        session.setAttribute("dess.flash.section", sectionOf(redirectTarget));
+
+        // Keep what the user typed in the two short forms when the server refuses it.
+        if ("error".equals(kind) && ("createType".equals(action) || "addPair".equals(action)))
+        {
+            Map<String, String> draft = new HashMap<>();
+
+            for (String field : List.of("code", "label", "parentType", "childType"))
+            {
+                draft.put(action + "." + field, trim(request.getParameter(field)));
+            }
+
+            session.setAttribute("dess.institution.draft", draft);
+        }
+
         response.sendRedirect(request.getContextPath() + "/" + redirectTarget);
         return;
     }
@@ -845,6 +876,25 @@
     session.removeAttribute("dess.flash.text");
 
     ConfigurationStatus status = institutionService.getStatus();
+    String flashSection = (String) session.getAttribute("dess.flash.section");
+    session.removeAttribute("dess.flash.section");
+
+    // Only the ready page has sections; every other message goes to the top.
+    if (status != ConfigurationStatus.READY || flashSection == null
+        || !List.of("types", "relations", "graph", "editor", "settings").contains(flashSection))
+    {
+        flashSection = "top";
+    }
+
+    @SuppressWarnings("unchecked")
+    Map<String, String> draft = (Map<String, String>) session.getAttribute("dess.institution.draft");
+    session.removeAttribute("dess.institution.draft");
+
+    if (draft == null)
+    {
+        draft = Map.of();
+    }
+
     String requestedParent = trim(request.getParameter("parent"));
     boolean openCreateDialog = canWrite
         && status == ConfigurationStatus.READY
@@ -904,8 +954,8 @@
                     <p class="dess-page-description">
                         <% if (status == ConfigurationStatus.READY) { %>
                         <% if (canWrite) { %>
-                        Browse and maintain the organizational hierarchy. Every change is validated
-                        and written to the institution XML file.
+                        Define the unit types and the relations allowed between them, then build the
+                        hierarchy.
                         <% } else { %>
                         Browse the organizational hierarchy. Your role can view the structure but
                         cannot change it.
@@ -916,43 +966,17 @@
                     </p>
                 </div>
                 <div class="header-actions">
-                    <span class="badge <%= status == ConfigurationStatus.READY ? "ok" : "warn" %>">
-                        <%= status == ConfigurationStatus.READY
-                            ? "Configuration ready" : "Not initialized" %>
-                    </span>
                     <% if (status == ConfigurationStatus.READY) {
                         String nodeQuery = selectedId == null || selectedId.isEmpty()
                             ? "" : "node=" + urlEncode(selectedId) + "&";
                     %>
                     <a class="btn btn-sm btn-ghost" href="?<%= nodeQuery %>check=1">Validate</a>
-                    <a class="btn btn-sm btn-ghost" href="?<%= nodeQuery %>preview=1#xml">Preview XML</a>
-                    <a class="btn btn-sm" href="<%= request.getContextPath() %>/export.jsp">Download XML</a>
+                    <a class="btn btn-sm btn-ghost" href="<%= request.getContextPath() %>/export.jsp">Download XML</a>
                     <% } %>
                 </div>
             </div>
 
-            <div class="dess-context-bar" role="group" aria-label="Current context">
-                <div class="dess-context-item">
-                    <span class="dess-context-label">Institution</span>
-                    <span class="dess-context-value">
-                        <% if (currentInfo != null) { %>
-                        <strong><%= esc(currentInfo.name()) %></strong>
-                        <span class="mono"><%= esc(currentInfo.code()) %></span>
-                        <% } else { %>
-                        <span class="muted">Not initialized</span>
-                        <% } %>
-                    </span>
-                </div>
-                <div class="dess-context-item">
-                    <span class="dess-context-label">Configuration file</span>
-                    <span class="dess-context-value mono"><%= esc(configFile.toString()) %></span>
-                </div>
-            </div>
-
-            <% if (flashText != null) { %>
-            <div class="flash <%= "error".equals(flashKind) ? "error" : "ok" %>"
-                 role="<%= "error".equals(flashKind) ? "alert" : "status" %>"><%= esc(flashText) %></div>
-            <% } %>
+            <%= flash("top", flashSection, flashKind, flashText) %>
 
             <% if (!canWrite) { %>
             <div class="flash info" role="status">
@@ -1037,8 +1061,6 @@
             ? null
             : hierarchyService.getById(selectedId).orElse(null);
         boolean selectedMissing = selectedId != null && !selectedId.isEmpty() && selectedUnit == null;
-        String xmlPreview = null;
-        String xmlPreviewError = null;
 
         for (UnitTypeDefinition type : allTypes)
         {
@@ -1051,18 +1073,6 @@
         if (request.getParameter("check") != null)
         {
             report = institutionService.check();
-        }
-
-        if (request.getParameter("preview") != null)
-        {
-            try
-            {
-                xmlPreview = Files.readString(configFile, StandardCharsets.UTF_8);
-            }
-            catch (IOException error)
-            {
-                xmlPreviewError = rootMessage(error);
-            }
         }
 
         Set<String> graphVisited = new HashSet<>();
@@ -1129,6 +1139,13 @@
             allowedParentTypes = unitTypeService.getAllowedParentTypes(selectedUnit.typeCode());
         }
 
+        Map<String, String> typeLabels = new HashMap<>();
+
+        for (UnitTypeDefinition type : allTypes)
+        {
+            typeLabels.put(type.code(), type.label());
+        }
+
         Map<String, List<String>> allowedParentsByType = new LinkedHashMap<>();
 
         for (UnitTypeDefinition type : activeTypes)
@@ -1136,59 +1153,6 @@
             allowedParentsByType.put(type.code(), unitTypeService.getAllowedParentTypes(type.code()));
         }
     %>
-    <details class="card" id="tree">
-        <summary>
-            <h2 class="summary-title">Tree settings</h2>
-            <span class="summary-note">
-                <%= esc(currentInfo.name()) %> · <span class="mono"><%= esc(currentInfo.code()) %></span>
-            </span>
-        </summary>
-        <div class="details-body">
-            <% if (canWrite) { %>
-            <form method="post" class="grid">
-                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-                <input type="hidden" name="action" value="updateInfo">
-                <label>Tree code
-                    <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
-                           value="<%= esc(currentInfo.code()) %>">
-                </label>
-                <label>Tree name
-                    <input name="name" required maxlength="120" value="<%= esc(currentInfo.name()) %>">
-                </label>
-                <label class="span-2">Description
-                    <input name="description" maxlength="255" value="<%= esc(currentInfo.description()) %>"
-                           placeholder="Optional">
-                </label>
-                <div class="form-actions span-2">
-                    <button class="btn" type="submit">Save the tree</button>
-                </div>
-            </form>
-
-            <div class="form-actions details-actions">
-                <form method="post" class="inline">
-                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-                    <input type="hidden" name="action" value="reload">
-                    <button class="btn btn-sm btn-ghost" type="submit">Reload XML</button>
-                </form>
-                <span class="summary-note">id <span class="mono"><%= esc(currentInfo.id()) %></span></span>
-            </div>
-            <% } else { %>
-            <p class="muted flush-top">
-                <strong><%= esc(currentInfo.name()) %></strong>
-                · <span class="mono"><%= esc(currentInfo.code()) %></span>
-            </p>
-            <% if (currentInfo.description() != null && !currentInfo.description().isBlank()) { %>
-            <p><%= esc(currentInfo.description()) %></p>
-            <% } %>
-            <p class="summary-note">id <span class="mono"><%= esc(currentInfo.id()) %></span></p>
-            <% } %>
-
-            <p class="hint details-note">
-                XML file: <span class="mono"><%= esc(configFile.toString()) %></span>
-            </p>
-        </div>
-    </details>
-
     <% if (report != null) { %>
         <% if (report.valid()) { %>
         <div class="flash ok" role="status">The configuration is valid.</div>
@@ -1204,24 +1168,186 @@
         <% } %>
     <% } %>
 
-    <% if (request.getParameter("preview") != null) { %>
-    <details class="card" id="xml" open>
-        <summary>
-            <h2 class="summary-title">XML preview</h2>
-            <span class="summary-note">persisted file</span>
-        </summary>
-        <div class="details-body">
-            <p class="muted flush-top">
-                This is the current persisted file generated from the named tree.
-            </p>
-            <% if (xmlPreviewError != null) { %>
-            <div class="flash error" role="alert"><%= esc(xmlPreviewError) %></div>
+    <nav class="dess-context-bar" aria-label="On this page">
+        <span class="dess-context-item">
+            <strong><%= esc(currentInfo.name()) %></strong>
+            <span class="mono"><%= esc(currentInfo.code()) %></span>
+        </span>
+        <a class="dess-context-item" href="#types">Unit types (<%= allTypes.size() %>)</a>
+        <a class="dess-context-item" href="#relations">Allowed relations (<%= pairs.size() %>)</a>
+        <a class="dess-context-item" href="#graph">Hierarchy (<%= graphBoxes.size() %>)</a>
+        <a class="dess-context-item" href="#settings">Settings</a>
+    </nav>
+
+    <div class="structure-rules">
+    <section class="card" id="types" aria-labelledby="types-title">
+        <h2 id="types-title">Unit types</h2>
+        <p class="muted flush-top">The kinds of unit this institution uses.</p>
+        <%= flash("types", flashSection, flashKind, flashText) %>
+        <% if (allTypes.isEmpty()) { %>
+        <div class="empty">
+            <p><strong>No unit types yet.</strong></p>
+            <% if (canWrite) { %>
+            <p>Add the first type below, for example a faculty or a class.</p>
             <% } else { %>
-            <pre class="preview"><%= esc(xmlPreview) %></pre>
+            <p>An administrator must add the first type.</p>
             <% } %>
         </div>
-    </details>
-    <% } %>
+        <% } else { %>
+        <div class="table-wrap" role="region" aria-labelledby="types-title" tabindex="0">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Type</th>
+                <th scope="col">Attributes</th>
+                <th scope="col">Status</th>
+                <% if (canWrite) { %>
+                <th scope="col">Actions</th>
+                <% } %>
+            </tr>
+            </thead>
+            <tbody>
+            <% for (UnitTypeDefinition type : allTypes) { %>
+            <tr>
+                <td>
+                    <strong><%= esc(type.label()) %></strong>
+                    <div class="mono muted"><%= esc(type.code()) %></div>
+                    <% if (type.description() != null) { %>
+                    <div class="muted"><%= esc(type.description()) %></div>
+                    <% } %>
+                </td>
+                <td>
+                    <% if (type.attributes().isEmpty()) { %>
+                    <span class="muted">None</span>
+                    <% } %>
+                    <% for (AttributeDefinition attribute : type.attributes()) { %>
+                    <div>
+                        <%= esc(attribute.label()) %>
+                        <span class="muted"><%= esc(attribute.type().name().toLowerCase(java.util.Locale.ROOT)) %><%=
+                            attribute.required() ? ", required" : "" %></span>
+                    </div>
+                    <% } %>
+                </td>
+                <td>
+                    <span class="badge <%= type.active() ? "ok" : "off" %>">
+                        <%= type.active() ? "Active" : "Inactive" %>
+                    </span>
+                </td>
+                <% if (canWrite) { %>
+                <td class="actions">
+                    <div class="row-actions">
+                    <%= type.active()
+                        ? postButton(csrfToken, "deactivateType", "code", type.code(), "Deactivate", "btn-ghost", null)
+                        : postButton(csrfToken, "activateType", "code", type.code(), "Activate", "btn-ghost", null) %>
+                    <%= postButton(csrfToken, "deleteType", "code", type.code(), "Delete", "btn-danger",
+                        "Delete unit type '" + type.code() + "'? Deletion is refused while units or relations still use it.") %>
+                    </div>
+                </td>
+                <% } %>
+            </tr>
+            <% } %>
+            </tbody>
+        </table>
+        </div>
+        <% } %>
+
+        <% if (canWrite) { %>
+        <h3>Add a unit type</h3>
+        <form method="post" class="row" id="create-type-form">
+            <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+            <input type="hidden" name="action" value="createType">
+            <label>Label
+                <input name="label" required maxlength="120" placeholder="Department"
+                       value="<%= esc(draft.get("createType.label")) %>">
+            </label>
+            <label>Code
+                <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
+                       title="Letters, digits, dot, dash or underscore; start with a letter or digit"
+                       placeholder="DEPARTMENT" value="<%= esc(draft.get("createType.code")) %>">
+            </label>
+            <button class="btn" type="submit">Add type</button>
+        </form>
+        <p class="hint">Both fields are required. The code cannot be changed later.</p>
+        <% } %>
+    </section>
+
+    <section class="card" id="relations" aria-labelledby="relations-title">
+        <h2 id="relations-title">Allowed relations</h2>
+        <p class="muted flush-top">Which type can be placed directly under which other type.</p>
+        <%= flash("relations", flashSection, flashKind, flashText) %>
+        <% if (pairs.isEmpty()) { %>
+        <div class="empty">
+            <p><strong>No relations yet.</strong></p>
+            <p>Root units can use any type. A child unit needs a relation.</p>
+        </div>
+        <% } else { %>
+        <div class="table-wrap" role="region" aria-labelledby="relations-title" tabindex="0">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Parent type</th>
+                <th scope="col">Child type</th>
+                <% if (canWrite) { %>
+                <th scope="col">Actions</th>
+                <% } %>
+            </tr>
+            </thead>
+            <tbody>
+            <% for (AllowedParentChildPair pair : pairs) { %>
+            <tr>
+                <td><%= esc(typeLabels.getOrDefault(pair.parent(), pair.parent())) %></td>
+                <td><%= esc(typeLabels.getOrDefault(pair.child(), pair.child())) %></td>
+                <% if (canWrite) { %>
+                <td class="actions">
+                    <form method="post" class="inline"
+                          data-confirm="Remove the allowed relation <%= esc(pair.parent()) %> → <%= esc(pair.child()) %>? Removal is refused while units rely on it.">
+                        <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                        <input type="hidden" name="action" value="removePair">
+                        <input type="hidden" name="parentType" value="<%= esc(pair.parent()) %>">
+                        <input type="hidden" name="childType" value="<%= esc(pair.child()) %>">
+                        <button class="btn btn-sm btn-danger" type="submit"
+                                aria-label="<%= esc("Remove " + pair.parent() + " to " + pair.child()) %>">Remove</button>
+                    </form>
+                </td>
+                <% } %>
+            </tr>
+            <% } %>
+            </tbody>
+        </table>
+        </div>
+        <% } %>
+
+        <% if (canWrite) { %>
+        <h3>Allow a relation</h3>
+        <% if (allTypes.isEmpty()) { %>
+        <p class="muted">Add a unit type first.</p>
+        <% } else { %>
+        <form method="post" class="row">
+            <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+            <input type="hidden" name="action" value="addPair">
+            <label>Parent type
+                <select name="parentType" required>
+                    <option value="">Choose…</option>
+                    <% for (UnitTypeDefinition type : allTypes) { %>
+                    <option value="<%= esc(type.code()) %>" <%= type.code().equals(draft.get("addPair.parentType"))
+                        ? "selected" : "" %>><%= esc(type.label() + " (" + type.code() + ")") %></option>
+                    <% } %>
+                </select>
+            </label>
+            <label>Child type
+                <select name="childType" required>
+                    <option value="">Choose…</option>
+                    <% for (UnitTypeDefinition type : allTypes) { %>
+                    <option value="<%= esc(type.code()) %>" <%= type.code().equals(draft.get("addPair.childType"))
+                        ? "selected" : "" %>><%= esc(type.label() + " (" + type.code() + ")") %></option>
+                    <% } %>
+                </select>
+            </label>
+            <button class="btn" type="submit">Allow relation</button>
+        </form>
+        <% } } %>
+    </section>
+    </div>
 
     <div class="workspace">
         <section class="card canvas-card" id="graph" aria-labelledby="graph-title">
@@ -1233,22 +1359,17 @@
                     </span>
                 </div>
                 <div class="form-actions">
-                    <% if (!graphBoxes.isEmpty()) { %>
-                    <button type="button" class="btn btn-sm btn-ghost" id="tidyLayout">Tidy layout</button>
-                    <% } %>
                     <% if (canWrite) { %>
-                    <button type="button" class="btn btn-sm new-root">+ New root</button>
+                    <button type="button" class="btn btn-sm new-root">+ New root unit</button>
                     <% } %>
                 </div>
             </div>
             <% if (!graphBoxes.isEmpty()) { %>
             <p class="legend" id="graph-legend">
                 <% if (canWrite) { %>
-                Drag a node to arrange it. Drag the round handle on a node onto another node to
-                connect them. Use <strong>+</strong> to add a child. Positions are kept in this browser.
+                Select a unit to edit or move it. Use <strong>+</strong> to add a child under it.
                 <% } else { %>
-                Select a node to view its details. Drag a node to arrange the canvas; positions are
-                kept in this browser.
+                Select a unit to view its details.
                 <% } %>
                 <span class="graph-hint">
                     On a small screen, scroll the canvas sideways to reach every unit.
@@ -1256,6 +1377,7 @@
             </p>
             <% } %>
 
+            <%= flash("graph", flashSection, flashKind, flashText) %>
             <% if (graphBoxes.isEmpty()) { %>
             <div class="empty">
                 <p><strong>No units yet.</strong></p>
@@ -1272,8 +1394,6 @@
                 <svg id="graphSvg" class="graph" width="<%= graphWidth %>" height="<%= graphHeight %>"
                      viewBox="0 0 <%= graphWidth %> <%= graphHeight %>" role="group"
                      style="--graph-min: <%= graphMinWidth %>px"
-                     data-tree="<%= esc(currentInfo.id()) %>"
-                     data-width="<%= graphWidth %>" data-height="<%= graphHeight %>"
                      aria-label="Institution unit graph">
                     <g class="edges">
                         <% for (GraphEdge edge : graphEdges) {
@@ -1301,18 +1421,14 @@
                                 meta += " · inactive";
                             }
                         %>
-                        <g class="gnode<%= selected ? " selected" : "" %><%= unit.active() ? "" : " inactive" %>"
+                        <a class="gnode<%= selected ? " selected" : "" %><%= unit.active() ? "" : " inactive" %>"
                            data-id="<%= esc(unit.id()) %>"
                            data-name="<%= esc(unit.name()) %>"
                            data-code="<%= esc(unit.code()) %>"
                            data-type="<%= esc(unit.typeCode()) %>"
                            data-active="<%= unit.active() %>"
-                           data-x="<%= box.x %>"
-                           data-y="<%= box.y %>"
-                           data-home-x="<%= box.x %>"
-                           data-home-y="<%= box.y %>"
                            transform="translate(<%= box.x %>,<%= box.y %>)"
-                           tabindex="0" role="button"
+                           href="?node=<%= urlEncode(unit.id()) %>#editor"
                            <%= selected ? "aria-current=\"true\"" : "" %>
                            aria-label="<%= esc(unit.name() + ", " + unit.code() + ", type "
                                + unit.typeCode() + (unit.active() ? ", active" : ", inactive")) %>">
@@ -1325,7 +1441,7 @@
                             <text class="gline" x="14" y="47"><%= esc(clipText(
                                 unit.code() + " · " + unit.typeCode(), 35)) %></text>
                             <text class="gmeta" x="14" y="64"><%= esc(meta) %></text>
-                        </g>
+                        </a>
                         <% } %>
                     </g>
                     <% if (canWrite) { %>
@@ -1342,35 +1458,15 @@
                         </g>
                         <% } %>
                     </g>
-                    <g class="handles">
-                        <% for (GraphBox box : graphBoxes) { %>
-                        <g class="link-handle" data-for="<%= esc(box.unit.id()) %>"
-                           transform="translate(<%= box.x %>,<%= box.y + GRAPH_NODE_H / 2 %>)"
-                           tabindex="0" role="button"
-                           aria-label="<%= esc("Connect " + box.unit.name() + " to another unit") %>">
-                            <title>Connect <%= esc(box.unit.name()) %> to another unit</title>
-                            <circle class="link-handle-hit" r="15"></circle>
-                            <circle class="link-handle-dot" r="6"></circle>
-                        </g>
-                        <% } %>
-                    </g>
                     <% } %>
                 </svg>
             </div>
-            <p class="visually-hidden" id="graph-status" role="status" aria-live="polite"></p>
             <% } %>
 
-            <% if (canWrite) { %>
-            <form id="moveForm" method="post" class="hidden-form">
-                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-                <input type="hidden" name="action" value="moveUnit">
-                <input type="hidden" name="id" id="moveId">
-                <input type="hidden" name="parentId" id="moveParentId">
-            </form>
-            <% } %>
         </section>
 
     <aside class="card inspector" id="editor" aria-labelledby="editor-title">
+        <%= flash("editor", flashSection, flashKind, flashText) %>
         <% if (selectedMissing) { %>
         <h2 id="editor-title">Unit not found</h2>
         <div class="flash error" role="alert">This node no longer exists.</div>
@@ -1378,17 +1474,11 @@
         <h2 id="editor-title">Unit details</h2>
         <% if (canWrite) { %>
         <p class="muted flush-top">
-            Select a node in the graph to edit its fields, parent and status.
+            Select a unit in the hierarchy to edit its fields, parent and status.
         </p>
-        <p class="muted">
-            Drag nodes to arrange the canvas. Drag the round handle on a node onto another node
-            to choose which unit becomes the parent. Positions are stored in this browser;
-            <em>Tidy layout</em> restores the automatic tree.
-        </p>
-        <button type="button" class="btn btn-sm btn-ghost new-root">+ New root unit</button>
         <% } else { %>
         <p class="muted flush-top">
-            Select a node in the graph to view its details, parent and status.
+            Select a unit in the hierarchy to view its details, parent and status.
         </p>
         <% } %>
         <% } else {
@@ -1409,7 +1499,7 @@
         <div class="card-head">
             <h2 id="editor-title"><%= esc(selectedUnit.name()) %></h2>
             <span class="badge <%= selectedUnit.active() ? "ok" : "off" %>">
-                <%= selectedUnit.active() ? "active" : "inactive" %>
+                <%= selectedUnit.active() ? "Active" : "Inactive" %>
             </span>
         </div>
         <p class="meta">
@@ -1420,7 +1510,7 @@
             <% } %>
         </p>
         <p class="path-trail">
-            <a href="#graph">Graph</a> / <%= esc(pathText.toString()) %>
+            <a href="#graph">Hierarchy</a> / <%= esc(pathText.toString()) %>
         </p>
 
         <% if (canWrite) { %>
@@ -1443,8 +1533,8 @@
             </label>
 
             <% if (selectedType != null && !selectedType.attributes().isEmpty()) { %>
-            <details class="subdetails">
-                <summary>Attributes (<%= selectedType.attributes().size() %>)</summary>
+            <fieldset>
+                <legend>Attributes</legend>
                 <div class="stack">
                     <% for (AttributeDefinition attribute : selectedType.attributes()) {
                         AttributeValue current = selectedUnit.values().get(attribute.key());
@@ -1477,7 +1567,7 @@
                     </label>
                     <% } %>
                 </div>
-            </details>
+            </fieldset>
             <% } %>
 
             <div>
@@ -1493,8 +1583,8 @@
             <% } %>
         </p>
         <% if (selectedType != null && !selectedType.attributes().isEmpty()) { %>
-        <details class="subdetails">
-            <summary>Attributes (<%= selectedType.attributes().size() %>)</summary>
+        <fieldset>
+            <legend>Attributes</legend>
             <div class="stack">
                 <% for (AttributeDefinition attribute : selectedType.attributes()) {
                     AttributeValue current = selectedUnit.values().get(attribute.key());
@@ -1510,7 +1600,7 @@
                 </p>
                 <% } %>
             </div>
-        </details>
+        </fieldset>
         <% } %>
         <% } %>
 
@@ -1536,9 +1626,9 @@
             <input type="hidden" name="action" value="moveUnit">
             <input type="hidden" name="id" value="<%= esc(selectedUnit.id()) %>">
             <label>New parent
-                <select name="parentId" aria-describedby="move-hint">
+                <select name="parentId">
                     <option value="" <%= selectedUnit.parentId() == null ? "selected" : "" %>>
-                        (none — make this node a root)
+                        (none — make this unit a root)
                     </option>
                     <% for (OrganizationalUnit candidate : moveCandidates) {
                         boolean current = candidate.id().equals(selectedUnit.parentId());
@@ -1559,13 +1649,9 @@
                 </select>
             </label>
             <div>
-                <button class="btn btn-sm btn-ghost" type="submit">Move node</button>
+                <button class="btn btn-sm btn-ghost" type="submit">Move unit</button>
             </div>
         </form>
-        <p class="hint" id="move-hint">
-            Or drag from the node's link handle onto the new parent in the graph.
-        </p>
-
         <hr>
 
         <div class="inspector-actions">
@@ -1606,186 +1692,46 @@
     </aside>
     </div>
 
-    <details class="card" id="types">
-        <summary>
-            <h2 class="summary-title">Unit types and relations</h2>
-            <span class="summary-note">
-                <%= allTypes.size() %> <%= allTypes.size() == 1 ? "type" : "types" %> ·
-                <%= pairs.size() %> <%= pairs.size() == 1 ? "relation" : "relations" %>
-            </span>
-        </summary>
-        <div class="details-body">
-        <% if (allTypes.isEmpty()) { %>
-        <div class="empty">
-            <p><strong>No unit types yet.</strong></p>
-            <p>A unit type defines the attributes and the allowed parent-child relations.</p>
-            <% if (canWrite) { %>
-            <a class="btn btn-sm" href="#create-type-form">Create the first type</a>
-            <% } %>
-        </div>
-        <% } else { %>
-        <div class="table-wrap" role="region" aria-label="Unit types table" tabindex="0">
-        <table>
-            <caption class="visually-hidden">Unit types</caption>
-            <thead>
-            <tr>
-                <th scope="col">Code</th>
-                <th scope="col">Label</th>
-                <th scope="col">State</th>
-                <th scope="col">Attributes</th>
-                <th scope="col">Allowed children</th>
-                <% if (canWrite) { %>
-                <th scope="col">Actions</th>
-                <% } %>
-            </tr>
-            </thead>
-            <tbody>
-            <% for (UnitTypeDefinition type : allTypes) {
-                List<String> childTypes = unitTypeService.getAllowedChildTypes(type.code());
-            %>
-            <tr>
-                <td class="mono"><%= esc(type.code()) %></td>
-                <td>
-                    <%= esc(type.label()) %>
-                    <% if (type.description() != null) { %>
-                    <div class="muted"><%= esc(type.description()) %></div>
-                    <% } %>
-                </td>
-                <td>
-                    <span class="badge <%= type.active() ? "ok" : "off" %>">
-                        <%= type.active() ? "active" : "inactive" %>
-                    </span>
-                </td>
-                <td>
-                    <% if (type.attributes().isEmpty()) { %>
-                    <span class="muted">—</span>
-                    <% } else {
-                        for (AttributeDefinition attribute : type.attributes()) { %>
-                    <span class="kv">
-                        <span class="mono"><%= esc(attribute.key()) %></span> :
-                        <%= esc(attribute.type().name()) %><%= attribute.required() ? " required" : "" %>
-                    </span>
-                    <%      }
-                       } %>
-                </td>
-                <td>
-                    <% if (childTypes.isEmpty()) { %>
-                    <span class="muted">—</span>
-                    <% } else { %>
-                    <span class="mono"><%= esc(String.join(", ", childTypes)) %></span>
-                    <% } %>
-                </td>
-                <% if (canWrite) { %>
-                <td class="actions">
-                    <%= type.active()
-                        ? postButton(csrfToken, "deactivateType", "code", type.code(), "Deactivate", "btn-ghost", null)
-                        : postButton(csrfToken, "activateType", "code", type.code(), "Activate", "btn-ghost", null) %>
-                    <%= postButton(csrfToken, "deleteType", "code", type.code(), "Delete", "btn-danger",
-                        "Delete unit type '" + type.code() + "'? Deletion is refused while units still use it.") %>
-                </td>
-                <% } %>
-            </tr>
-            <% } %>
-            </tbody>
-        </table>
-        </div>
-        <% } %>
-
+    <section class="card" id="settings" aria-labelledby="settings-title">
+        <h2 id="settings-title">Institution settings</h2>
+        <%= flash("settings", flashSection, flashKind, flashText) %>
         <% if (canWrite) { %>
-        <hr>
-
-        <h3 id="create-type-title">Create a type</h3>
-        <form method="post" class="grid" id="create-type-form">
-                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-            <input type="hidden" name="action" value="createType">
-            <label>Code
+        <form method="post" class="grid">
+            <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+            <input type="hidden" name="action" value="updateInfo">
+            <label>Institution code
                 <input name="code" required maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
-                       placeholder="DEPARTMENT">
+                       value="<%= esc(currentInfo.code()) %>">
             </label>
-            <label>Label
-                <input name="label" required maxlength="120" placeholder="Department">
+            <label>Institution name
+                <input name="name" required maxlength="120" value="<%= esc(currentInfo.name()) %>">
+            </label>
+            <label class="span-2">Description
+                <input name="description" maxlength="255" value="<%= esc(currentInfo.description()) %>"
+                       placeholder="Optional">
             </label>
             <div class="form-actions span-2">
-                <button class="btn" type="submit">Create the type</button>
+                <button class="btn" type="submit">Save settings</button>
             </div>
         </form>
-        <% } %>
-
-        <hr>
-
-        <h3>Allowed relations</h3>
-        <% if (pairs.isEmpty()) { %>
-        <p class="muted">
-            No relation is defined. A root unit may use any type; a relation is required to create
-            a child unit.
-        </p>
+        <form method="post" class="danger-zone">
+            <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+            <input type="hidden" name="action" value="reload">
+            <button class="btn btn-sm btn-ghost" type="submit">Reload from XML file</button>
+            <span class="hint">
+                Use this after editing the file by hand:
+                <span class="mono file-path"><%= esc(configFile.toString()) %></span>
+            </span>
+        </form>
         <% } else { %>
-        <div class="table-wrap" role="region" aria-label="Allowed parent-child relations table"
-             tabindex="0">
-        <table>
-            <caption class="visually-hidden">Allowed parent-child relations</caption>
-            <thead>
-            <tr>
-                <th scope="col">Parent type</th>
-                <th scope="col"><span class="visually-hidden">Direction</span></th>
-                <th scope="col">Child type</th>
-                <% if (canWrite) { %>
-                <th scope="col">Actions</th>
-                <% } %>
-            </tr>
-            </thead>
-            <tbody>
-            <% for (AllowedParentChildPair pair : pairs) { %>
-            <tr>
-                <td class="mono"><%= esc(pair.parent()) %></td>
-                <td aria-hidden="true">→</td>
-                <td class="mono"><%= esc(pair.child()) %></td>
-                <% if (canWrite) { %>
-                <td class="actions">
-                    <form method="post" class="inline"
-                          data-confirm="Remove the allowed relation <%= esc(pair.parent()) %> → <%= esc(pair.child()) %>?">
-                        <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-                        <input type="hidden" name="action" value="removePair">
-                        <input type="hidden" name="parentType" value="<%= esc(pair.parent()) %>">
-                        <input type="hidden" name="childType" value="<%= esc(pair.child()) %>">
-                        <button class="btn btn-sm btn-danger" type="submit">Remove</button>
-                    </form>
-                </td>
-                <% } %>
-            </tr>
-            <% } %>
-            </tbody>
-        </table>
-        </div>
-        <% } %>
-
-        <% if (canWrite) { %>
-        <form method="post" class="row form-row-spaced">
-                    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-            <input type="hidden" name="action" value="addPair">
-            <label>Parent type
-                <select name="parentType" required>
-                    <option value="">Choose…</option>
-                    <% for (UnitTypeDefinition type : allTypes) { %>
-                    <option value="<%= esc(type.code()) %>"><%= esc(type.code() + " — " + type.label()) %></option>
-                    <% } %>
-                </select>
-            </label>
-            <label>Child type
-                <select name="childType" required>
-                    <option value="">Choose…</option>
-                    <% for (UnitTypeDefinition type : allTypes) { %>
-                    <option value="<%= esc(type.code()) %>"><%= esc(type.code() + " — " + type.label()) %></option>
-                    <% } %>
-                </select>
-            </label>
-            <div>
-                <button class="btn" type="submit">Allow the relation</button>
-            </div>
-        </form>
-        <% } %>
-        </div>
-    </details>
+        <p class="flush">
+            <strong><%= esc(currentInfo.name()) %></strong>
+            <span class="mono"><%= esc(currentInfo.code()) %></span>
+        </p>
+        <% if (currentInfo.description() != null && !currentInfo.description().isBlank()) { %>
+        <p class="muted"><%= esc(currentInfo.description()) %></p>
+        <% } } %>
+    </section>
 
     <% if (canWrite) { %>
     <dialog id="createDialog" aria-labelledby="createTitle"
@@ -1802,7 +1748,7 @@
         <div class="dialog-body">
             <p class="muted flush">
                 Activate a type or create one under
-                <a href="#types" data-close-dialog>Unit types and relations</a>
+                <a href="#types" data-close-dialog>Unit types</a>
                 before adding units.
             </p>
         </div>
@@ -1862,8 +1808,8 @@
                 </div>
 
                 <p class="hint" id="createNoType" role="status" hidden>
-                    No active type is allowed under this parent. Add an allowed relation under
-                    Unit types and relations first.
+                    No active type is allowed under this parent. Add one under
+                    Allowed relations first.
                 </p>
 
                 <% for (UnitTypeDefinition type : activeTypes) {
@@ -1917,41 +1863,6 @@
         <% } %>
     </dialog>
 
-    <dialog id="linkDialog" class="link-dialog" aria-labelledby="linkTitle"
-            aria-describedby="linkNote">
-        <div class="dialog-panel">
-            <div class="dialog-head">
-                <div>
-                    <h2 id="linkTitle">Connect units</h2>
-                    <p class="muted">Choose which unit becomes the parent.</p>
-                </div>
-                <button type="button" class="icon-btn" data-close-link
-                        aria-label="Close dialog">×</button>
-            </div>
-            <div class="dialog-body">
-                <fieldset class="link-choices">
-                    <legend class="visually-hidden">Parent and child</legend>
-                    <label class="link-option">
-                        <input type="radio" name="linkDirection" value="a" checked>
-                        <span id="linkOptionA"></span>
-                    </label>
-                    <label class="link-option">
-                        <input type="radio" name="linkDirection" value="b">
-                        <span id="linkOptionB"></span>
-                    </label>
-                </fieldset>
-                <p class="hint flush-top" id="linkNote">
-                    The move is checked when you confirm. Invalid relations and moves that
-                    create a cycle are refused.
-                </p>
-            </div>
-            <div class="dialog-foot">
-                <button type="button" class="btn btn-ghost" data-close-link>Cancel</button>
-                <button type="button" class="btn" id="linkConfirm">Connect</button>
-            </div>
-        </div>
-    </dialog>
-
     <% } %>
 
     <footer class="dess-footer">
@@ -1960,16 +1871,11 @@
         <% } else { %>
         <p>Read-only view. Changes are validated by the institution module before they are written to the XML file.</p>
         <% } %>
-        <p>This page is only for local development.</p>
+        <p>Local development only.</p>
     </footer>
 
     <script>
         (function () {
-            var NODE_W = <%= GRAPH_NODE_W %>;
-            var NODE_H = <%= GRAPH_NODE_H %>;
-            var MARGIN = <%= GRAPH_MARGIN %>;
-            var PLUS_GAP = 16;
-            var svg = document.getElementById('graphSvg');
             var dialog = document.getElementById('createDialog');
             var form = dialog ? dialog.querySelector('form') : null;
             var createName = document.getElementById('createName');
@@ -1982,53 +1888,11 @@
             var createActiveHint = document.getElementById('createActiveHint');
             var createNoType = document.getElementById('createNoType');
             var createSubmit = document.getElementById('createSubmit');
-            var moveForm = document.getElementById('moveForm');
-            var moveId = document.getElementById('moveId');
-            var moveParent = document.getElementById('moveParentId');
-            var linkDialog = document.getElementById('linkDialog');
-            var linkOptionA = document.getElementById('linkOptionA');
-            var linkOptionB = document.getElementById('linkOptionB');
-            var linkConfirm = document.getElementById('linkConfirm');
-            var linkStatus = document.getElementById('graph-status');
-            var legendEl = document.getElementById('graph-legend');
-            var legendDefault = legendEl ? legendEl.innerHTML : '';
-            var statusTimer = null;
             var nodes = {};
-            var adds = {};
-            var handles = {};
-            var positions = {};
-            var storageKey = svg
-                ? 'dess.institution.layout.' + svg.getAttribute('data-tree')
-                : null;
-            var activeNode = null;
-            var currentTarget = null;
-            var overlay = null;
-            var dragged = false;
-            var linkMode = false;
-            var pickSourceId = null;
-            var linkSourceId = null;
-            var linkTargetId = null;
-            var startClientX = 0;
-            var startClientY = 0;
-            var pointerX = 0;
-            var pointerY = 0;
-            var cableX = 0;
-            var cableY = 0;
-            var originX = 0;
-            var originY = 0;
             var codeEdited = false;
 
             document.querySelectorAll('.gnode').forEach(function (node) {
                 nodes[node.getAttribute('data-id')] = node;
-            });
-
-            document.querySelectorAll('.add-child').forEach(function (add) {
-                adds[add.getAttribute('data-for')] = add;
-            });
-
-            document.querySelectorAll('.link-handle').forEach(function (handle) {
-                handles[handle.getAttribute('data-for')] = handle;
-                handle.setAttribute('aria-pressed', 'false');
             });
 
             function syncAttributes() {
@@ -2209,11 +2073,6 @@
                 });
             });
 
-            if (dialog) {
-                // Escape and the explicit close controls close the dialog.
-                // A backdrop click does not, so typed values are not lost.
-            }
-
             document.querySelectorAll('.new-root').forEach(function (button) {
                 button.addEventListener('click', function () {
                     openCreate(null);
@@ -2226,608 +2085,32 @@
                 });
             });
 
-            if (svg) {
-                svg.querySelectorAll('.gnode').forEach(function (node) {
-                    var id = node.getAttribute('data-id');
+            document.querySelectorAll('.add-child').forEach(function (add) {
+                var id = add.getAttribute('data-for');
 
-                    positions[id] = {
-                        x: parseFloat(node.getAttribute('data-x')),
-                        y: parseFloat(node.getAttribute('data-y'))
-                    };
-
-                    node.addEventListener('pointerdown', onNodePointerDown);
-                    node.addEventListener('keydown', function (event) {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-
-                            if (pickSourceId) {
-                                if (pickSourceId === id) {
-                                    cancelPickMode(true);
-                                } else {
-                                    openLinkDialog(pickSourceId, id);
-                                }
-
-                                return;
-                            }
-
-                            openNode(id);
-                        }
-                    });
+                add.addEventListener('click', function () {
+                    openForNode(id);
                 });
 
-                svg.querySelectorAll('.add-child').forEach(function (add) {
-                    var id = add.getAttribute('data-for');
-
-                    add.addEventListener('pointerdown', function (event) {
-                        event.stopPropagation();
-                    });
-
-                    add.addEventListener('click', function (event) {
+                add.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        event.stopPropagation();
                         openForNode(id);
-                    });
-
-                    add.addEventListener('keydown', function (event) {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            openForNode(id);
-                        }
-                    });
-                });
-
-                svg.querySelectorAll('.link-handle').forEach(function (handle) {
-                    var id = handle.getAttribute('data-for');
-
-                    handle.addEventListener('pointerdown', function (event) {
-                        if (event.button !== 0) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        event.stopPropagation();
-                        beginLinkDrag(id, event);
-                    });
-
-                    handle.addEventListener('keydown', function (event) {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-
-                            if (pickSourceId === id) {
-                                cancelPickMode(true);
-                            } else {
-                                startPickMode(id);
-                            }
-                        }
-                    });
-                });
-
-                svg.addEventListener('click', function (event) {
-                    if (!pickSourceId) {
-                        return;
                     }
-
-                    if (event.target.closest('.gnode') || event.target.closest('.link-handle')) {
-                        return;
-                    }
-
-                    cancelPickMode(true);
                 });
+            });
 
-                loadStored();
-                Object.keys(positions).forEach(applyPosition);
-                routeEdges();
-                updateExtent();
+            // On narrow screens the canvas scrolls sideways. Start centred so the root is visible.
+            var scroll = document.querySelector('.graph-scroll');
 
-                // On narrow screens the canvas scrolls horizontally. Start
-                // centred so the root and its main branches are visible.
-                var scroll = svg.parentElement;
-
-                if (scroll && scroll.scrollWidth > scroll.clientWidth) {
-                    scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) / 2;
-                }
-
-                var tidyButton = document.getElementById('tidyLayout');
-
-                if (tidyButton) {
-                    tidyButton.addEventListener('click', tidy);
-                }
+            if (scroll && scroll.scrollWidth > scroll.clientWidth) {
+                scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) / 2;
             }
 
             var requestedParent = document.body.getAttribute('data-open-create');
 
             if (requestedParent !== null) {
                 openForNode(requestedParent);
-            }
-
-            function svgPoint(event) {
-                var point = svg.createSVGPoint();
-                point.x = event.clientX;
-                point.y = event.clientY;
-                return point.matrixTransform(svg.getScreenCTM().inverse());
-            }
-
-            function openNode(id) {
-                window.location.href = '?node=' + encodeURIComponent(id) + '#editor';
-            }
-
-            function nameOf(id) {
-                var node = nodes[id];
-
-                return node ? node.getAttribute('data-name') : id;
-            }
-
-            function setGraphStatus(text) {
-                if (!linkStatus) {
-                    return;
-                }
-
-                linkStatus.textContent = text;
-
-                // While a source is picked, the legend line shows the same
-                // instruction in view; otherwise it returns to the static help.
-                if (legendEl && text && pickSourceId) {
-                    legendEl.textContent = text;
-                    legendEl.classList.add('picking');
-                } else if (legendEl && legendEl.classList.contains('picking')) {
-                    legendEl.innerHTML = legendDefault;
-                    legendEl.classList.remove('picking');
-                }
-
-                if (statusTimer) {
-                    window.clearTimeout(statusTimer);
-                    statusTimer = null;
-                }
-
-                // A message that describes a finished action clears itself; a
-                // pick-mode hint stays until the mode ends.
-                if (text && !pickSourceId) {
-                    statusTimer = window.setTimeout(function () {
-                        linkStatus.textContent = '';
-                        statusTimer = null;
-                    }, 6000);
-                }
-            }
-
-            function markSource(id) {
-                Object.keys(nodes).forEach(function (key) {
-                    nodes[key].classList.toggle('link-source', key === id);
-                });
-
-                Object.keys(handles).forEach(function (key) {
-                    handles[key].setAttribute('aria-pressed', key === id ? 'true' : 'false');
-                });
-
-                svg.classList.toggle('picking', Boolean(id));
-            }
-
-            function startPickMode(id) {
-                if (!nodes[id] || !positions[id]) {
-                    return;
-                }
-
-                pickSourceId = id;
-                markSource(id);
-                setGraphStatus('Connecting from ' + nameOf(id)
-                    + '. Select another unit to connect, or press Escape to cancel.');
-            }
-
-            function cancelPickMode(announce) {
-                if (!pickSourceId) {
-                    return;
-                }
-
-                markSource(null);
-                pickSourceId = null;
-                setGraphStatus(announce ? 'Connection cancelled.' : '');
-            }
-
-            function beginLinkDrag(id, event) {
-                if (!positions[id] || !nodes[id]) {
-                    return;
-                }
-
-                cancelPickMode(false);
-                activeNode = nodes[id];
-                dragged = false;
-                linkMode = true;
-                startClientX = event.clientX;
-                startClientY = event.clientY;
-                originX = positions[id].x;
-                originY = positions[id].y;
-                // A handle drag starts at the node's left edge; a Shift-drag on
-                // the node body starts at its centre.
-                cableX = originX;
-                cableY = originY + NODE_H / 2;
-
-                var point = svgPoint(event);
-                pointerX = point.x;
-                pointerY = point.y;
-
-                document.addEventListener('pointermove', onPointerMove);
-                document.addEventListener('pointerup', onPointerUp);
-                document.addEventListener('pointercancel', onPointerUp);
-            }
-
-            function openLinkDialog(sourceId, targetId) {
-                if (!linkDialog || !sourceId || !targetId || sourceId === targetId) {
-                    return;
-                }
-
-                linkSourceId = sourceId;
-                linkTargetId = targetId;
-
-                var sourceName = nameOf(sourceId);
-                var targetName = nameOf(targetId);
-
-                if (linkOptionA) {
-                    linkOptionA.textContent = targetName + ' becomes a child of ' + sourceName;
-                }
-
-                if (linkOptionB) {
-                    linkOptionB.textContent = sourceName + ' becomes a child of ' + targetName;
-                }
-
-                var first = linkDialog.querySelector('input[name="linkDirection"][value="a"]');
-
-                if (first) {
-                    first.checked = true;
-                }
-
-                cancelPickMode(false);
-
-                if (typeof linkDialog.showModal === 'function') {
-                    linkDialog.showModal();
-                } else {
-                    linkDialog.setAttribute('open', '');
-                }
-
-                if (first) {
-                    first.focus();
-                }
-            }
-
-            function closeLinkDialog() {
-                if (!linkDialog) {
-                    return;
-                }
-
-                if (linkDialog.close) {
-                    linkDialog.close();
-                } else {
-                    linkDialog.removeAttribute('open');
-                }
-
-                linkSourceId = null;
-                linkTargetId = null;
-            }
-
-            function submitLink() {
-                if (!moveForm || !moveId || !moveParent || !linkSourceId || !linkTargetId) {
-                    return;
-                }
-
-                var choice = linkDialog
-                    ? linkDialog.querySelector('input[name="linkDirection"]:checked')
-                    : null;
-                var targetBecomesChild = !choice || choice.value === 'a';
-                var childId = targetBecomesChild ? linkTargetId : linkSourceId;
-                var parentId = targetBecomesChild ? linkSourceId : linkTargetId;
-
-                moveId.value = childId;
-                moveParent.value = parentId;
-                closeLinkDialog();
-                moveForm.submit();
-            }
-
-            document.querySelectorAll('[data-close-link]').forEach(function (button) {
-                button.addEventListener('click', closeLinkDialog);
-            });
-
-            if (linkConfirm) {
-                linkConfirm.addEventListener('click', submitLink);
-            }
-
-            if (linkDialog) {
-                linkDialog.addEventListener('close', function () {
-                    linkSourceId = null;
-                    linkTargetId = null;
-                });
-
-                // The dialog is not a form, so Enter confirms from the radios.
-                linkDialog.addEventListener('keydown', function (event) {
-                    if (event.key === 'Enter'
-                        && event.target
-                        && event.target.tagName === 'INPUT') {
-                        event.preventDefault();
-                        submitLink();
-                    }
-                });
-            }
-
-            document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape' && pickSourceId) {
-                    cancelPickMode(true);
-                }
-            });
-
-            function applyPosition(id) {
-                var position = positions[id];
-                var node = nodes[id];
-                var add = adds[id];
-                var handle = handles[id];
-
-                if (!position || !node) {
-                    return;
-                }
-
-                node.setAttribute('transform', 'translate(' + position.x + ',' + position.y + ')');
-
-                if (add) {
-                    add.setAttribute('transform', 'translate('
-                        + (position.x + NODE_W + PLUS_GAP) + ',' + (position.y + NODE_H / 2) + ')');
-                }
-
-                if (handle) {
-                    handle.setAttribute('transform', 'translate('
-                        + position.x + ',' + (position.y + NODE_H / 2) + ')');
-                }
-            }
-
-            function routeEdges() {
-                svg.querySelectorAll('.edge').forEach(function (edge) {
-                    var parent = positions[edge.getAttribute('data-parent')];
-                    var child = positions[edge.getAttribute('data-child')];
-
-                    if (!parent || !child) {
-                        return;
-                    }
-
-                    var x1 = parent.x + NODE_W / 2;
-                    var y1 = parent.y + NODE_H;
-                    var x2 = child.x + NODE_W / 2;
-                    var y2 = child.y;
-                    var bend = Math.max(40, Math.abs(y2 - y1) / 2);
-
-                    edge.setAttribute('d', 'M' + x1 + ',' + y1
-                        + ' C' + x1 + ',' + (y1 + bend)
-                        + ' ' + x2 + ',' + (y2 - bend)
-                        + ' ' + x2 + ',' + y2);
-                });
-            }
-
-            function updateExtent() {
-                var width = parseFloat(svg.getAttribute('data-width')) || 0;
-                var height = parseFloat(svg.getAttribute('data-height')) || 0;
-
-                Object.keys(positions).forEach(function (id) {
-                    width = Math.max(width, positions[id].x + NODE_W + PLUS_GAP + 28);
-                    height = Math.max(height, positions[id].y + NODE_H + MARGIN);
-                });
-
-                width = Math.ceil(width);
-                height = Math.ceil(height);
-                svg.setAttribute('width', width);
-                svg.setAttribute('height', height);
-                svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-            }
-
-            function loadStored() {
-                if (!storageKey) {
-                    return;
-                }
-
-                try {
-                    var stored = JSON.parse(window.localStorage.getItem(storageKey) || '{}');
-
-                    Object.keys(stored).forEach(function (id) {
-                        if (positions[id]
-                            && typeof stored[id].x === 'number'
-                            && typeof stored[id].y === 'number') {
-                            positions[id].x = Math.max(MARGIN, stored[id].x);
-                            positions[id].y = Math.max(MARGIN, stored[id].y);
-                        }
-                    });
-                } catch (error) {
-                    // Ignore an unreadable layout entry.
-                }
-            }
-
-            function persist() {
-                if (!storageKey) {
-                    return;
-                }
-
-                try {
-                    window.localStorage.setItem(storageKey, JSON.stringify(positions));
-                } catch (error) {
-                    // Private browsing or a full quota: the layout is not kept.
-                }
-            }
-
-            function clearTarget() {
-                if (currentTarget) {
-                    currentTarget.classList.remove('drop-target');
-                }
-
-                currentTarget = null;
-            }
-
-            function cleanup() {
-                clearTarget();
-
-                if (overlay && overlay.parentNode) {
-                    overlay.parentNode.removeChild(overlay);
-                }
-
-                if (activeNode) {
-                    activeNode.classList.remove('link-source');
-                    activeNode.classList.remove('moving');
-                }
-
-                overlay = null;
-                activeNode = null;
-                linkMode = false;
-                svg.classList.remove('linking');
-                svg.classList.remove('moving');
-            }
-
-            function onNodePointerDown(event) {
-                if (event.button !== 0) {
-                    return;
-                }
-
-                var id = event.currentTarget.getAttribute('data-id');
-
-                if (!positions[id]) {
-                    return;
-                }
-
-                if (pickSourceId) {
-                    event.preventDefault();
-
-                    if (pickSourceId === id) {
-                        cancelPickMode(true);
-                    } else {
-                        openLinkDialog(pickSourceId, id);
-                    }
-
-                    return;
-                }
-
-                activeNode = event.currentTarget;
-                dragged = false;
-                linkMode = event.shiftKey;
-                startClientX = event.clientX;
-                startClientY = event.clientY;
-                originX = positions[id].x;
-                originY = positions[id].y;
-                cableX = originX + NODE_W / 2;
-                cableY = originY + NODE_H / 2;
-
-                var point = svgPoint(event);
-                pointerX = point.x;
-                pointerY = point.y;
-
-                document.addEventListener('pointermove', onPointerMove);
-                document.addEventListener('pointerup', onPointerUp);
-                document.addEventListener('pointercancel', onPointerUp);
-            }
-
-            function onPointerMove(event) {
-                if (!activeNode) {
-                    return;
-                }
-
-                if (!dragged && Math.abs(event.clientX - startClientX)
-                    + Math.abs(event.clientY - startClientY) < 4) {
-                    return;
-                }
-
-                if (!dragged) {
-                    dragged = true;
-
-                    if (linkMode) {
-                        activeNode.classList.add('link-source');
-                        svg.classList.add('linking');
-                        overlay = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        overlay.setAttribute('class', 'drag-line');
-                        overlay.setAttribute('x1', cableX);
-                        overlay.setAttribute('y1', cableY);
-                        svg.appendChild(overlay);
-                    } else {
-                        activeNode.classList.add('moving');
-                        svg.classList.add('moving');
-                    }
-                }
-
-                var point = svgPoint(event);
-
-                if (linkMode) {
-                    overlay.setAttribute('x2', point.x);
-                    overlay.setAttribute('y2', point.y);
-                    clearTarget();
-
-                    var element = document.elementFromPoint(event.clientX, event.clientY);
-                    var handleEl = element && element.closest
-                        ? element.closest('.link-handle') : null;
-                    var target = handleEl
-                        ? nodes[handleEl.getAttribute('data-for')]
-                        : element && element.closest ? element.closest('.gnode') : null;
-
-                    if (target && target !== activeNode) {
-                        currentTarget = target;
-                        currentTarget.classList.add('drop-target');
-                    }
-
-                    return;
-                }
-
-                var id = activeNode.getAttribute('data-id');
-                positions[id].x = Math.max(MARGIN, Math.round(originX + point.x - pointerX));
-                positions[id].y = Math.max(MARGIN, Math.round(originY + point.y - pointerY));
-                applyPosition(id);
-                routeEdges();
-            }
-
-            function onPointerUp() {
-                document.removeEventListener('pointermove', onPointerMove);
-                document.removeEventListener('pointerup', onPointerUp);
-                document.removeEventListener('pointercancel', onPointerUp);
-
-                if (!activeNode) {
-                    return;
-                }
-
-                var id = activeNode.getAttribute('data-id');
-                var targetId = currentTarget ? currentTarget.getAttribute('data-id') : null;
-                var wasLink = linkMode;
-
-                if (!dragged) {
-                    cleanup();
-
-                    if (wasLink) {
-                        startPickMode(id);
-                        return;
-                    }
-
-                    openNode(id);
-                    return;
-                }
-
-                cleanup();
-
-                if (wasLink) {
-                    if (targetId && targetId !== id) {
-                        openLinkDialog(id, targetId);
-                    }
-
-                    return;
-                }
-
-                persist();
-                updateExtent();
-            }
-
-            function tidy() {
-                Object.keys(nodes).forEach(function (id) {
-                    positions[id].x = parseFloat(nodes[id].getAttribute('data-home-x'));
-                    positions[id].y = parseFloat(nodes[id].getAttribute('data-home-y'));
-                    applyPosition(id);
-                });
-
-                try {
-                    window.localStorage.removeItem(storageKey);
-                } catch (error) {
-                    // Ignore.
-                }
-
-                var width = parseFloat(svg.getAttribute('data-width')) || 0;
-                var height = parseFloat(svg.getAttribute('data-height')) || 0;
-                svg.setAttribute('width', width);
-                svg.setAttribute('height', height);
-                svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-                routeEdges();
             }
         })();
     </script>
