@@ -33,6 +33,8 @@ public class JpaBookingRepository implements BookingRepository
         {
             entity.setStatus(booking.status().name());
         }
+        entityManager.flush();
+        entityManager.refresh(entity);
         return toDomain(entity);
     }
 

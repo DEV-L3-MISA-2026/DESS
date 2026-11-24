@@ -14,17 +14,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dess.scheduling.application.impl.BookingServiceImpl;
-import com.dess.scheduling.domain.ResourceRef;
 import com.dess.scheduling.application.spi.BookingRepository;
 import com.dess.scheduling.application.spi.BookingSlotRepository;
+import com.dess.scheduling.application.spi.RoomRepository;
 import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 import com.dess.scheduling.domain.BookingStatus;
+import com.dess.scheduling.domain.ResourceRef;
+import com.dess.scheduling.domain.Room;
 
 class BookingServiceTest
 {
     private InMemoryBookingRepository bookings;
     private InMemoryBookingSlotRepository slots;
+    private InMemoryRoomRepository rooms;
     private BookingServiceImpl service;
 
     @BeforeEach
@@ -32,7 +35,8 @@ class BookingServiceTest
     {
         bookings = new InMemoryBookingRepository();
         slots = new InMemoryBookingSlotRepository();
-        service = new BookingServiceImpl(bookings, slots);
+        rooms = new InMemoryRoomRepository();
+        service = new BookingServiceImpl(bookings, slots, rooms);
     }
 
     @Test
@@ -42,9 +46,10 @@ class BookingServiceTest
         OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
         UUID ownerId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
 
         Booking created = service.create("SESSION", ownerId, start, end,
-                List.of(new BookingService.ResourceRequest("ROOM", roomId)));
+                List.of(new BookingService.ResourceRequest("ROOM", roomId, 10)));
 
         assertEquals("SESSION", created.ownerType());
         assertEquals(ownerId, created.ownerId());
@@ -57,11 +62,13 @@ class BookingServiceTest
     {
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
         OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
 
         Booking created = service.create("SESSION", UUID.randomUUID(), start, end,
                 List.of(
-                        new BookingService.ResourceRequest("ROOM", UUID.randomUUID()),
-                        new BookingService.ResourceRequest("EQUIPMENT", UUID.randomUUID())
+                        new BookingService.ResourceRequest("ROOM", roomId, 10),
+                        new BookingService.ResourceRequest("EQUIPMENT", UUID.randomUUID(), 0)
                 ));
 
         assertEquals(2, service.findSlotsByBookingId(created.id()).size());
@@ -84,14 +91,15 @@ class BookingServiceTest
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
         OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
         UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
 
         service.create("SESSION", UUID.randomUUID(), start, end,
-                List.of(new BookingService.ResourceRequest("ROOM", roomId)));
+                List.of(new BookingService.ResourceRequest("ROOM", roomId, 10)));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> service.create("SESSION", UUID.randomUUID(), start.plusMinutes(30),
                         end.plusMinutes(30),
-                        List.of(new BookingService.ResourceRequest("ROOM", roomId))));
+                        List.of(new BookingService.ResourceRequest("ROOM", roomId, 10))));
 
         assertEquals("resource is already booked for this time range", exception.getMessage());
     }
@@ -102,9 +110,10 @@ class BookingServiceTest
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
         OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
         UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
 
         service.create("SESSION", UUID.randomUUID(), start, end,
-                List.of(new BookingService.ResourceRequest("ROOM", roomId)));
+                List.of(new BookingService.ResourceRequest("ROOM", roomId, 10)));
 
         assertTrue(service.isAvailable("ROOM", roomId, end, end.plusHours(1)));
         assertFalse(service.isAvailable("ROOM", roomId, start.plusMinutes(30), end.plusMinutes(30)));
@@ -115,9 +124,11 @@ class BookingServiceTest
     {
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
         OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
 
         Booking created = service.create("SESSION", UUID.randomUUID(), start, end,
-                List.of(new BookingService.ResourceRequest("ROOM", UUID.randomUUID())));
+                List.of(new BookingService.ResourceRequest("ROOM", roomId, 10)));
 
         Booking cancelled = service.cancel(created.id());
 
@@ -142,9 +153,11 @@ class BookingServiceTest
     {
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
         UUID ownerId = UUID.randomUUID();
+        UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
 
         Booking created = service.create("SESSION", ownerId, start, start.plusHours(1),
-                List.of(new BookingService.ResourceRequest("ROOM", UUID.randomUUID())));
+                List.of(new BookingService.ResourceRequest("ROOM", roomId, 10)));
 
         assertEquals(List.of(created), service.findByOwner("SESSION", ownerId));
     }
@@ -196,6 +209,75 @@ class BookingServiceTest
 
         assertFalse(service.isAvailable(ResourceRef.personId(42L), start, end));
         assertTrue(service.isAvailable(ResourceRef.personId(43L), start, end));
+    }
+
+    @Test
+    void acceptsBookingWhenRequiredCapacityEqualsRoomCapacity()
+    {
+        OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
+
+        Booking created = service.create("SESSION", UUID.randomUUID(), start, end,
+                List.of(new BookingService.ResourceRequest("ROOM", roomId, 30)));
+
+        assertEquals(1, service.findSlotsByBookingId(created.id()).size());
+    }
+
+    @Test
+    void rejectsBookingWhenRequiredCapacityExceedsRoomCapacity()
+    {
+        OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-20T11:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> service.create("SESSION", UUID.randomUUID(), start, end,
+                        List.of(new BookingService.ResourceRequest("ROOM", roomId, 40))));
+
+        assertEquals("room capacity is insufficient: room A101 holds 30, 40 requested",
+                exception.getMessage());
+    }
+
+    @Test
+    void rejectsRoomBookingWithoutRequiredCapacity()
+    {
+        OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+        rooms.save(new Room(roomId, "A101", "Salle A101", 30));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> service.create("SESSION", UUID.randomUUID(), start, start.plusHours(1),
+                        List.of(new BookingService.ResourceRequest("ROOM", roomId, 0))));
+
+        assertEquals("a room booking must state the required capacity", exception.getMessage());
+    }
+
+    @Test
+    void rejectsBookingForUnknownRoomWhenCapacityIsRequired()
+    {
+        OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> service.create("SESSION", UUID.randomUUID(), start, start.plusHours(1),
+                        List.of(new BookingService.ResourceRequest("ROOM", roomId, 10))));
+
+        assertEquals("room not found: " + roomId, exception.getMessage());
+    }
+
+    @Test
+    void rejectsNegativeRequiredCapacity()
+    {
+        OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> service.create("SESSION", UUID.randomUUID(), start, start.plusHours(1),
+                        List.of(new BookingService.ResourceRequest("ROOM", UUID.randomUUID(), -1))));
+
+        assertEquals("required capacity cannot be negative", exception.getMessage());
     }
 
     private static OffsetDateTime date(String value)
@@ -273,6 +355,37 @@ class BookingServiceTest
                     .filter(slot -> slot.resourceId().equals(resourceId))
                     .anyMatch(slot -> slot.startsAt().isBefore(endsAt)
                             && slot.endsAt().isAfter(startsAt));
+        }
+    }
+
+    private static final class InMemoryRoomRepository implements RoomRepository
+    {
+        private final List<Room> values = new ArrayList<>();
+
+        @Override
+        public Room save(Room room)
+        {
+            values.removeIf(existing -> existing.id().equals(room.id()));
+            values.add(room);
+            return room;
+        }
+
+        @Override
+        public Optional<Room> findById(UUID id)
+        {
+            return values.stream().filter(room -> room.id().equals(id)).findFirst();
+        }
+
+        @Override
+        public Optional<Room> findByCode(String code)
+        {
+            return values.stream().filter(room -> room.code().equals(code)).findFirst();
+        }
+
+        @Override
+        public List<Room> findAll()
+        {
+            return List.copyOf(values);
         }
     }
 }
