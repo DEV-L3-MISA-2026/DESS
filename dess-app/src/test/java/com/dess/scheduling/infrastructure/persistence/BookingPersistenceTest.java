@@ -49,7 +49,7 @@ import com.dess.scheduling.infrastructure.persistence.entity.BookingEntity;
  * what only the real database can guarantee: the exclusion constraint, the
  * ON DELETE CASCADE and the database-filled created_at.
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class BookingPersistenceTest
 {
     private static final OffsetDateTime START = OffsetDateTime.parse("2026-11-25T09:00:00+03:00");
