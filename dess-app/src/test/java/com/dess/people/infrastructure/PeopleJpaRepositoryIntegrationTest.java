@@ -7,6 +7,7 @@ import com.dess.people.exception.DuplicateRegistrationNumberException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
+import jakarta.persistence.PersistenceException;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,6 +96,35 @@ class PeopleJpaRepositoryIntegrationTest {
                     () -> students.create(new CreateStudentCommand("unique.student@dess.mg", "Rabe", "Paul", "INT-STUDENT-3")));
             assertThrows(DuplicateRegistrationNumberException.class,
                     () -> students.create(new CreateStudentCommand("other.student@dess.mg", "Rabe", "Paul", "INT-STUDENT-2")));
+
+            entityManager.getTransaction().rollback();
+        } catch (RuntimeException exception) {
+            if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
+            throw exception;
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    @Test
+    void rejectsCaseDifferentEmailAtDatabaseAndPreservesOriginalCase() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            entityManager.createNativeQuery(
+                            "INSERT INTO app_user (email, last_name, first_name, role, active) "
+                                    + "VALUES ('Ada@x', 'Rakoto', 'Jean', 'STUDENT', true)")
+                    .executeUpdate();
+
+            String storedEmail = entityManager.createNativeQuery(
+                            "SELECT email FROM app_user WHERE lower(email) = 'ada@x'")
+                    .getSingleResult().toString();
+            assertEquals("Ada@x", storedEmail);
+
+            assertThrows(PersistenceException.class, () -> entityManager.createNativeQuery(
+                            "INSERT INTO app_user (email, last_name, first_name, role, active) "
+                                    + "VALUES ('ada@x', 'Rabe', 'Paul', 'STUDENT', true)")
+                    .executeUpdate());
 
             entityManager.getTransaction().rollback();
         } catch (RuntimeException exception) {

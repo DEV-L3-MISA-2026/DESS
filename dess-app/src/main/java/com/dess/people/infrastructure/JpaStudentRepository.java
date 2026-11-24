@@ -2,6 +2,7 @@ package com.dess.people.infrastructure;
 
 import com.dess.people.application.CreateStudentCommand;
 import com.dess.people.application.spi.StudentRepository;
+import com.dess.people.domain.Person;
 import com.dess.people.domain.StudentProfile;
 import com.dess.people.exception.DuplicateEmailException;
 import com.dess.people.exception.DuplicateRegistrationNumberException;
@@ -28,9 +29,10 @@ public class JpaStudentRepository implements StudentRepository {
     @Override
     public StudentProfile create(CreateStudentCommand command) {
         String email = command.email().trim();
+        String normalizedEmail = Person.normalizeEmail(email);
         String registrationNumber = command.registrationNumber().trim();
 
-        if (emailExists(email)) throw new DuplicateEmailException(email);
+        if (emailExists(normalizedEmail)) throw new DuplicateEmailException(email);
         if (registrationNumberExists(registrationNumber)) {
             throw new DuplicateRegistrationNumberException(registrationNumber);
         }
@@ -67,10 +69,10 @@ public class JpaStudentRepository implements StudentRepository {
         return count != null && count > 0;
     }
 
-    private boolean emailExists(String email) {
+    private boolean emailExists(String normalizedEmail) {
         Long count = entityManager.createQuery(
-                        "select count(u) from AppUserEntity u where u.email = :email", Long.class)
-                .setParameter("email", email)
+                        "select count(u) from AppUserEntity u where lower(u.email) = :normalizedEmail", Long.class)
+                .setParameter("normalizedEmail", normalizedEmail)
                 .getSingleResult();
         return count != null && count > 0;
     }
@@ -93,6 +95,6 @@ public class JpaStudentRepository implements StudentRepository {
                 || detail.contains("matricule")) {
             return new DuplicateRegistrationNumberException(detail);
         }
-        return new DuplicateEmailException(detail);
+        return new DuplicateEmailException(detail, exception);
     }
 }
