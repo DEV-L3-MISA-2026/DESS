@@ -3,6 +3,7 @@ package com.dess.people.infrastructure;
 import com.dess.people.application.CreateTeacherCommand;
 import com.dess.people.application.spi.TeacherRepository;
 import com.dess.people.domain.TeacherProfile;
+import com.dess.people.domain.Person;
 import com.dess.people.exception.DuplicateEmailException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
@@ -25,9 +26,10 @@ public class JpaTeacherRepository implements TeacherRepository {
     @Override
     public TeacherProfile create(CreateTeacherCommand command) {
         String email = command.email().trim();
+        String normalizedEmail = Person.normalizeEmail(email);
         Long count = entityManager.createQuery(
-                        "select count(u) from AppUserEntity u where u.email = :email", Long.class)
-                .setParameter("email", email)
+                        "select count(u) from AppUserEntity u where lower(u.email) = :normalizedEmail", Long.class)
+                .setParameter("normalizedEmail", normalizedEmail)
                 .getSingleResult();
         if (count != null && count > 0) throw new DuplicateEmailException(email);
 
@@ -41,7 +43,7 @@ public class JpaTeacherRepository implements TeacherRepository {
             entityManager.flush();
             return new TeacherProfile(person.getId(), teacher.getAcademicRank());
         } catch (PersistenceException exception) {
-            throw new DuplicateEmailException(email);
+            throw new DuplicateEmailException(email, exception);
         }
     }
 }

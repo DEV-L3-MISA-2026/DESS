@@ -28,9 +28,10 @@ public class JpaPersonRepository implements PersonRepository {
 
     @Override
     public Optional<Person> findByEmail(String email) {
+        String normalizedEmail = Person.normalizeEmail(email);
         TypedQuery<AppUserEntity> query = entityManager.createQuery(
-                "select u from AppUserEntity u where u.email = :email", AppUserEntity.class);
-        query.setParameter("email", email);
+                "select u from AppUserEntity u where lower(u.email) = :normalizedEmail", AppUserEntity.class);
+        query.setParameter("normalizedEmail", normalizedEmail);
         return query.getResultStream().findFirst().map(this::toPerson);
     }
 

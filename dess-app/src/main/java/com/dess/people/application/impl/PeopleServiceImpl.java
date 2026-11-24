@@ -52,7 +52,7 @@ public class PeopleServiceImpl implements PeopleService {
     @Override
     public Optional<Person> findByEmail(String email) {
         if (email == null || email.trim().isBlank()) throw new IllegalArgumentException("L’adresse e-mail est obligatoire");
-        return personRepository.findByEmail(email.trim());
+        return personRepository.findByEmail(Person.normalizeEmail(email));
     }
 
     @Override

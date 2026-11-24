@@ -75,6 +75,22 @@ class PeopleServiceImplTest {
                 () -> service.findByEmail(" "));
     }
 
+    @Test
+    void rejectsCaseDifferentDuplicateEmailAndPreservesOriginalCase() {
+        InMemoryPeopleRepositories repositories = new InMemoryPeopleRepositories();
+        PeopleService service = service(repositories);
+
+        StudentProfile student = service.createStudent(
+                new CreateStudentCommand("Ada@x", "Rakoto", "Jean", "ETU-CASE-1"));
+
+        assertEquals("Ada@x", service.findByEmail(" ada@x ").orElseThrow().email());
+        assertThrows(DuplicateEmailException.class,
+                () -> service.createTeacher(new CreateTeacherCommand("ada@x", "Rabe", "Paul", "Professeur")));
+        assertThrows(DuplicateEmailException.class,
+                () -> service.createStudent(new CreateStudentCommand(" ADA@X ", "Rabe", "Paul", "ETU-CASE-2")));
+        assertEquals("Ada@x", repositories.persons.get(student.personId()).email());
+    }
+
     private PeopleService service(InMemoryPeopleRepositories repositories) {
         return new PeopleServiceImpl(repositories, repositories, repositories);
     }
@@ -93,14 +109,15 @@ class PeopleServiceImplTest {
 
         @Override
         public Optional<Person> findByEmail(String email) {
-            Long id = emails.get(email.trim());
+            Long id = emails.get(Person.normalizeEmail(email));
             return id == null ? Optional.empty() : Optional.ofNullable(persons.get(id));
         }
 
         @Override
         public StudentProfile create(CreateStudentCommand command) {
             String email = command.email().trim();
-            if (emails.containsKey(email)) throw new DuplicateEmailException(email);
+            String normalizedEmail = Person.normalizeEmail(email);
+            if (emails.containsKey(normalizedEmail)) throw new DuplicateEmailException(email);
             String registrationNumber = command.registrationNumber().trim();
             if (registrationNumbers.containsKey(registrationNumber)) {
                 throw new DuplicateRegistrationNumberException(registrationNumber);
@@ -109,7 +126,7 @@ class PeopleServiceImplTest {
             persons.put(id, new Person(id, email, command.lastName(), command.firstName(), true));
             StudentProfile profile = new StudentProfile(id, registrationNumber);
             students.put(id, profile);
-            emails.put(email, id);
+            emails.put(normalizedEmail, id);
             registrationNumbers.put(registrationNumber, id);
             return profile;
         }
@@ -127,10 +144,11 @@ class PeopleServiceImplTest {
         @Override
         public TeacherProfile create(CreateTeacherCommand command) {
             String email = command.email().trim();
-            if (emails.containsKey(email)) throw new DuplicateEmailException(email);
+            String normalizedEmail = Person.normalizeEmail(email);
+            if (emails.containsKey(normalizedEmail)) throw new DuplicateEmailException(email);
             long id = nextId++;
             persons.put(id, new Person(id, email, command.lastName(), command.firstName(), true));
-            emails.put(email, id);
+            emails.put(normalizedEmail, id);
             return new TeacherProfile(id, command.academicRank());
         }
     }
