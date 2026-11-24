@@ -93,18 +93,6 @@
     min-width: 0;
 }
 
-.dess-context-label {
-    color: var(--dess-text-muted);
-    font-size: var(--dess-font-size-meta);
-    font-weight: 700;
-    letter-spacing: 0.01em;
-}
-
-.dess-context-value {
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-
 /* Panels and sections.
 
    .panel is the shared surface for grouping page content. .card is the older
@@ -798,62 +786,6 @@ details.card > summary:focus-visible {
     box-shadow: var(--dess-focus-ring);
 }
 
-.summary-title {
-    margin: 0;
-    color: var(--dess-primary);
-    font-size: var(--dess-font-size-section-title);
-    line-height: 1.3;
-}
-
-.summary-note {
-    color: var(--dess-text-muted);
-    font-size: var(--dess-font-size-label);
-    font-weight: 400;
-}
-
-.details-body {
-    padding: var(--dess-space-5);
-}
-
-details.subdetails {
-    margin: 0;
-    padding: var(--dess-space-2) var(--dess-space-3);
-    border: var(--dess-border-width) solid var(--dess-border);
-    border-radius: var(--dess-radius-sm);
-}
-
-details.subdetails > summary {
-    list-style: none;
-    color: var(--dess-text);
-    font-size: var(--dess-font-size-label);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-details.subdetails > summary::before {
-    content: "\25B8";
-    margin-right: var(--dess-space-2);
-    color: var(--dess-text-muted);
-    font-size: 0.75rem;
-}
-
-details.subdetails[open] > summary::before {
-    content: "\25BE";
-}
-
-details.subdetails > summary::-webkit-details-marker {
-    display: none;
-}
-
-details.subdetails[open] > summary {
-    margin-bottom: var(--dess-space-3);
-}
-
-details.subdetails > summary:focus-visible {
-    outline: none;
-    box-shadow: var(--dess-focus-ring);
-}
-
 /* Dialogs */
 
 dialog {
@@ -966,38 +898,12 @@ dialog::backdrop {
     overflow-wrap: anywhere;
 }
 
-.preview {
-    max-height: 520px;
-    margin: 0;
-    padding: var(--dess-space-4);
-    border-radius: var(--dess-radius-sm);
-    background: var(--dess-primary);
-    color: var(--dess-surface);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: var(--dess-font-size-table);
-    line-height: 1.55;
-    overflow: auto;
-}
-
 .flush {
     margin: 0;
 }
 
 .flush-top {
     margin-top: 0;
-}
-
-.details-actions {
-    margin-top: var(--dess-space-3);
-}
-
-.details-note {
-    margin-top: var(--dess-space-3);
-    overflow-wrap: anywhere;
-}
-
-.form-row-spaced {
-    margin-top: var(--dess-space-3);
 }
 
 .dialog-fieldset {
@@ -1022,8 +928,6 @@ dialog::backdrop {
         margin-top: var(--dess-space-3);
     }
 
-    .details-body,
-    details.card > summary,
     .dialog-body,
     .dialog-head,
     .dialog-foot {

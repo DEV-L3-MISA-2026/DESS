@@ -7,6 +7,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,6 +23,8 @@ public final class Web
 {
     private static final String FLASH_KIND = "flashKind";
     private static final String FLASH_MESSAGE = "flashMessage";
+    private static final DateTimeFormatter MOMENT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private Web()
     {
@@ -127,12 +132,14 @@ public final class Web
     }
 
     /**
-     * @param request current request
-     * @return the application context path
+     * Formats an instant the way the timetable pages display it.
+     *
+     * @param value instant to format, possibly with a non-UTC offset
+     * @return {@code yyyy-MM-dd HH:mm} in UTC
      */
-    public static String context(HttpServletRequest request)
+    public static String moment(OffsetDateTime value)
     {
-        return request.getContextPath();
+        return MOMENT.format(value.withOffsetSameInstant(ZoneOffset.UTC));
     }
 
     /**

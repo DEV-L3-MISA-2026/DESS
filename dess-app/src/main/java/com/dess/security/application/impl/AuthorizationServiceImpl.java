@@ -6,7 +6,6 @@ import com.dess.security.domain.Role;
 import com.dess.security.domain.UserAccount;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;

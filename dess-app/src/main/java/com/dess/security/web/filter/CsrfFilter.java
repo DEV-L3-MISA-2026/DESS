@@ -1,6 +1,7 @@
 package com.dess.security.web.filter;
 
 import com.dess.security.web.CsrfTokens;
+import com.dess.security.web.RequestPaths;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,7 +31,7 @@ public class CsrfFilter implements Filter
     {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        String path = path(request);
+        String path = RequestPaths.path(request);
 
         if (isSafe(request.getMethod()))
         {
@@ -90,20 +91,10 @@ public class CsrfFilter implements Filter
                 || "OPTIONS".equalsIgnoreCase(method);
     }
 
-    private static String path(HttpServletRequest request)
-    {
-        String uri = request.getRequestURI();
-        String context = request.getContextPath();
-
-        return uri != null && context != null && uri.startsWith(context)
-                ? uri.substring(context.length())
-                : uri;
-    }
-
     private static void reject(HttpServletRequest request, HttpServletResponse response)
             throws IOException
     {
-        if (path(request).startsWith("/api/"))
+        if (RequestPaths.isApi(request))
         {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");

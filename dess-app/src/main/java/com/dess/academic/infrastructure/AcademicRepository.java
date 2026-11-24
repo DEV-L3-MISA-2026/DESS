@@ -5,7 +5,6 @@ import com.dess.academic.application.CreateProgramCommand;
 import com.dess.academic.application.CreateProgramVersionCommand;
 import com.dess.academic.application.EnrollStudentCommand;
 import com.dess.academic.domain.*;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 

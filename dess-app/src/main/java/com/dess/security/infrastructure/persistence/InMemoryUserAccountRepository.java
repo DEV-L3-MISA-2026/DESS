@@ -1,7 +1,6 @@
 package com.dess.security.infrastructure.persistence;
 
 import com.dess.security.application.spi.PasswordEncoder;
-import com.dess.security.domain.Role;
 import com.dess.security.domain.RoleCatalog;
 import com.dess.security.domain.UserAccount;
 import com.dess.security.domain.UserAccountRepository;

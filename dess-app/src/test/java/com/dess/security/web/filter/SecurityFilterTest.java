@@ -54,8 +54,8 @@ class SecurityFilterTest
     @Test
     void jsonErrorsContainCodeAndMessage()
     {
-        assertTrue(filter.construireJson401().contains("UNAUTHORIZED"));
-        assertTrue(filter.construireJson403().contains("FORBIDDEN"));
+        assertTrue(SecurityFilter.construireJson401().contains("UNAUTHORIZED"));
+        assertTrue(SecurityFilter.construireJson403().contains("FORBIDDEN"));
     }
 
     @Test

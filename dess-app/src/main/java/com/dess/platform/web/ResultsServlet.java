@@ -1,8 +1,6 @@
 package com.dess.platform.web;
 
 import java.io.IOException;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +34,6 @@ import com.dess.scheduling.application.RoomService;
 @WebServlet("/app/results")
 public class ResultsServlet extends HttpServlet
 {
-    private static final DateTimeFormatter DATE_TIME =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
     @Inject
     private ExamSessionService examSessionService;
 
@@ -80,10 +75,8 @@ public class ResultsServlet extends HttpServlet
                             session.candidatePersonIds().size(),
                             recordedByAssessment.get(session.assessmentId()));
                     return new ResultRow(
-                            DATE_TIME.format(session.startsAt()
-                                    .withOffsetSameInstant(ZoneOffset.UTC)),
-                            DATE_TIME.format(session.endsAt()
-                                    .withOffsetSameInstant(ZoneOffset.UTC)),
+                            Web.moment(session.startsAt()),
+                            Web.moment(session.endsAt()),
                             roomLabels.getOrDefault(session.roomId(), "Unknown room"),
                             session.candidatePersonIds().size(),
                             Badge.of(progress.tone(), progress.label()));

@@ -25,9 +25,9 @@ class PeopleViewTest
     {
         PeopleView view = new PeopleView(List.of(), "", true, Map.of(), Map.of());
 
-        assertEquals("Add student", view.getChrome().getHeaderActionLabel());
-        assertEquals("#create-student", view.getChrome().getHeaderActionHref());
-        assertTrue(view.getChrome().isWritable());
+        assertEquals("Add student", view.getChrome().headerActionLabel());
+        assertEquals("#create-student", view.getChrome().headerActionHref());
+        assertTrue(view.getChrome().writable());
     }
 
     @Test
@@ -35,8 +35,8 @@ class PeopleViewTest
     {
         PeopleView view = new PeopleView(List.of(), "", false, Map.of(), Map.of());
 
-        assertEquals("", view.getChrome().getHeaderActionLabel());
-        assertEquals("", view.getChrome().getHeaderActionHref());
+        assertEquals("", view.getChrome().headerActionLabel());
+        assertEquals("", view.getChrome().headerActionHref());
     }
 
     @Test

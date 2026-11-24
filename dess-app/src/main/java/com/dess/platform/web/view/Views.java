@@ -40,22 +40,22 @@ public final class Views
         String context = request.getContextPath();
 
         request.setAttribute("page", view);
-        request.setAttribute("pageTitle", chrome.getTitle());
-        request.setAttribute("topbarContext", chrome.getTopbarContext());
-        request.setAttribute("pageDescription", chrome.getDescription());
-        request.setAttribute("activeNav", chrome.getActiveNav());
-        request.setAttribute("breadcrumbParentLabel", chrome.getBreadcrumbParentLabel());
+        request.setAttribute("pageTitle", chrome.title());
+        request.setAttribute("topbarContext", chrome.topbarContext());
+        request.setAttribute("pageDescription", chrome.description());
+        request.setAttribute("activeNav", chrome.activeNav());
+        request.setAttribute("breadcrumbParentLabel", chrome.breadcrumbParentLabel());
         request.setAttribute("breadcrumbParentHref",
-                absolute(context, chrome.getBreadcrumbParentHref()));
-        request.setAttribute("breadcrumbSectionLabel", chrome.getBreadcrumbSectionLabel());
+                absolute(context, chrome.breadcrumbParentHref()));
+        request.setAttribute("breadcrumbSectionLabel", chrome.breadcrumbSectionLabel());
         request.setAttribute("breadcrumbSectionHref",
-                absolute(context, chrome.getBreadcrumbSectionHref()));
-        request.setAttribute("headerActionLabel", chrome.getHeaderActionLabel());
+                absolute(context, chrome.breadcrumbSectionHref()));
+        request.setAttribute("headerActionLabel", chrome.headerActionLabel());
         request.setAttribute("headerActionHref",
-                absolute(context, chrome.getHeaderActionHref()));
-        request.setAttribute("canWrite", chrome.isWritable());
+                absolute(context, chrome.headerActionHref()));
+        request.setAttribute("canWrite", chrome.writable());
 
-        request.getRequestDispatcher(chrome.getViewPath()).forward(request, response);
+        request.getRequestDispatcher(chrome.viewPath()).forward(request, response);
     }
 
     /**

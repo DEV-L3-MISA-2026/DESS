@@ -4,8 +4,6 @@ import com.dess.academic.application.CreatePeriodCommand;
 import com.dess.academic.application.CreateProgramCommand;
 import com.dess.academic.application.CreateProgramVersionCommand;
 import com.dess.academic.application.spi.PeriodRepository;
-import com.dess.academic.application.spi.ProgramRepository;
-import com.dess.academic.application.spi.ProgramVersionRepository;
 import com.dess.academic.domain.AcademicPeriod;
 import com.dess.academic.domain.AcademicProgram;
 import com.dess.academic.domain.AcademicProgramStatus;
