@@ -21,7 +21,12 @@ import org.junit.jupiter.api.Test;
  */
 class ArchitectureTest
 {
-    private static final Path MAIN = Path.of("src", "main", "java");
+    // Note pour l'équipe (Iavo / Platform) :
+    // On restreint ce test architectural au seul package 'com.dess.institution'
+    // pour préserver son indépendance (pas de SQL/JPA/REST dans institution),
+    // tout en permettant aux modules web/platform (comme DessApplication ou HealthResource)
+    // d'utiliser les annotations Jakarta REST (@Path, @GET, etc.).
+    private static final Path MAIN = Path.of("src", "main", "java", "com", "dess", "institution");
 
     private static final List<String> FORBIDDEN_IMPORT_PREFIXES = List.of(
             "java.sql", "javax.sql", "jakarta.persistence", "javax.persistence", "org.hibernate",
@@ -40,6 +45,55 @@ class ArchitectureTest
     void mainSourcesExist() throws IOException
     {
         assertFalse(mainSources().isEmpty());
+    }
+
+    /**
+     * @brief Sources of one module, for guards that must look beyond institution.
+     */
+    private static List<Path> moduleSources(String module) throws IOException
+    {
+        try (Stream<Path> files = Files.walk(Path.of("src", "main", "java", "com", "dess", module)))
+        {
+            return files.filter(path -> path.toString().endsWith(".java")).collect(Collectors.toList());
+        }
+    }
+
+    @Test
+    void peopleDoesNotImportAcademic() throws IOException
+    {
+        for (Path source : moduleSources("people"))
+        {
+            for (String line : Files.readAllLines(source))
+            {
+                assertFalse(line.trim().startsWith("import com.dess.academic"),
+                        source + " imports the academic module");
+            }
+        }
+    }
+
+    @Test
+    void domainPackagesHaveNoTechnicalDependencies() throws IOException
+    {
+        for (String module : List.of("institution", "people"))
+        {
+            for (Path source : moduleSources(module))
+            {
+                if (!source.toString().contains("/domain/"))
+                {
+                    continue;
+                }
+
+                for (String line : Files.readAllLines(source))
+                {
+                    String trimmed = line.trim();
+                    assertFalse(trimmed.startsWith("import jakarta.persistence"), source + " imports JPA");
+                    assertFalse(trimmed.startsWith("import jakarta.ws.rs"), source + " imports REST");
+                    assertFalse(trimmed.startsWith("import jakarta.servlet"), source + " imports Servlet");
+                    assertFalse(trimmed.contains("com.dess." + module + ".infrastructure"),
+                            source + " depends on infrastructure");
+                }
+            }
+        }
     }
 
     @Test
@@ -159,51 +213,107 @@ class ArchitectureTest
     void pomDeclaresNoPersistenceRestOrSiblingModuleDependency() throws IOException
     {
         // Only Maven coordinates (groupId / artifactId) are inspected, not comments.
-        // Test-scope dependencies never enter the shipped WAR, so the persistence
-        // and REST bans apply to every scope except test: integration tests
-        // against a real database need a JPA provider and a JDBC driver in test
-        // scope. Sibling-module dependencies stay banned in every scope.
-        String pom = Files.readString(Path.of("pom.xml"));
-        Pattern dependencyBlock = Pattern.compile("<dependency>(.*?)</dependency>", Pattern.DOTALL);
         Pattern coordinate = Pattern.compile("<(groupId|artifactId)>([^<]+)</\\1>");
-        Pattern scopePattern = Pattern.compile("<scope>([^<]+)</scope>");
+        Matcher matcher = coordinate.matcher(Files.readString(Path.of("pom.xml")));
+        List<String> coordinates = new java.util.ArrayList<>();
 
-        List<String> shippedCoordinates = new java.util.ArrayList<>();
-        List<String> allCoordinates = new java.util.ArrayList<>();
-
-        Matcher blocks = dependencyBlock.matcher(pom);
-        while (blocks.find())
+        while (matcher.find())
         {
-            String block = blocks.group(1);
-            Matcher scopeMatcher = scopePattern.matcher(block);
-            String dependencyScope = scopeMatcher.find() ? scopeMatcher.group(1).trim() : "compile";
+            coordinates.add(matcher.group(2).toLowerCase());
+        }
 
-            Matcher coordinates = coordinate.matcher(block);
-            while (coordinates.find())
+        for (String banned : List.of("persistence", "ws.rs", "resteasy",
+                                     "dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
+        {
+            assertTrue(coordinates.stream().noneMatch(c -> c.contains(banned)),
+                       "pom.xml declares a forbidden dependency: " + banned);
+        }
+
+        // The JDBC driver and the ORM may appear only as test dependencies; WildFly supplies
+        // them at runtime and Hibernate must never manage the schema.
+        Pattern dependency = Pattern.compile(
+                "<dependency>(.*?)</dependency>", Pattern.DOTALL);
+
+        for (Matcher block = dependency.matcher(Files.readString(Path.of("pom.xml"))); block.find(); )
+        {
+            String body = block.group(1).toLowerCase();
+            if (body.contains("postgresql") || body.contains("hibernate") || body.contains("flyway"))
             {
-                String value = coordinates.group(2).toLowerCase();
-                allCoordinates.add(value);
-                if (!dependencyScope.equals("test"))
+                assertTrue(body.contains("<scope>test</scope>"),
+                           "database drivers and ORM must stay test-scoped");
+            }
+        }
+
+        // Note pour l'équipe (Iavo / Platform) :
+        // Le WAR unique 'dess-app' embarque désormais l'application complète déployée sur WildFly,
+        // donc jakartaee-api est accepté pour fournir les spécifications standard (CDI, REST, etc.).
+        assertTrue(coordinates.stream().anyMatch(c -> c.contains("cdi-api")
+                                             || c.contains("jakartaee-api")),
+                   "CDI or Jakarta EE API is the expected Jakarta API");
+    }
+
+    @Test
+    void academicDomainHasNoTechnicalDependencies() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            if (!source.toString().contains("/domain/")) continue;
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                assertFalse(trimmed.startsWith("import jakarta.persistence"), source + " imports JPA");
+                assertFalse(trimmed.startsWith("import jakarta.ws.rs"), source + " imports REST");
+                assertFalse(trimmed.startsWith("import jakarta.servlet"), source + " imports Servlet");
+                assertFalse(trimmed.contains("com.dess.academic.infrastructure"),
+                        source + " depends on infrastructure");
+            }
+        }
+    }
+
+    @Test
+    void academicPersistenceOnlyInInfrastructure() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
+        {
+            boolean infrastructure = source.toString().contains("/academic/infrastructure/");
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("import jakarta.persistence"))
                 {
-                    shippedCoordinates.add(value);
+                    assertTrue(infrastructure, source + " uses JPA outside infrastructure");
                 }
             }
         }
 
-        for (String banned : List.of("postgresql", "hibernate", "flyway", "persistence", "ws.rs", "resteasy"))
+        for (Path source : moduleSources("academic"))
         {
-            assertTrue(shippedCoordinates.stream().noneMatch(c -> c.contains(banned)),
-                       "pom.xml declares a forbidden dependency: " + banned);
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*")) continue;
+                if (trimmed.contains("@Transactional"))
+                {
+                    boolean allowed = source.toString().contains("/application/impl/")
+                            || source.toString().contains("/academic/infrastructure/");
+                    assertTrue(allowed, source + " uses @Transactional outside application/impl or infrastructure");
+                }
+            }
         }
+    }
 
-        for (String banned : List.of("dess-academic", "dess-people", "dess-assessment", "dess-scheduling"))
+    @Test
+    void academicCallsPeopleOnlyThroughApplication() throws IOException
+    {
+        for (Path source : moduleSources("academic"))
         {
-            assertTrue(allCoordinates.stream().noneMatch(c -> c.contains(banned)),
-                       "pom.xml declares a forbidden dependency: " + banned);
+            for (String line : Files.readAllLines(source))
+            {
+                String trimmed = line.trim();
+                if (!trimmed.startsWith("import com.dess.people")) continue;
+                assertTrue(trimmed.startsWith("import com.dess.people.application"),
+                        source + " accède à people hors de com.dess.people.application");
+            }
         }
-
-        assertTrue(allCoordinates.stream().anyMatch(c -> c.contains("cdi-api")
-                                             || c.contains("jakartaee-api")),
-                   "CDI or Jakarta EE API is the expected Jakarta API");
     }
 }

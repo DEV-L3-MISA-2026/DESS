@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -101,7 +102,8 @@ public final class InstitutionValidator
      */
     private static void validateTypes(InstitutionConfig config, List<String> errors)
     {
-        Set<String> codes = new HashSet<>();
+        // Keys are compared without case: two keys that differ only by case would name one concept twice.
+        Map<String, String> codes = new HashMap<>();
 
         for (UnitTypeDefinition type : config.unitTypes())
         {
@@ -109,9 +111,14 @@ public final class InstitutionValidator
             {
                 errors.add("Type '" + type.code() + "': invalid code");
             }
-            else if (!codes.add(type.code()))
+            else
             {
-                errors.add("Type '" + type.code() + "': duplicate type code");
+                String existing = codes.putIfAbsent(typeKey(type.code()), type.code());
+
+                if (existing != null)
+                {
+                    errors.add(duplicateTypeMessage(type.code(), existing));
+                }
             }
 
             if (Texts.isBlank(type.label()))
@@ -124,8 +131,8 @@ public final class InstitutionValidator
     }
 
     /**
-     * Validates allowed parent-child relations: referenced types must exist and relations must be
-     * unique.
+     * Validates allowed parent-child relations: referenced types must exist, a type cannot be its
+     * own parent, and relations must be unique.
      *
      * @param config configuration being validated
      * @param errors list receiving the detected violations
@@ -148,6 +155,13 @@ public final class InstitutionValidator
                            + ": child type '" + pair.child() + "' does not exist");
             }
 
+            // A self pair would let a unit nest under a unit of its own type without limit.
+            if (!pair.parent().isEmpty() && pair.parent().equals(pair.child()))
+            {
+                errors.add("Allowed relation " + pair.parent() + " → " + pair.child()
+                           + ": a type cannot be its own parent");
+            }
+
             if (!seen.add(pair))
             {
                 errors.add("Allowed relation " + pair.parent() + " → " + pair.child() + ": duplicate");
@@ -167,7 +181,6 @@ public final class InstitutionValidator
     private static void validateHierarchy(InstitutionConfig config, List<String> errors)
     {
         Map<String, OrganizationalUnit> unitsById = new HashMap<>();
-        Set<String> codes = new HashSet<>();
 
         for (OrganizationalUnit unit : config.units())
         {
@@ -186,16 +199,14 @@ public final class InstitutionValidator
             {
                 errors.add("Unit " + label + ": invalid code");
             }
-            else if (!codes.add(unit.code()))
-            {
-                errors.add("Unit " + label + ": duplicate code '" + unit.code() + "'");
-            }
 
             if (Texts.isBlank(unit.name()))
             {
                 errors.add("Unit " + label + ": name required");
             }
         }
+
+        validateCodeScopes(config, unitsById, errors);
 
         for (OrganizationalUnit unit : config.units())
         {
@@ -245,6 +256,66 @@ public final class InstitutionValidator
     }
 
     /**
+     * Checks that unit codes are unique among the children of one parent.
+     *
+     * <p>Codes are compared without case. All root units share one scope. The same code may be used
+     * again under another parent, for example one {@code L1} level per program.</p>
+     *
+     * @param config    configuration being validated
+     * @param unitsById units indexed by identifier, used to name the parent in the message
+     * @param errors    list receiving the detected violations
+     */
+    private static void validateCodeScopes(InstitutionConfig config, Map<String, OrganizationalUnit> unitsById,
+                                           List<String> errors)
+    {
+        Map<String, OrganizationalUnit> seen = new HashMap<>();
+
+        for (OrganizationalUnit unit : config.units())
+        {
+            if (!CODE_PATTERN.matcher(unit.code()).matches())
+            {
+                continue;
+            }
+
+            String scope = unit.parentId() == null ? "" : unit.parentId();
+            OrganizationalUnit existing = seen.putIfAbsent(scope + "\n" + unitCodeKey(unit.code()), unit);
+
+            if (existing != null)
+            {
+                errors.add(duplicateUnitCodeMessage(unit, existing, unitsById.get(unit.parentId())));
+            }
+        }
+    }
+
+    /**
+     * Normalizes a unit code for the uniqueness check.
+     *
+     * @param code unit code
+     * @return the code in lower case, independent of the default locale
+     */
+    public static String unitCodeKey(String code)
+    {
+        return code.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Builds the message for a unit code that is already used under the same parent.
+     *
+     * @param unit     rejected unit
+     * @param existing unit that already uses the code
+     * @param parent   common parent, or {@code null} for root units
+     * @return a message that names the code, the scope and the existing unit
+     */
+    public static String duplicateUnitCodeMessage(OrganizationalUnit unit, OrganizationalUnit existing,
+                                                  OrganizationalUnit parent)
+    {
+        String scope = parent == null ? "among the root units" : "under " + label(parent);
+
+        return "Unit " + label(unit) + ": duplicate code '" + unit.code() + "' " + scope
+               + ", already used by " + label(existing);
+    }
+
+    /**
      * Detects parent cycles and reports each cycle once.
      *
      * @param unitsById units indexed by identifier
@@ -277,6 +348,31 @@ public final class InstitutionValidator
                 current = unitsById.get(current.parentId());
             }
         }
+    }
+
+    /**
+     * Normalizes a unit type key for the uniqueness check.
+     *
+     * @param code unit type code
+     * @return the code in lower case, independent of the default locale
+     */
+    public static String typeKey(String code)
+    {
+        return code.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Builds the message for a duplicated unit type key.
+     *
+     * @param code     rejected code
+     * @param existing code already present in the configuration
+     * @return a message that names both keys
+     */
+    public static String duplicateTypeMessage(String code, String existing)
+    {
+        String suffix = code.equals(existing) ? "" : " (same key as '" + existing + "')";
+
+        return "Type '" + code + "': duplicate type key" + suffix;
     }
 
     private static String label(OrganizationalUnit unit)

@@ -163,6 +163,14 @@ class XmlConfigLoaderTest
     }
 
     @Test
+    void selfParentPairInXmlIsRejected()
+    {
+        List<String> errors = InstitutionValidator.validate(load("invalid/self-parent-pair.xml"));
+
+        assertEquals(List.of("Allowed relation A → A: a type cannot be its own parent"), errors);
+    }
+
+    @Test
     void forbiddenParentChildIsRejected()
     {
         List<String> errors = InstitutionValidator.validate(load("invalid/forbidden-parent-child.xml"));
@@ -176,6 +184,29 @@ class XmlConfigLoaderTest
         List<String> errors = InstitutionValidator.validate(load("invalid/duplicate-code.xml"));
 
         assertTrue(errors.stream().anyMatch(message -> message.contains("duplicate")), errors.toString());
+    }
+
+    @Test
+    void sameUnitCodeUnderAnotherParentIsAccepted()
+    {
+        assertEquals(List.of(), InstitutionValidator.validate(load("valid/same-code-other-parent.xml")));
+    }
+
+    @Test
+    void sameUnitCodeUnderOneParentIsRejectedWithoutCase()
+    {
+        List<String> errors = InstitutionValidator.validate(load("invalid/duplicate-code-same-parent.xml"));
+
+        assertEquals(List.of("Unit 'Law year 1 bis' (l1): duplicate code 'l1' under 'Law' (LAW), "
+                             + "already used by 'Law year 1' (L1)"), errors);
+    }
+
+    @Test
+    void duplicateTypeKeyInXmlIsRejectedWithTheKeyNamed()
+    {
+        List<String> errors = InstitutionValidator.validate(load("invalid/duplicate-type-code.xml"));
+
+        assertEquals(List.of("Type 'Faculty': duplicate type key (same key as 'FACULTY')"), errors);
     }
 
     @Test

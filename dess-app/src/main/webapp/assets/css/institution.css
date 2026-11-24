@@ -1,0 +1,412 @@
+/*
+ * Institution structure page.
+ *
+ * The hierarchy canvas and inspector are page-specific. Shared panels,
+ * buttons, forms, alerts and tables come from components.css.
+ */
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--dess-space-4);
+    margin-bottom: var(--dess-space-4);
+}
+
+.canvas-card {
+    margin-bottom: 0;
+    padding: var(--dess-space-4);
+}
+
+.canvas-card h2 {
+    margin: 0;
+    font-size: var(--dess-font-size-section-title);
+}
+
+.graph-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dess-space-2);
+    margin-bottom: var(--dess-space-3);
+}
+
+.toolbar-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--dess-space-2);
+}
+
+.legend {
+    margin: 0 0 var(--dess-space-3);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-table);
+    line-height: 1.55;
+}
+
+.legend strong {
+    color: var(--dess-text);
+}
+
+/* Visible companion to the live region: pick mode must not rely on the
+   cursor or on opacity alone. The legend line carries the state so no extra
+   layer covers the graph. */
+.legend.picking {
+    color: var(--dess-text);
+}
+
+.graph-hint {
+    display: none;
+}
+
+.graph-scroll {
+    min-height: 420px;
+    max-height: calc(100vh - 270px);
+    overflow: auto;
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-md);
+    background-color: var(--dess-surface);
+    background-image: radial-gradient(var(--dess-border) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.graph-scroll:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+svg.graph {
+    display: block;
+    /* Fit wide graphs into the canvas instead of hiding the right-hand nodes.
+       Scaling is safe because pointer positions are mapped through the SVG
+       coordinate system. --graph-min (70% of the natural width) keeps labels
+       readable; narrower screens scroll the canvas instead of shrinking the
+       diagram further. A small graph keeps its natural size and never grows. */
+    max-width: 100%;
+    min-width: var(--graph-min, 0);
+    height: auto;
+    margin: 0 auto;
+    user-select: none;
+    /* Let touch gestures pan the canvas; nodes opt out below because they
+       handle drag and re-parent gestures themselves. */
+    touch-action: auto;
+}
+
+.edge {
+    fill: none;
+    stroke: var(--dess-text-muted);
+    stroke-width: 2;
+    opacity: 0.5;
+    transition: stroke 140ms ease, opacity 140ms ease;
+}
+
+/* Edges that touch the selected unit make the surrounding hierarchy easier
+   to trace without hiding the rest of the tree. */
+.edge.connected {
+    stroke: var(--dess-accent);
+    stroke-width: 2.2;
+    opacity: 0.85;
+}
+
+.gnode {
+    cursor: grab;
+    outline: none;
+    touch-action: none;
+}
+
+.gnode rect {
+    fill: var(--dess-surface);
+    stroke: var(--dess-border);
+    stroke-width: 1.4;
+    filter: drop-shadow(var(--dess-shadow-panel));
+    transition: stroke 120ms ease, fill 120ms ease;
+}
+
+.gnode:hover rect {
+    stroke: var(--dess-text-muted);
+}
+
+.gnode:focus-visible rect {
+    stroke: var(--dess-accent);
+    stroke-width: 2.4;
+}
+
+.gnode.selected rect {
+    stroke: var(--dess-accent);
+    stroke-width: 2.4;
+}
+
+.gnode.inactive rect {
+    fill: var(--dess-background);
+    stroke-dasharray: 4 3;
+}
+
+.gnode.drop-target rect {
+    fill: var(--dess-background);
+    stroke: var(--dess-success);
+    stroke-width: 2.6;
+}
+
+.gnode text {
+    pointer-events: none;
+}
+
+.gname {
+    fill: var(--dess-text);
+    font-size: var(--dess-font-size-body);
+    font-weight: 600;
+}
+
+.gline {
+    fill: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+.gmeta {
+    fill: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+}
+
+.gdot.ok {
+    fill: var(--dess-success);
+}
+
+.gdot.off {
+    fill: var(--dess-danger);
+}
+
+.drag-line {
+    fill: none;
+    stroke: var(--dess-accent);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+    pointer-events: none;
+}
+
+.hidden-form {
+    display: none;
+}
+
+.gnode.moving {
+    cursor: grabbing;
+}
+
+.gnode.moving rect {
+    stroke: var(--dess-accent);
+}
+
+.gnode.link-source {
+    opacity: 0.45;
+}
+
+svg.graph.moving {
+    cursor: grabbing;
+}
+
+svg.graph.linking {
+    cursor: crosshair;
+}
+
+.add-child {
+    cursor: pointer;
+    outline: none;
+    touch-action: none;
+}
+
+.add-child-hit {
+    fill: transparent;
+    pointer-events: all;
+}
+
+.add-child-ring {
+    fill: var(--dess-surface);
+    stroke: var(--dess-border);
+    stroke-width: 1.4;
+    transition: stroke 120ms ease, fill 120ms ease;
+}
+
+.add-child path {
+    fill: none;
+    stroke: var(--dess-text-muted);
+    stroke-width: 1.6;
+}
+
+.add-child:hover .add-child-ring,
+.add-child:focus-visible .add-child-ring {
+    fill: var(--dess-background);
+    stroke: var(--dess-accent);
+}
+
+.add-child:hover path,
+.add-child:focus-visible path {
+    stroke: var(--dess-accent);
+}
+
+/* Connection handle
+   A small dot on the node's left edge. The visible dot stays quiet; the
+   transparent hit circle is wider so the target is easy to grab with a
+   mouse or a finger. */
+.link-handle {
+    cursor: crosshair;
+    outline: none;
+    touch-action: none;
+}
+
+.link-handle-hit {
+    fill: transparent;
+    pointer-events: all;
+}
+
+.link-handle-dot {
+    fill: var(--dess-surface);
+    stroke: var(--dess-text-muted);
+    stroke-width: 1.6;
+    transition: fill 120ms ease, stroke 120ms ease;
+}
+
+.link-handle:hover .link-handle-dot,
+.link-handle:focus-visible .link-handle-dot {
+    fill: var(--dess-accent);
+    stroke: var(--dess-accent);
+}
+
+/* Keyboard focus needs more than a colour change, so the dot gains a ring. */
+.link-handle:focus-visible .link-handle-hit {
+    fill: none;
+    stroke: var(--dess-accent);
+    stroke-width: 1.6;
+}
+
+/* While a unit is picked, the whole canvas invites a second click. */
+svg.graph.picking .gnode {
+    cursor: pointer;
+}
+
+/* Link dialog
+   Reuses the shared dialog parts; only the direction choices and the
+   narrower width are page-specific. */
+.link-dialog {
+    width: min(460px, 94vw);
+}
+
+.dialog-panel {
+    display: flex;
+    flex-direction: column;
+    max-height: 88vh;
+}
+
+.link-choices {
+    display: grid;
+    gap: var(--dess-space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.link-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--dess-space-2);
+    margin: 0;
+    padding: var(--dess-space-3);
+    border: var(--dess-border-width) solid var(--dess-border-control);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-surface);
+    cursor: pointer;
+    line-height: 1.45;
+    transition: border-color var(--dess-transition-fast),
+        background var(--dess-transition-fast);
+}
+
+/* The shared form styles stretch every label input; a radio needs its
+   native size and no field padding. */
+.dess-content .link-option input[type="radio"] {
+    display: inline-block;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 2px 0 0;
+    padding: 0;
+    accent-color: var(--dess-accent);
+}
+
+.link-option span {
+    font-size: var(--dess-font-size-body);
+    font-weight: 400;
+}
+
+.link-option:hover {
+    border-color: var(--dess-text-muted);
+}
+
+.link-option:has(input:checked) {
+    border-color: var(--dess-accent);
+    background: var(--dess-accent-soft);
+}
+
+.link-option:has(input:focus-visible) {
+    box-shadow: var(--dess-focus-ring);
+}
+
+.inspector {
+    margin-bottom: 0;
+}
+
+.inspector h2 {
+    margin: 0 0 var(--dess-space-1);
+    font-size: var(--dess-font-size-section-title);
+    overflow-wrap: anywhere;
+}
+
+.inspector .meta {
+    margin: 0 0 var(--dess-space-3);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+.inspector-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dess-space-2);
+}
+
+.inspector .danger-zone .hint {
+    margin-bottom: var(--dess-space-2);
+}
+
+/* Place the inspector beside the canvas only when the pane keeps a readable
+   width for the graph. Narrower desktops stack the inspector below the canvas
+   so the hierarchy is not squeezed into a small scrolling strip. */
+@media (min-width: 1400px) {
+    .workspace {
+        grid-template-columns: minmax(0, 1fr) 360px;
+    }
+
+    .inspector {
+        position: sticky;
+        top: calc(var(--dess-header-height) + var(--dess-space-4));
+        max-height: calc(100vh - var(--dess-header-height) - var(--dess-space-6));
+        overflow: auto;
+    }
+}
+
+@media (max-width: 720px) {
+    .graph-scroll {
+        max-height: 70vh;
+    }
+
+    .graph-hint {
+        display: inline;
+    }
+}
+
+/* A finger needs a larger grab area than a mouse. */
+@media (pointer: coarse) {
+    .link-handle-hit {
+        r: 18px;
+    }
+}

@@ -20,6 +20,7 @@ import com.dess.scheduling.application.spi.RoomRepository;
 import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 import com.dess.scheduling.domain.BookingStatus;
+import com.dess.scheduling.domain.ResourceRef;
 import com.dess.scheduling.domain.Room;
 
 class BookingServiceTest
@@ -162,6 +163,55 @@ class BookingServiceTest
     }
 
     @Test
+    void createsBookingFromTypedRequest()
+    {
+        OffsetDateTime start = date("2026-11-23T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-23T11:00:00+03:00");
+        UUID ownerId = UUID.randomUUID();
+        UUID roomId = UUID.randomUUID();
+
+        Booking created = service.create(new BookingRequest(BookingService.EXAM_SESSION_OWNER,
+                ownerId, start, end,
+                List.of(ResourceRef.room(roomId),
+                        ResourceRef.personId(42L),
+                        ResourceRef.studentGroup(UUID.randomUUID()))));
+
+        assertEquals(BookingService.EXAM_SESSION_OWNER, created.ownerType());
+        assertEquals(ownerId, created.ownerId());
+        assertEquals(3, service.findSlotsByBookingId(created.id()).size());
+        assertEquals(created, service.findById(created.id()).orElseThrow());
+    }
+
+    @Test
+    void checksAvailabilityWithTypedRef()
+    {
+        OffsetDateTime start = date("2026-11-23T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-23T11:00:00+03:00");
+        UUID roomId = UUID.randomUUID();
+
+        service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                UUID.randomUUID(), start, end, List.of(ResourceRef.room(roomId))));
+
+        assertFalse(service.isAvailable(ResourceRef.room(roomId),
+                start.plusMinutes(30), end.plusMinutes(30)));
+        assertTrue(service.isAvailable(ResourceRef.room(roomId), end, end.plusHours(1)));
+        assertTrue(service.isAvailable(ResourceRef.room(UUID.randomUUID()), start, end));
+    }
+
+    @Test
+    void typedPersonRefMapsToSameResource()
+    {
+        OffsetDateTime start = date("2026-11-23T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-23T11:00:00+03:00");
+
+        service.create(new BookingRequest(BookingService.EXAM_SESSION_OWNER,
+                UUID.randomUUID(), start, end, List.of(ResourceRef.personId(42L))));
+
+        assertFalse(service.isAvailable(ResourceRef.personId(42L), start, end));
+        assertTrue(service.isAvailable(ResourceRef.personId(43L), start, end));
+    }
+
+    @Test
     void acceptsBookingWhenRequiredCapacityEqualsRoomCapacity()
     {
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
@@ -251,6 +301,12 @@ class BookingServiceTest
         public Optional<Booking> findById(UUID id)
         {
             return values.stream().filter(booking -> booking.id().equals(id)).findFirst();
+        }
+
+        @Override
+        public List<Booking> findAll()
+        {
+            return List.copyOf(values);
         }
 
         @Override

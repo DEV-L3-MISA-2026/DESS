@@ -84,6 +84,35 @@ class UnitTypeServiceTest
     }
 
     @Test
+    void refusesDuplicateTypeKeyThatDiffersOnlyByCase()
+    {
+        ValidationException e = assertThrows(ValidationException.class,
+                                             () -> types.create(UnitTypeDefinition.of("Mention", "Department")));
+
+        assertEquals(List.of("Type 'Mention': duplicate type key (same key as 'MENTION')"), e.getViolations());
+        assertTrue(types.getByCode("Mention").isEmpty());
+        assertEquals(5, types.getAll().size());
+    }
+
+    @Test
+    void refusesBlankLabelOnCreate()
+    {
+        ValidationException e = assertThrows(ValidationException.class,
+                                             () -> types.create(UnitTypeDefinition.of("LABORATORY", "  ")));
+
+        assertTrue(e.getViolations().contains("Type 'LABORATORY': label required"), e.getViolations().toString());
+        assertTrue(types.getByCode("LABORATORY").isEmpty());
+    }
+
+    @Test
+    void refusesBlankLabelOnUpdateAndKeepsTheOldOne()
+    {
+        assertThrows(ValidationException.class, () -> types.update("MENTION", "", "Field of study"));
+
+        assertEquals("Department", types.getByCode("MENTION").orElseThrow().label());
+    }
+
+    @Test
     void refusesInvalidTypeCode()
     {
         assertThrows(ValidationException.class, () -> types.create(UnitTypeDefinition.of("bad code", "x")));

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A unit type is allowed as its own parent -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="A" label="A"/>
+    </unitTypes>
+    <allowedParentChildPairs>
+        <allow parent="A" child="A"/>
+    </allowedParentChildPairs>
+</institution>

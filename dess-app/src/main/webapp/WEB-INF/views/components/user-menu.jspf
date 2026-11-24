@@ -1,0 +1,15 @@
+<%-- Signed-in account chip and sign-out action, shared by every shell. --%>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:if test="${not empty sessionUser}">
+    <span class="dess-user-chip">
+        <span class="dess-user-avatar" aria-hidden="true"><c:out value="${sessionUser.initials}"/></span>
+        <span class="dess-user-copy">
+            <span class="dess-user-name"><c:out value="${sessionUser.displayName}"/></span>
+            <span class="dess-user-role">${sessionUser.admin ? 'Administrator' : 'Professor'}</span>
+        </span>
+    </span>
+    <form method="post" action="${ctx}/logout" class="inline">
+        <input type="hidden" name="csrfToken" value="${csrfToken}">
+        <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>
+    </form>
+</c:if>

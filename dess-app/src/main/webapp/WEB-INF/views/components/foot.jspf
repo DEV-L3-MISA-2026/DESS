@@ -1,0 +1,11 @@
+<%-- Closes the shell opened by head.jspf. --%>
+<%@ page pageEncoding="UTF-8" %>
+            <footer class="dess-footer">
+                <p>DESS · Department Exam and Schedule System</p>
+                <p>Local development only. Confirm every change with the server.</p>
+            </footer>
+        </main>
+    </div>
+</div>
+</body>
+</html>

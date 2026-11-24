@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two unit types share one key; the second differs only by case -->
+<institution id="i1" code="TEST" name="Test">
+    <unitTypes>
+        <type code="FACULTY" label="Faculty"/>
+        <type code="Faculty" label="Faculty again"/>
+    </unitTypes>
+</institution>

@@ -9,9 +9,14 @@ import java.util.Optional;
 /** API applicative du module people. */
 public interface PeopleService {
     StudentProfile createStudent(CreateStudentCommand command);
+
     TeacherProfile createTeacher(CreateTeacherCommand command);
+
     Optional<Person> findById(long id);
+
     Optional<Person> findByEmail(String email);
+
     List<StudentProfile> listStudents();
+
     boolean studentExists(long id);
 }

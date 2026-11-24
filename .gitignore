@@ -24,5 +24,7 @@ frontend/dist/
 
 # agent context
 AGENTS.md
+.agents/skills/
+.opencode/agents/
 
 .run/
