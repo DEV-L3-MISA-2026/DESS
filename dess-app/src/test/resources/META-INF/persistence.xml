@@ -43,4 +43,8 @@
             <property name="hibernate.show_sql" value="false"/>
         </properties>
     </persistence-unit>
+    <persistence-unit name="groupEnrollmentTestPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>com.dess.academic.infrastructure.GroupEnrollmentEntity</class>
+    </persistence-unit>
 </persistence>
