@@ -30,6 +30,10 @@ public class SecurityFilter implements Filter
     private static final String LOGOUT_PATH = "/logout";
     private static final String HEALTH_PATH = "/api/health";
     private static final String SECURITY_AREA = "/app/security";
+    private static final String JSON_401 =
+            "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}";
+    private static final String JSON_403 =
+            "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}";
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
@@ -114,23 +118,13 @@ public class SecurityFilter implements Filter
         return estRoutePublique(chemin);
     }
 
-    public static String construireJson401()
-    {
-        return "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}";
-    }
-
-    public static String construireJson403()
-    {
-        return "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}";
-    }
-
     private static void denyUnauthenticated(HttpServletRequest request,
                                             HttpServletResponse response)
             throws IOException
     {
         if (RequestPaths.isApi(request))
         {
-            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED, construireJson401());
+            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED, JSON_401);
             return;
         }
 
@@ -153,7 +147,7 @@ public class SecurityFilter implements Filter
     {
         if (RequestPaths.isApi(request))
         {
-            writeJson(response, HttpServletResponse.SC_FORBIDDEN, construireJson403());
+            writeJson(response, HttpServletResponse.SC_FORBIDDEN, JSON_403);
             return;
         }
 
