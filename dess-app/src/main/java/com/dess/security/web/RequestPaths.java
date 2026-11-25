@@ -20,9 +20,16 @@ public final class RequestPaths
      */
     public static String path(HttpServletRequest request)
     {
-        String uri = request.getRequestURI();
-        String context = request.getContextPath();
+        return path(request.getRequestURI(), request.getContextPath());
+    }
 
+    /**
+     * @param uri request URI as reported by the container
+     * @param context application context path, possibly empty
+     * @return the URI without the context path, or the URI unchanged
+     */
+    static String path(String uri, String context)
+    {
         return uri != null && context != null && uri.startsWith(context)
                 ? uri.substring(context.length())
                 : uri;
