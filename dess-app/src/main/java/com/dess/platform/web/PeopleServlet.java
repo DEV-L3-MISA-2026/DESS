@@ -142,7 +142,8 @@ public class PeopleServlet extends HttpServlet
         }
 
         PeopleView view = new PeopleView(rows, Web.param(request, "q"),
-                canWrite(request), form, errors);
+                Web.canWrite(request, authorizationService, RoleCatalog.PEOPLE_WRITE),
+                form, errors);
 
         Views.render(request, response, view);
     }
@@ -153,11 +154,6 @@ public class PeopleServlet extends HttpServlet
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         showPage(request, response, form, errors);
-    }
-
-    private boolean canWrite(HttpServletRequest request)
-    {
-        return Web.canWrite(request, authorizationService, RoleCatalog.PEOPLE_WRITE);
     }
 
     private static void addRequiredErrors(Map<String, String> form, Map<String, String> errors)

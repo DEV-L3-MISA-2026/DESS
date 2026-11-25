@@ -146,7 +146,8 @@ public class SchedulingServlet extends HttpServlet
                         booking.status() == BookingStatus.ACTIVE))
                 .toList();
 
-        SchedulingView view = new SchedulingView(rooms, bookings, canWrite(request),
+        SchedulingView view = new SchedulingView(rooms, bookings,
+                Web.canWrite(request, authorizationService, RoleCatalog.SCHEDULING_WRITE),
                 roomForm, roomErrors);
 
         Views.render(request, response, view);
@@ -158,10 +159,5 @@ public class SchedulingServlet extends HttpServlet
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         render(request, response, form, errors);
-    }
-
-    private boolean canWrite(HttpServletRequest request)
-    {
-        return Web.canWrite(request, authorizationService, RoleCatalog.SCHEDULING_WRITE);
     }
 }

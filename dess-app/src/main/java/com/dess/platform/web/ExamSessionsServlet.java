@@ -347,7 +347,9 @@ public class ExamSessionsServlet extends HttpServlet
                 .toList();
 
         ExamSessionsView view = new ExamSessionsView(sessions, selectableSessions,
-                assessments, rooms, query, canWrite(request), sessionForm, sessionErrors,
+                assessments, rooms, query,
+                Web.canWrite(request, authorizationService, RoleCatalog.ACADEMIC_WRITE),
+                sessionForm, sessionErrors,
                 invigilatorForm, invigilatorErrors, cancelErrors);
 
         Views.render(request, response, view);
@@ -363,10 +365,5 @@ public class ExamSessionsServlet extends HttpServlet
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         showPage(request, response, sessionForm, sessionErrors,
                 invigilatorForm, invigilatorErrors, cancelErrors);
-    }
-
-    private boolean canWrite(HttpServletRequest request)
-    {
-        return Web.canWrite(request, authorizationService, RoleCatalog.ACADEMIC_WRITE);
     }
 }
