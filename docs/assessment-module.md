@@ -96,16 +96,66 @@ candidate eligibility is checked by the assessment definitions work, not
 here.
 
 The `/app/examinations` page stays a read-only list with a link to the
-management page. The `/app/results` page lists each session with the number
-of results recorded for its assessment. Result entry and correction exist in
-the application layer but have no page yet, so the page never shows a mark
-that was not stored. The `/app/exam-sessions` page schedules sessions, finds
+management page. The `/app/exam-sessions` page schedules sessions, finds
 one by a case-insensitive substring of its id, replaces invigilators and
 cancels a session after a confirmation dialog. It shows a session only
 after the server stored it. Write actions require `academic:write`, use
 the shared CSRF token, follow Post/Redirect/Get and keep entered values on
 validation errors. Cancelling releases the active booking and removes the
 session in the same transaction.
+
+## Pages (Batch B, issues #32, #33, #34, #117)
+
+- `/app/assessments` (issue #32): the assessment list with type and status,
+  and the create form (title, type, course, maximum score, duration in
+  minutes). A created assessment is visible after reload. Validation errors
+  return 400 with a summary and preserved values. Professors are read-only:
+  the form is hidden and every write is refused on the server with 403,
+  through the same `academic:write` check as the exam-sessions page
+  (the professor role has read permissions only).
+- `/app/eligibility?assessment=<id>` (issue #33): eligible and ineligible
+  candidates for one assessment, with the reason for each ineligible
+  candidate. The reason sentence comes from `EligibilityPresentation`, the
+  same wording as the API error, and the page never decides eligibility
+  itself: every row asks `EligibilityService`. Candidates come from the
+  exam sessions of the assessment (the union of every session candidate
+  list, in session order, without duplicates). When no session exists for
+  the assessment, the page checks an explicit student list given as
+  comma-separated person ids in the `students` query parameter; the list can
+  also add candidates alongside the session lists. The explicit list was
+  chosen over "all students" because the page must show the candidates of
+  the assessment, not the whole student body, and no other candidate source
+  exists in the servlets today.
+- `/app/results?session=<id>` (issue #34): result entry for one exam
+  session. Each candidate row shows the stored mark and status badge only;
+  a candidate with no stored result shows no mark. A mark is entered per
+  candidate and saved through `ResultService.recordResult`; an existing
+  result is changed through `ResultService.correctResult` with the current
+  user as `correctedBy`. The correction trail from
+  `ResultService.detail(id)` is shown under a corrected result, so the
+  original value stays readable. An invalid mark returns 400 and keeps the
+  entered value. Save follows Post/Redirect/Get, so a reload shows the
+  stored mark. The entry section identifies the assessment, the course, the
+  session (date, time in UTC, room) and the candidate; no academic period
+  is shown, because no course offering exists yet. No averages, weighting,
+  ranking or retake UI is introduced here.
+- Filters and empty state (issue #117): the assessments list filters by
+  type and by course. Both filters live in the URL
+  (`/app/assessments?type=EXAM&course=<id>`), so reloading the URL restores
+  them. An unknown type or course value matches nothing instead of silently
+  ignoring the filter. The empty state names the next action: it offers to
+  clear the filters when filters are active, and otherwise tells a writer
+  to create the first assessment below.
+
+### Period filter: pending issue #18
+
+The period filter of issue #117 is NOT implemented, and no period data is
+faked. An assessment has no period: there is no `CourseOffering`, a course
+has no period link, and `AcademicPeriod` has no start or end dates. When
+#18 lands (a `CourseOffering` with a course, a period with start/end dates,
+and groups), the assessment link should move from course id to offering id
+and the period filter can be written against the real period. Until then
+the list filters by type and course only.
 
 ## Persistence
 
@@ -124,8 +174,6 @@ session in the same transaction.
 
 - Booking a student group: the `ExamSession` model has no group field
   yet, so only the room and the invigilators are reserved.
-- The `/app/results` page lists sessions and recorded-result counts. Result
-  entry, correction and candidate-level lists have no page yet.
 - Integration tests against PostgreSQL through Testcontainers; the
   service tests use in-memory fakes, and the Flyway migration is applied
   separately during local setup.

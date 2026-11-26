@@ -48,4 +48,30 @@ class BadgeTest
         assertEquals("warn", badge.getTone());
         assertEquals("Partial", badge.getLabel());
     }
+
+    @Test
+    void eligibleUsesTheOkToneAndIneligibleTheDangerTone()
+    {
+        assertEquals("ok", Badge.eligible(true).getTone());
+        assertEquals("Eligible", Badge.eligible(true).getLabel());
+        assertEquals("danger", Badge.eligible(false).getTone());
+        assertEquals("Not eligible", Badge.eligible(false).getLabel());
+    }
+
+    @Test
+    void resultStatusLabelsEachStoredStatus()
+    {
+        assertEquals("ok", Badge.resultStatus(
+                com.dess.assessment.domain.ResultStatus.SCORED).getTone());
+        assertEquals("Scored", Badge.resultStatus(
+                com.dess.assessment.domain.ResultStatus.SCORED).getLabel());
+        assertEquals("off", Badge.resultStatus(
+                com.dess.assessment.domain.ResultStatus.ABSENT).getTone());
+        assertEquals("Absent", Badge.resultStatus(
+                com.dess.assessment.domain.ResultStatus.ABSENT).getLabel());
+        assertEquals("info", Badge.resultStatus(
+                com.dess.assessment.domain.ResultStatus.EXCUSED).getTone());
+        assertEquals("Excused", Badge.resultStatus(
+                com.dess.assessment.domain.ResultStatus.EXCUSED).getLabel());
+    }
 }

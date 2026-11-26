@@ -52,6 +52,21 @@ class AssessmentPresentationTest
                 () -> AssessmentPresentation.label(KNOWN_ID, null));
     }
 
+    @Test
+    void typeLabelsNameEachKind()
+    {
+        assertEquals("Exam", AssessmentPresentation.typeLabel(AssessmentType.EXAM));
+        assertEquals("Test", AssessmentPresentation.typeLabel(AssessmentType.TEST));
+        assertEquals("Practical", AssessmentPresentation.typeLabel(AssessmentType.PRACTICAL));
+    }
+
+    @Test
+    void typeLabelRejectsNull()
+    {
+        assertThrows(NullPointerException.class,
+                () -> AssessmentPresentation.typeLabel(null));
+    }
+
     private static Assessment assessment(UUID id, String title)
     {
         return new Assessment(id, UUID.randomUUID(), title, AssessmentType.EXAM,

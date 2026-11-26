@@ -54,6 +54,10 @@
                    ${active == 'examinations' ? 'aria-current="page"' : ''}>Examinations</a>
             </li>
             <li>
+                <a class="dess-nav-link" href="${ctx}/app/assessments"
+                   ${active == 'assessments' ? 'aria-current="page"' : ''}>Assessments</a>
+            </li>
+            <li>
                 <a class="dess-nav-link" href="${ctx}/app/results"
                    ${active == 'results' ? 'aria-current="page"' : ''}>Results</a>
             </li>

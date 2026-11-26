@@ -59,4 +59,20 @@ public final class AssessmentPresentation
 
         return labels.getOrDefault(assessmentId, UNKNOWN_LABEL);
     }
+
+    /**
+     * @param type the kind of evaluation
+     * @return the label shown in lists and forms, for example {@code Exam}
+     * @throws NullPointerException when the type is null
+     */
+    public static String typeLabel(com.dess.assessment.domain.AssessmentType type)
+    {
+        Objects.requireNonNull(type, "type is required");
+        return switch (type)
+        {
+            case EXAM -> "Exam";
+            case TEST -> "Test";
+            case PRACTICAL -> "Practical";
+        };
+    }
 }

@@ -46,6 +46,32 @@ public final class Badge
     }
 
     /**
+     * @param eligible whether the eligibility service says the candidate may sit
+     *                 the assessment
+     * @return {@code Eligible} or {@code Not eligible}
+     */
+    public static Badge eligible(boolean eligible)
+    {
+        return eligible ? of("ok", "Eligible") : of("danger", "Not eligible");
+    }
+
+    /**
+     * @param status the stored status of a result
+     * @return the badge for the stored status; the score itself is never part of
+     *         the badge
+     */
+    public static Badge resultStatus(com.dess.assessment.domain.ResultStatus status)
+    {
+        Objects.requireNonNull(status, "status is required");
+        return switch (status)
+        {
+            case SCORED -> of("ok", "Scored");
+            case ABSENT -> of("off", "Absent");
+            case EXCUSED -> of("info", "Excused");
+        };
+    }
+
+    /**
      * @param tone one of {@code ok}, {@code warn}, {@code info}, {@code danger} or
      *             {@code off}
      * @param label visible text

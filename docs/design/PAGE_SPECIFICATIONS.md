@@ -147,9 +147,14 @@ definitions and the list resolves each stored id to its title, marking an id
 with no definition as unknown. `/app/examinations` is a read-only session list
 with UTC times.
 
-The assessment list and detail pages, the candidate/eligibility view and a
-session calendar are roadmap items. Assessment definitions and eligibility
-exist in the application layer but have no page yet.
+`/app/assessments` lists the assessment definitions with type, course, maximum
+score, duration and status, filters by type and course through the URL, and
+offers the create form to accounts with the write permission. Each row links
+to the candidate/eligibility view. `/app/eligibility?assessment=<id>` shows
+the eligible and ineligible candidates of one assessment, with the reason for
+each ineligible candidate, taken from the exam sessions of the assessment or,
+when no session exists, from an explicit student list in the URL. A session
+calendar is still a roadmap item.
 
 ## 7. Results
 
@@ -173,7 +178,13 @@ Record, validate, and consult assessment results.
 its assessment, using `ResultService`. The page never shows a mark that was not
 stored.
 
-Result entry, correction and a candidate-level result list have no page yet.
+Opening a session (`/app/results?session=<id>`) shows its candidates with the
+stored mark and status badge only, the correction trail of corrected results,
+and the entry form for a mark or a correction. An invalid mark returns 400
+and keeps the entered value. The entry section identifies the assessment,
+course, session and candidate; no academic period is shown, because no course
+offering exists yet.
+
 The model stores final results only: there is no draft, submitted or validated
 state to display. Those states, averages, weighting and ranking stay out of the
 release until they are explicitly added.
