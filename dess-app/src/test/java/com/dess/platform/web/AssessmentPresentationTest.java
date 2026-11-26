@@ -55,7 +55,7 @@ class AssessmentPresentationTest
     private static Assessment assessment(UUID id, String title)
     {
         return new Assessment(id, UUID.randomUUID(), title, AssessmentType.EXAM,
-                new BigDecimal("20.00"), true,
+                new BigDecimal("20.00"), 90, true,
                 OffsetDateTime.of(2026, 11, 21, 9, 0, 0, 0, ZoneOffset.UTC));
     }
 }

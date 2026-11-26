@@ -65,14 +65,14 @@ public class JpaAssessmentRepository implements AssessmentRepository
     private AssessmentEntity toEntity(Assessment assessment)
     {
         return new AssessmentEntity(assessment.id(), assessment.courseId(), assessment.title(),
-                assessment.type().name(), assessment.maximumScore(), assessment.active(),
-                assessment.createdAt());
+                assessment.type().name(), assessment.maximumScore(),
+                assessment.durationMinutes(), assessment.active(), assessment.createdAt());
     }
 
     private Assessment toDomain(AssessmentEntity entity)
     {
         return new Assessment(entity.getId(), entity.getCourseId(), entity.getTitle(),
                 AssessmentType.valueOf(entity.getType()), entity.getMaximumScore(),
-                entity.isActive(), entity.getCreatedAt());
+                entity.getDurationMinutes(), entity.isActive(), entity.getCreatedAt());
     }
 }

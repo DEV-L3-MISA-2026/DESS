@@ -26,6 +26,7 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>com.dess.assessment.infrastructure.AssessmentEntity</class>
         <class>com.dess.assessment.infrastructure.ResultEntity</class>
+        <class>com.dess.assessment.infrastructure.ResultCorrectionEntity</class>
     </persistence-unit>
     <persistence-unit name="studentGroupTestPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
