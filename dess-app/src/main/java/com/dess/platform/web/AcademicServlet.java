@@ -204,7 +204,8 @@ public class AcademicServlet extends HttpServlet
                 .map(course -> new CourseRow(course.code(), course.title(), course.active()))
                 .toList();
 
-        AcademicView view = new AcademicView(periods, programs, courses, canWrite(request),
+        AcademicView view = new AcademicView(periods, programs, courses,
+                Web.canWrite(request, authorizationService, RoleCatalog.ACADEMIC_WRITE),
                 periodForm, periodErrors,
                 programForm, programErrors,
                 courseForm, courseErrors);
@@ -231,13 +232,5 @@ public class AcademicServlet extends HttpServlet
                 periodForm, periodErrors,
                 programForm, programErrors,
                 courseForm, courseErrors);
-    }
-
-    private boolean canWrite(HttpServletRequest request)
-    {
-        var user = Web.currentUser(request);
-
-        return user != null && authorizationService.isPermitted(user.toAccount(),
-                RoleCatalog.ACADEMIC_WRITE);
     }
 }

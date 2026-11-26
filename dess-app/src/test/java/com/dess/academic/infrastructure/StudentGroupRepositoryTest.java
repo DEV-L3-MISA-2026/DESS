@@ -13,7 +13,6 @@ import jakarta.persistence.PersistenceException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;

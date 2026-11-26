@@ -1,5 +1,6 @@
 package com.dess.assessment.application.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -168,7 +169,7 @@ public class ResultServiceImpl implements ResultService
         return new ResultDetail(result, corrections.findByResultId(id));
     }
 
-    private void checkScoreAgainstMaximum(java.math.BigDecimal score, ResultStatus status,
+    private void checkScoreAgainstMaximum(BigDecimal score, ResultStatus status,
                                           Assessment assessment)
     {
         if (status == ResultStatus.SCORED && score != null

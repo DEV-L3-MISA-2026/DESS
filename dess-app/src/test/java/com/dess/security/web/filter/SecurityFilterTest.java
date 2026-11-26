@@ -52,13 +52,6 @@ class SecurityFilterTest
     }
 
     @Test
-    void jsonErrorsContainCodeAndMessage()
-    {
-        assertTrue(filter.construireJson401().contains("UNAUTHORIZED"));
-        assertTrue(filter.construireJson403().contains("FORBIDDEN"));
-    }
-
-    @Test
     void institutionWritesAreDetectedOnRootEditorAndAliases()
     {
         assertTrue(filter.estEcritureInstitution("/", "POST"));

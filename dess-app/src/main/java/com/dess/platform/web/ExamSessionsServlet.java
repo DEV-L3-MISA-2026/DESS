@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,9 +43,6 @@ import com.dess.security.domain.RoleCatalog;
 public class ExamSessionsServlet extends HttpServlet
 {
     private static final String LIST_PATH = "/app/exam-sessions";
-    private static final DateTimeFormatter DATE_TIME =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
     @Inject
     private ExamSessionService examSessionService;
 
@@ -330,8 +326,8 @@ public class ExamSessionsServlet extends HttpServlet
                         session.id().toString(),
                         AssessmentPresentation.label(session.assessmentId(),
                                 assessmentLabels),
-                        DATE_TIME.format(session.startsAt()),
-                        DATE_TIME.format(session.endsAt()),
+                        Web.moment(session.startsAt()),
+                        Web.moment(session.endsAt()),
                         roomLabels.getOrDefault(session.roomId(), "Unknown room"),
                         session.candidatePersonIds().size(),
                         String.join(", ", session.invigilatorPersonIds()
@@ -351,7 +347,9 @@ public class ExamSessionsServlet extends HttpServlet
                 .toList();
 
         ExamSessionsView view = new ExamSessionsView(sessions, selectableSessions,
-                assessments, rooms, query, canWrite(request), sessionForm, sessionErrors,
+                assessments, rooms, query,
+                Web.canWrite(request, authorizationService, RoleCatalog.ACADEMIC_WRITE),
+                sessionForm, sessionErrors,
                 invigilatorForm, invigilatorErrors, cancelErrors);
 
         Views.render(request, response, view);
@@ -367,13 +365,5 @@ public class ExamSessionsServlet extends HttpServlet
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         showPage(request, response, sessionForm, sessionErrors,
                 invigilatorForm, invigilatorErrors, cancelErrors);
-    }
-
-    private boolean canWrite(HttpServletRequest request)
-    {
-        var user = Web.currentUser(request);
-
-        return user != null && authorizationService.isPermitted(user.toAccount(),
-                RoleCatalog.ACADEMIC_WRITE);
     }
 }

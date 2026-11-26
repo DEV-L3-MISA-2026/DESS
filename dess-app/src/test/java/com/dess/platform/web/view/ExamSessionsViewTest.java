@@ -48,7 +48,7 @@ class ExamSessionsViewTest
 
         assertEquals("selected", view.getSelectableSessions().get(0).getSelectedAttribute());
         assertEquals("selected", view.getRooms().get(0).getSelectedAttribute());
-        assertTrue(view.getChrome().isWritable());
+        assertTrue(view.getChrome().writable());
     }
 
     private static ExamSessionsView view(String query, List<ManagedSessionRow> sessions)

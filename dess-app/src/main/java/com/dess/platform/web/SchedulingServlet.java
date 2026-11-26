@@ -18,8 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +35,6 @@ import java.util.stream.Collectors;
 public class SchedulingServlet extends HttpServlet
 {
     private static final String LIST_PATH = "/app/scheduling";
-    private static final DateTimeFormatter DATE_TIME =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
     @Inject
     private RoomService roomService;
 
@@ -146,14 +141,13 @@ public class SchedulingServlet extends HttpServlet
                         BookingPresentation.ownerLabel(booking.ownerType()),
                         BookingPresentation.resources(
                                 bookingService.findSlotsByBookingId(booking.id()), roomCodes),
-                        DATE_TIME.format(booking.startsAt()
-                                .withOffsetSameInstant(ZoneOffset.UTC)),
-                        DATE_TIME.format(booking.endsAt()
-                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        Web.moment(booking.startsAt()),
+                        Web.moment(booking.endsAt()),
                         booking.status() == BookingStatus.ACTIVE))
                 .toList();
 
-        SchedulingView view = new SchedulingView(rooms, bookings, canWrite(request),
+        SchedulingView view = new SchedulingView(rooms, bookings,
+                Web.canWrite(request, authorizationService, RoleCatalog.SCHEDULING_WRITE),
                 roomForm, roomErrors);
 
         Views.render(request, response, view);
@@ -165,13 +159,5 @@ public class SchedulingServlet extends HttpServlet
     {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         render(request, response, form, errors);
-    }
-
-    private boolean canWrite(HttpServletRequest request)
-    {
-        var user = Web.currentUser(request);
-
-        return user != null && authorizationService.isPermitted(user.toAccount(),
-                RoleCatalog.SCHEDULING_WRITE);
     }
 }

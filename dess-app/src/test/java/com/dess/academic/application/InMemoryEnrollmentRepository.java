@@ -5,7 +5,6 @@ import com.dess.academic.domain.EnrollmentStatus;
 import com.dess.academic.domain.ProgramEnrollment;
 import com.dess.academic.exception.EnrollmentConflictException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

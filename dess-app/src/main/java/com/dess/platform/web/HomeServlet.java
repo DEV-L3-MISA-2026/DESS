@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,9 +35,6 @@ import java.util.stream.Collectors;
 @WebServlet({"/app", "/app/"})
 public class HomeServlet extends HttpServlet
 {
-    private static final DateTimeFormatter DATE_TIME =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
     @Inject
     private PeopleService peopleService;
 
@@ -76,10 +72,8 @@ public class HomeServlet extends HttpServlet
                         BookingPresentation.ownerLabel(booking.ownerType()),
                         BookingPresentation.resources(
                                 bookingService.findSlotsByBookingId(booking.id()), roomCodes),
-                        DATE_TIME.format(booking.startsAt()
-                                .withOffsetSameInstant(ZoneOffset.UTC)),
-                        DATE_TIME.format(booking.endsAt()
-                                .withOffsetSameInstant(ZoneOffset.UTC)),
+                        Web.moment(booking.startsAt()),
+                        Web.moment(booking.endsAt()),
                         booking.status() == BookingStatus.ACTIVE))
                 .toList();
 

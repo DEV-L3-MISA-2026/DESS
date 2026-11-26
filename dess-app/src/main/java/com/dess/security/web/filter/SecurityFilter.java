@@ -1,6 +1,7 @@
 package com.dess.security.web.filter;
 
 import com.dess.security.domain.RoleCatalog;
+import com.dess.security.web.RequestPaths;
 import com.dess.security.web.SessionUser;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -29,6 +30,10 @@ public class SecurityFilter implements Filter
     private static final String LOGOUT_PATH = "/logout";
     private static final String HEALTH_PATH = "/api/health";
     private static final String SECURITY_AREA = "/app/security";
+    private static final String JSON_401 =
+            "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}";
+    private static final String JSON_403 =
+            "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}";
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
@@ -36,7 +41,7 @@ public class SecurityFilter implements Filter
     {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        String path = path(request);
+        String path = RequestPaths.path(request);
 
         addSecurityHeaders(response);
 
@@ -113,24 +118,13 @@ public class SecurityFilter implements Filter
         return estRoutePublique(chemin);
     }
 
-    public String construireJson401()
-    {
-        return "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}";
-    }
-
-    public String construireJson403()
-    {
-        return "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}";
-    }
-
     private static void denyUnauthenticated(HttpServletRequest request,
                                             HttpServletResponse response)
             throws IOException
     {
-        if (isApi(request))
+        if (RequestPaths.isApi(request))
         {
-            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED,
-                    "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}");
+            writeJson(response, HttpServletResponse.SC_UNAUTHORIZED, JSON_401);
             return;
         }
 
@@ -151,10 +145,9 @@ public class SecurityFilter implements Filter
                                       HttpServletResponse response)
             throws IOException
     {
-        if (isApi(request))
+        if (RequestPaths.isApi(request))
         {
-            writeJson(response, HttpServletResponse.SC_FORBIDDEN,
-                    "{\"code\":\"FORBIDDEN\",\"message\":\"Access denied\"}");
+            writeJson(response, HttpServletResponse.SC_FORBIDDEN, JSON_403);
             return;
         }
 
@@ -168,21 +161,6 @@ public class SecurityFilter implements Filter
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(body);
-    }
-
-    private static boolean isApi(HttpServletRequest request)
-    {
-        return path(request).startsWith("/api/");
-    }
-
-    private static String path(HttpServletRequest request)
-    {
-        String uri = request.getRequestURI();
-        String context = request.getContextPath();
-
-        return uri != null && context != null && uri.startsWith(context)
-                ? uri.substring(context.length())
-                : uri;
     }
 
     private static void addSecurityHeaders(HttpServletResponse response)

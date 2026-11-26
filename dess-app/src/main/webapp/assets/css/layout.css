@@ -170,23 +170,6 @@ a.dess-nav-link[aria-current="page"] {
     font-weight: 600;
 }
 
-.dess-nav-link.is-disabled {
-    color: var(--dess-on-dark-muted);
-    cursor: default;
-}
-
-.dess-nav-soon {
-    margin-left: auto;
-    padding: 1px var(--dess-space-1);
-    border: var(--dess-border-width) solid var(--dess-border-on-dark);
-    border-radius: var(--dess-radius-sm);
-    color: var(--dess-on-dark-muted);
-    font-size: var(--dess-font-size-label);
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    line-height: 1.4;
-}
-
 .dess-sidebar-footer {
     margin-top: auto;
     padding: var(--dess-space-4);
@@ -249,13 +232,6 @@ a.dess-nav-link[aria-current="page"] {
     flex: none;
     align-items: center;
     gap: var(--dess-space-2);
-}
-
-.dess-env-label {
-    color: var(--dess-text-muted);
-    font-size: var(--dess-font-size-meta);
-    font-weight: 600;
-    letter-spacing: 0.01em;
 }
 
 .dess-mobile-menu {
@@ -377,9 +353,6 @@ a.dess-nav-link[aria-current="page"] {
         padding: var(--dess-space-3);
     }
 
-    .dess-env-label {
-        display: none;
-    }
 }
 
 /* Shell controls that only appear on narrow screens still need a touch

@@ -3,7 +3,6 @@ package com.dess.security.application;
 import com.dess.security.domain.Permission;
 import com.dess.security.domain.UserAccount;
 
-import java.io.IOException;
 import java.util.Set;
 
 /**

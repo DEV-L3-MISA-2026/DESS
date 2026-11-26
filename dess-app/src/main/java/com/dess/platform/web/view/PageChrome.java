@@ -9,35 +9,33 @@ import java.util.Objects;
  * <p>Hrefs are application-relative. {@link Views#render} adds the context path
  * when it forwards the page, so view models do not need the request.</p>
  */
-public final class PageChrome
+public record PageChrome(
+        String title,
+        String topbarContext,
+        String activeNav,
+        String description,
+        String viewPath,
+        String breadcrumbParentLabel,
+        String breadcrumbParentHref,
+        String breadcrumbSectionLabel,
+        String breadcrumbSectionHref,
+        String headerActionLabel,
+        String headerActionHref,
+        boolean writable)
 {
-    private final String title;
-    private final String topbarContext;
-    private final String activeNav;
-    private final String description;
-    private final String viewPath;
-    private final String breadcrumbParentLabel;
-    private final String breadcrumbParentHref;
-    private final String breadcrumbSectionLabel;
-    private final String breadcrumbSectionHref;
-    private final String headerActionLabel;
-    private final String headerActionHref;
-    private final boolean writable;
-
-    private PageChrome(Builder builder)
+    public PageChrome
     {
-        this.title = builder.title;
-        this.topbarContext = builder.topbarContext;
-        this.activeNav = builder.activeNav;
-        this.description = builder.description;
-        this.viewPath = builder.viewPath;
-        this.breadcrumbParentLabel = builder.breadcrumbParentLabel;
-        this.breadcrumbParentHref = builder.breadcrumbParentHref;
-        this.breadcrumbSectionLabel = builder.breadcrumbSectionLabel;
-        this.breadcrumbSectionHref = builder.breadcrumbSectionHref;
-        this.headerActionLabel = builder.headerActionLabel;
-        this.headerActionHref = builder.headerActionHref;
-        this.writable = builder.writable;
+        Objects.requireNonNull(title, "title is required");
+        Objects.requireNonNull(topbarContext, "topbarContext is required");
+        Objects.requireNonNull(activeNav, "activeNav is required");
+        Objects.requireNonNull(description, "description is required");
+        Objects.requireNonNull(viewPath, "viewPath is required");
+        Objects.requireNonNull(breadcrumbParentLabel, "breadcrumb parent label is required");
+        Objects.requireNonNull(breadcrumbParentHref, "breadcrumb parent href is required");
+        Objects.requireNonNull(breadcrumbSectionLabel, "breadcrumb section label is required");
+        Objects.requireNonNull(breadcrumbSectionHref, "breadcrumb section href is required");
+        Objects.requireNonNull(headerActionLabel, "header action label is required");
+        Objects.requireNonNull(headerActionHref, "header action href is required");
     }
 
     /**
@@ -51,66 +49,6 @@ public final class PageChrome
                                   String viewPath)
     {
         return new Builder(title, topbarContext, activeNav, viewPath);
-    }
-
-    public String getTitle()
-    {
-        return title;
-    }
-
-    public String getTopbarContext()
-    {
-        return topbarContext;
-    }
-
-    public String getActiveNav()
-    {
-        return activeNav;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public String getViewPath()
-    {
-        return viewPath;
-    }
-
-    public String getBreadcrumbParentLabel()
-    {
-        return breadcrumbParentLabel;
-    }
-
-    public String getBreadcrumbParentHref()
-    {
-        return breadcrumbParentHref;
-    }
-
-    public String getBreadcrumbSectionLabel()
-    {
-        return breadcrumbSectionLabel;
-    }
-
-    public String getBreadcrumbSectionHref()
-    {
-        return breadcrumbSectionHref;
-    }
-
-    public String getHeaderActionLabel()
-    {
-        return headerActionLabel;
-    }
-
-    public String getHeaderActionHref()
-    {
-        return headerActionHref;
-    }
-
-    public boolean isWritable()
-    {
-        return writable;
     }
 
     /** Mutable builder for {@link PageChrome}. */
@@ -131,44 +69,36 @@ public final class PageChrome
 
         private Builder(String title, String topbarContext, String activeNav, String viewPath)
         {
-            this.title = Objects.requireNonNull(title, "title is required");
-            this.topbarContext = Objects.requireNonNull(topbarContext,
-                    "topbarContext is required");
-            this.activeNav = Objects.requireNonNull(activeNav, "activeNav is required");
-            this.viewPath = Objects.requireNonNull(viewPath, "viewPath is required");
+            this.title = title;
+            this.topbarContext = topbarContext;
+            this.activeNav = activeNav;
+            this.viewPath = viewPath;
         }
 
         public Builder description(String description)
         {
-            this.description = Objects.requireNonNull(description,
-                    "description is required");
+            this.description = description;
             return this;
         }
 
         public Builder breadcrumb(String label, String href)
         {
-            this.breadcrumbParentLabel = Objects.requireNonNull(label,
-                    "breadcrumb label is required");
-            this.breadcrumbParentHref = Objects.requireNonNull(href,
-                    "breadcrumb href is required");
+            this.breadcrumbParentLabel = label;
+            this.breadcrumbParentHref = href;
             return this;
         }
 
         public Builder section(String label, String href)
         {
-            this.breadcrumbSectionLabel = Objects.requireNonNull(label,
-                    "section label is required");
-            this.breadcrumbSectionHref = Objects.requireNonNull(href,
-                    "section href is required");
+            this.breadcrumbSectionLabel = label;
+            this.breadcrumbSectionHref = href;
             return this;
         }
 
         public Builder headerAction(String label, String href)
         {
-            this.headerActionLabel = Objects.requireNonNull(label,
-                    "header action label is required");
-            this.headerActionHref = Objects.requireNonNull(href,
-                    "header action href is required");
+            this.headerActionLabel = label;
+            this.headerActionHref = href;
             return this;
         }
 
@@ -180,7 +110,9 @@ public final class PageChrome
 
         public PageChrome build()
         {
-            return new PageChrome(this);
+            return new PageChrome(title, topbarContext, activeNav, description, viewPath,
+                    breadcrumbParentLabel, breadcrumbParentHref, breadcrumbSectionLabel,
+                    breadcrumbSectionHref, headerActionLabel, headerActionHref, writable);
         }
     }
 }
