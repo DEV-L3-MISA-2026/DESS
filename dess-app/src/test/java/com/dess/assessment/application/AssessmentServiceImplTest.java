@@ -46,10 +46,11 @@ class AssessmentServiceImplTest
     void createsAnAssessmentForAnExistingCourse()
     {
         Assessment created = service.create(new CreateAssessmentCommand(courseId, "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20")));
+                AssessmentType.EXAM, new BigDecimal("20"), 90));
 
         assertEquals(courseId, created.courseId());
         assertEquals("Final exam", created.title());
+        assertEquals(90, created.durationMinutes());
         assertTrue(created.active());
         assertEquals(created, service.get(created.id()));
         assertEquals(1, service.listByCourse(courseId).size());
@@ -63,7 +64,31 @@ class AssessmentServiceImplTest
 
         assertThrows(InvalidAssessmentException.class, () -> service.create(
                 new CreateAssessmentCommand(unknownCourseId, "Final exam",
-                        AssessmentType.EXAM, new BigDecimal("20"))));
+                        AssessmentType.EXAM, new BigDecimal("20"), 90)));
+    }
+
+    @Test
+    void rejectsAMissingDuration()
+    {
+        assertThrows(IllegalArgumentException.class, () -> service.create(
+                new CreateAssessmentCommand(courseId, "Final exam",
+                        AssessmentType.EXAM, new BigDecimal("20"), null)));
+    }
+
+    @Test
+    void rejectsAZeroDuration()
+    {
+        assertThrows(IllegalArgumentException.class, () -> service.create(
+                new CreateAssessmentCommand(courseId, "Final exam",
+                        AssessmentType.EXAM, new BigDecimal("20"), 0)));
+    }
+
+    @Test
+    void rejectsANegativeDuration()
+    {
+        assertThrows(IllegalArgumentException.class, () -> service.create(
+                new CreateAssessmentCommand(courseId, "Final exam",
+                        AssessmentType.EXAM, new BigDecimal("20"), -30)));
     }
 
     @Test
@@ -76,7 +101,7 @@ class AssessmentServiceImplTest
     void deactivatesAnAssessment()
     {
         Assessment created = service.create(new CreateAssessmentCommand(courseId, "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20")));
+                AssessmentType.EXAM, new BigDecimal("20"), 90));
 
         Assessment deactivated = service.deactivate(created.id());
 

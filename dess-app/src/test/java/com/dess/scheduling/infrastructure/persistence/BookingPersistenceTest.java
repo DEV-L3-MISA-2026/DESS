@@ -39,6 +39,8 @@ import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 import com.dess.scheduling.domain.Room;
 import com.dess.scheduling.infrastructure.persistence.entity.BookingEntity;
+import com.dess.scheduling.application.BookingRequest;
+import com.dess.scheduling.domain.ResourceRef;
 
 /**
  * Integration tests against a real PostgreSQL 17 (Testcontainers).
@@ -227,6 +229,64 @@ class BookingPersistenceTest
         assertEquals(1, successes.get());
         assertEquals(1, countRows("booking"));
     }
+
+
+@Test
+void studentGroupBookingIsPersistedAndBlocksOverlappingExamBooking() throws Exception
+{
+    UUID groupId = UUID.randomUUID();
+
+    Booking created = inTransaction(service ->
+            service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                    UUID.randomUUID(), START, END, List.of(ResourceRef.studentGroup(groupId)))));
+
+    assertEquals(1, countRows("booking"));
+    assertEquals(1, countRows("booking_slot"));
+    try (Connection connection = jdbc(); Statement statement = connection.createStatement();
+         ResultSet rs = statement.executeQuery(
+                 "SELECT resource_type, resource_id FROM booking_slot WHERE booking_id = '"
+                         + created.id() + "'"))
+    {
+        assertTrue(rs.next());
+        assertEquals("STUDENT_GROUP", rs.getString(1));
+        assertEquals(groupId, UUID.fromString(rs.getString(2)));
+    }
+
+    assertThrows(IllegalArgumentException.class, () -> inTransaction(service ->
+            service.create(new BookingRequest(BookingService.EXAM_SESSION_OWNER,
+                    UUID.randomUUID(), START.plusMinutes(30), END.plusMinutes(30),
+                    List.of(ResourceRef.studentGroup(groupId))))));
+
+    assertEquals(1, countRows("booking"));
+}
+
+@Test
+void databaseRejectsOverlappingStudentGroupSlot() throws Exception
+{
+    UUID groupId = UUID.randomUUID();
+    Booking created = inTransaction(service ->
+            service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                    UUID.randomUUID(), START, END, List.of(ResourceRef.studentGroup(groupId)))));
+
+    EntityManager em = emf.createEntityManager();
+    try
+    {
+        em.getTransaction().begin();
+        JpaBookingSlotRepository slots = new JpaBookingSlotRepository(em);
+        slots.save(BookingSlot.create(created.id(), "STUDENT_GROUP", groupId,
+                START.plusMinutes(30), END.plusMinutes(30)));
+        assertThrows(PersistenceException.class, () -> em.getTransaction().commit());
+    }
+    finally
+    {
+        if (em.getTransaction().isActive())
+        {
+            em.getTransaction().rollback();
+        }
+        em.close();
+    }
+}
+
 
     private UUID createRoom(int capacity) throws Exception
     {

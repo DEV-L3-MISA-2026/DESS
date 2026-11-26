@@ -17,6 +17,9 @@
             <c:if test="${not empty page.query}">
                 <a class="btn btn-ghost btn-sm" href="${ctx}/app/people">Clear</a>
             </c:if>
+            <c:if test="${param.includeInactive == 'true'}">
+                <input type="hidden" name="includeInactive" value="true">
+            </c:if>
         </form>
     </div>
 
@@ -34,6 +37,7 @@
                         <th scope="col">Email</th>
                         <th scope="col">Registration number</th>
                         <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -45,6 +49,36 @@
                             <td>
                                 <c:set var="badge" value="${student.status}"/>
                                 <%@ include file="/WEB-INF/views/components/status-badge.jspf" %>
+                            </td>
+                            <td>
+                                <c:if test="${canWrite}">
+                                    <details>
+                                        <summary class="btn btn-ghost btn-sm">Edit</summary>
+                                        <form method="post" action="${ctx}/app/people" class="stack">
+                                            <input type="hidden" name="csrfToken" value="${csrfToken}">
+                                            <input type="hidden" name="action" value="update">
+                                            <input type="hidden" name="id" value="${student.id}">
+                                            <label>First name
+                                                <input name="firstName" value="<c:out value='${student.firstName}'/>" required>
+                                            </label>
+                                            <label>Last name
+                                                <input name="lastName" value="<c:out value='${student.lastName}'/>" required>
+                                            </label>
+                                            <label>Email
+                                                <input name="email" type="email" value="<c:out value='${student.email}'/>" required>
+                                            </label>
+                                            <button class="btn btn-sm" type="submit">Save</button>
+                                        </form>
+                                    </details>
+                                    <c:if test="${student.status.label == 'Active'}">
+                                        <form method="post" action="${ctx}/app/people" class="inline">
+                                            <input type="hidden" name="csrfToken" value="${csrfToken}">
+                                            <input type="hidden" name="action" value="deactivate">
+                                            <input type="hidden" name="id" value="${student.id}">
+                                            <button class="btn btn-danger btn-sm" type="submit">Deactivate</button>
+                                        </form>
+                                    </c:if>
+                                </c:if>
                             </td>
                         </tr>
                     </c:forEach>

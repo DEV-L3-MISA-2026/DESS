@@ -47,7 +47,7 @@ class EligibilityServiceImplTest
     {
         InMemoryAssessmentRepository assessments = new InMemoryAssessmentRepository();
         assessment = Assessment.create(UUID.randomUUID(), "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20"));
+                AssessmentType.EXAM, new BigDecimal("20"), 90);
         assessments.save(assessment);
         service = new EligibilityServiceImpl(assessments,
                 new StubPeopleService(), new StubEnrollmentService());
@@ -68,7 +68,7 @@ class EligibilityServiceImplTest
         EligibilityService.Eligibility eligibility = service.check(assessment.id(), UNKNOWN_STUDENT);
 
         assertFalse(eligibility.eligible());
-        assertEquals(1, eligibility.reasons().size());
+        assertEquals(List.of(EligibilityReason.STUDENT_NOT_FOUND), eligibility.reasons());
     }
 
     @Test
@@ -78,8 +78,8 @@ class EligibilityServiceImplTest
                 service.check(assessment.id(), NOT_ENROLLED_STUDENT);
 
         assertFalse(eligibility.eligible());
-        assertTrue(eligibility.reasons().stream()
-                .anyMatch(reason -> reason.contains("no active program enrollment")));
+        assertEquals(List.of(EligibilityReason.NO_ACTIVE_PROGRAM_ENROLLMENT),
+                eligibility.reasons());
     }
 
     @Test
@@ -95,8 +95,7 @@ class EligibilityServiceImplTest
                 inactiveService.check(inactive.id(), ELIGIBLE_STUDENT);
 
         assertFalse(eligibility.eligible());
-        assertTrue(eligibility.reasons().stream()
-                .anyMatch(reason -> reason.contains("not active")));
+        assertEquals(List.of(EligibilityReason.ASSESSMENT_INACTIVE), eligibility.reasons());
     }
 
     @Test

@@ -29,6 +29,9 @@ public class AssessmentEntity
     @Column(name = "maximum_score", nullable = false, precision = 6, scale = 2)
     private BigDecimal maximumScore;
 
+    @Column(name = "duration_minutes", nullable = false)
+    private int durationMinutes;
+
     @Column(nullable = false)
     private boolean active;
 
@@ -40,13 +43,15 @@ public class AssessmentEntity
     }
 
     public AssessmentEntity(UUID id, UUID courseId, String title, String type,
-                            BigDecimal maximumScore, boolean active, OffsetDateTime createdAt)
+                            BigDecimal maximumScore, int durationMinutes, boolean active,
+                            OffsetDateTime createdAt)
     {
         this.id = id;
         this.courseId = courseId;
         this.title = title;
         this.type = type;
         this.maximumScore = maximumScore;
+        this.durationMinutes = durationMinutes;
         this.active = active;
         this.createdAt = createdAt;
     }
@@ -74,6 +79,11 @@ public class AssessmentEntity
     public BigDecimal getMaximumScore()
     {
         return maximumScore;
+    }
+
+    public int getDurationMinutes()
+    {
+        return durationMinutes;
     }
 
     public boolean isActive()

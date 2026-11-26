@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 
 import com.dess.academic.application.ProgramEnrollmentService;
 import com.dess.academic.domain.EnrollmentStatus;
+import com.dess.assessment.application.EligibilityReason;
 import com.dess.assessment.application.EligibilityService;
 import com.dess.assessment.application.spi.AssessmentRepository;
 import com.dess.assessment.domain.Assessment;
@@ -54,19 +55,19 @@ public class EligibilityServiceImpl implements EligibilityService
         Assessment assessment = assessments.findById(assessmentId)
                 .orElseThrow(() -> new AssessmentNotFoundException(
                         "assessment not found: " + assessmentId));
-        List<String> reasons = new ArrayList<>();
+        List<EligibilityReason> reasons = new ArrayList<>();
         if (!assessment.active())
         {
-            reasons.add("assessment is not active");
+            reasons.add(EligibilityReason.ASSESSMENT_INACTIVE);
         }
         if (!peopleService.studentExists(studentPersonId))
         {
-            reasons.add("student not found: " + studentPersonId);
+            reasons.add(EligibilityReason.STUDENT_NOT_FOUND);
         }
         else if (enrollmentService.listByStudent(studentPersonId).stream()
                 .noneMatch(enrollment -> enrollment.status() == EnrollmentStatus.ACTIVE))
         {
-            reasons.add("student has no active program enrollment");
+            reasons.add(EligibilityReason.NO_ACTIVE_PROGRAM_ENROLLMENT);
         }
         return new Eligibility(reasons.isEmpty(), List.copyOf(reasons));
     }

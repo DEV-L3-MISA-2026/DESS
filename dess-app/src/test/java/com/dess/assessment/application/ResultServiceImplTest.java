@@ -24,10 +24,12 @@ import com.dess.academic.domain.ProgramEnrollment;
 import com.dess.assessment.application.impl.EligibilityServiceImpl;
 import com.dess.assessment.application.impl.ResultServiceImpl;
 import com.dess.assessment.application.spi.AssessmentRepository;
+import com.dess.assessment.application.spi.ResultCorrectionRepository;
 import com.dess.assessment.application.spi.ResultRepository;
 import com.dess.assessment.domain.Assessment;
 import com.dess.assessment.domain.AssessmentType;
 import com.dess.assessment.domain.Result;
+import com.dess.assessment.domain.ResultCorrection;
 import com.dess.assessment.domain.ResultStatus;
 import com.dess.assessment.exception.AssessmentNotFoundException;
 import com.dess.assessment.exception.DuplicateResultException;
@@ -54,12 +56,13 @@ class ResultServiceImplTest
     {
         InMemoryAssessmentRepository assessments = new InMemoryAssessmentRepository();
         assessment = Assessment.create(UUID.randomUUID(), "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20"));
+                AssessmentType.EXAM, new BigDecimal("20"), 90);
         assessments.save(assessment);
         InMemoryResultRepository results = new InMemoryResultRepository();
         EligibilityService eligibilityService = new EligibilityServiceImpl(assessments,
                 new StubPeopleService(), new StubEnrollmentService());
-        service = new ResultServiceImpl(results, assessments, eligibilityService);
+        service = new ResultServiceImpl(results, assessments, eligibilityService,
+                new InMemoryResultCorrectionRepository());
     }
 
     @Test
@@ -139,7 +142,7 @@ class ResultServiceImplTest
                 STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
 
         Result corrected = service.correctResult(recorded.id(),
-                new CorrectResultCommand(new BigDecimal("12"), ResultStatus.SCORED));
+                new CorrectResultCommand(new BigDecimal("12"), ResultStatus.SCORED, "professor@example.com"));
 
         assertEquals(new BigDecimal("12"), corrected.score());
         assertEquals("professor@example.com", corrected.enteredBy());
@@ -155,7 +158,88 @@ class ResultServiceImplTest
                 STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
 
         assertThrows(InvalidResultException.class, () -> service.correctResult(recorded.id(),
-                new CorrectResultCommand(new BigDecimal("21"), ResultStatus.SCORED)));
+                new CorrectResultCommand(new BigDecimal("21"), ResultStatus.SCORED, "professor@example.com")));
+    }
+
+    @Test
+    void rejectsCorrectionToAbsentWithAScore()
+    {
+        Result recorded = service.recordResult(new RecordResultCommand(assessment.id(), null,
+                STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
+
+        assertThrows(IllegalArgumentException.class, () -> service.correctResult(recorded.id(),
+                new CorrectResultCommand(new BigDecimal("10"), ResultStatus.ABSENT,
+                        "professor@example.com")));
+    }
+
+    @Test
+    void rejectsCorrectionToExcusedWithAScore()
+    {
+        Result recorded = service.recordResult(new RecordResultCommand(assessment.id(), null,
+                STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
+
+        assertThrows(IllegalArgumentException.class, () -> service.correctResult(recorded.id(),
+                new CorrectResultCommand(new BigDecimal("10"), ResultStatus.EXCUSED,
+                        "professor@example.com")));
+    }
+
+    @Test
+    void rejectsCorrectionToScoredWithoutAScore()
+    {
+        Result recorded = service.recordResult(new RecordResultCommand(assessment.id(), null,
+                STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
+
+        assertThrows(IllegalArgumentException.class, () -> service.correctResult(recorded.id(),
+                new CorrectResultCommand(null, ResultStatus.SCORED, "professor@example.com")));
+    }
+
+    @Test
+    void rejectsACorrectionWithoutACorrector()
+    {
+        Result recorded = service.recordResult(new RecordResultCommand(assessment.id(), null,
+                STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
+
+        assertThrows(IllegalArgumentException.class, () -> service.correctResult(recorded.id(),
+                new CorrectResultCommand(new BigDecimal("12"), ResultStatus.SCORED, "  ")));
+    }
+
+    @Test
+    void twoCorrectionsLeaveAnOrderedAuditTrail()
+    {
+        Result recorded = service.recordResult(new RecordResultCommand(assessment.id(), null,
+                STUDENT, new BigDecimal("10"), ResultStatus.SCORED, "professor@example.com"));
+
+        service.correctResult(recorded.id(),
+                new CorrectResultCommand(new BigDecimal("12"), ResultStatus.SCORED,
+                        "corrector@example.com"));
+        service.correctResult(recorded.id(),
+                new CorrectResultCommand(null, ResultStatus.ABSENT, "corrector@example.com"));
+
+        List<ResultCorrection> trail = service.correctionsFor(recorded.id());
+
+        assertEquals(2, trail.size());
+        assertEquals(new BigDecimal("10"), trail.get(0).previousScore());
+        assertEquals(ResultStatus.SCORED, trail.get(0).previousStatus());
+        assertEquals(new BigDecimal("12"), trail.get(0).newScore());
+        assertEquals(ResultStatus.SCORED, trail.get(0).newStatus());
+        assertEquals("corrector@example.com", trail.get(0).correctedBy());
+        assertEquals(new BigDecimal("12"), trail.get(1).previousScore());
+        assertEquals(ResultStatus.SCORED, trail.get(1).previousStatus());
+        assertNull(trail.get(1).newScore());
+        assertEquals(ResultStatus.ABSENT, trail.get(1).newStatus());
+        assertEquals("corrector@example.com", trail.get(1).correctedBy());
+        assertTrue(!trail.get(1).correctedAt().isBefore(trail.get(0).correctedAt()));
+
+        ResultService.ResultDetail detail = service.detail(recorded.id());
+        assertEquals(recorded.id(), detail.result().id());
+        assertNull(detail.result().score());
+        assertEquals(ResultStatus.ABSENT, detail.result().status());
+        assertEquals(2, detail.corrections().size());
+        assertEquals(new BigDecimal("10"), detail.corrections().get(0).previousScore());
+
+        Result found = service.findById(recorded.id()).orElseThrow();
+        assertEquals("professor@example.com", found.enteredBy());
+        assertEquals(recorded.enteredAt(), found.enteredAt());
     }
 
     @Test
@@ -163,7 +247,7 @@ class ResultServiceImplTest
     {
         assertThrows(ResultNotFoundException.class, () -> service.correctResult(
                 UUID.randomUUID(),
-                new CorrectResultCommand(new BigDecimal("12"), ResultStatus.SCORED)));
+                new CorrectResultCommand(new BigDecimal("12"), ResultStatus.SCORED, "professor@example.com")));
     }
 
     private static class InMemoryAssessmentRepository implements AssessmentRepository
@@ -244,6 +328,31 @@ class ResultServiceImplTest
         public boolean existsByAssessmentAndStudent(UUID assessmentId, long studentPersonId)
         {
             return findByAssessmentAndStudent(assessmentId, studentPersonId).isPresent();
+        }
+    }
+
+    private static class InMemoryResultCorrectionRepository implements ResultCorrectionRepository
+    {
+        private final List<ResultCorrection> corrections = new ArrayList<>();
+
+        @Override
+        public ResultCorrection save(ResultCorrection correction)
+        {
+            corrections.add(correction);
+            return correction;
+        }
+
+        @Override
+        public List<ResultCorrection> findByResultId(UUID resultId)
+        {
+            return corrections.stream()
+                    .filter(correction -> correction.resultId().equals(resultId))
+                    .sorted((left, right) ->
+                    {
+                        int byTime = left.correctedAt().compareTo(right.correctedAt());
+                        return byTime != 0 ? byTime : left.id().compareTo(right.id());
+                    })
+                    .toList();
         }
     }
 

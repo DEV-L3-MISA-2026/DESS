@@ -10,6 +10,14 @@ import java.util.Optional;
 public interface PeopleService {
     StudentProfile createStudent(CreateStudentCommand command);
 
+    default Person updateStudent(long id, UpdateStudentCommand command) {
+        throw new UnsupportedOperationException("Student updates are not implemented by this service");
+    }
+
+    default void deactivateStudent(long id) {
+        throw new UnsupportedOperationException("Student deactivation is not implemented by this service");
+    }
+
     TeacherProfile createTeacher(CreateTeacherCommand command);
 
     Optional<Person> findById(long id);
@@ -17,6 +25,10 @@ public interface PeopleService {
     Optional<Person> findByEmail(String email);
 
     List<StudentProfile> listStudents();
+
+    default List<StudentProfile> listStudentsIncludingInactive() {
+        return listStudents();
+    }
 
     boolean studentExists(long id);
 }

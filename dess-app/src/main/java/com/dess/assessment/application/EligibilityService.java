@@ -20,9 +20,12 @@ public interface EligibilityService
      * @brief The outcome of one eligibility check.
      *
      * @param eligible true when the student may sit the assessment
-     * @param reasons why the student is not eligible; empty when eligible
+     * @param reasons why the student is not eligible, as stable
+     *                codes; empty when eligible. The user-facing
+     *                sentence for a code lives in
+     *                {@code EligibilityPresentation}.
      */
-    record Eligibility(boolean eligible, List<String> reasons)
+    record Eligibility(boolean eligible, List<EligibilityReason> reasons)
     {
     }
 

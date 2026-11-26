@@ -2,11 +2,13 @@ package com.dess.platform.web;
 
 import com.dess.people.application.CreateStudentCommand;
 import com.dess.people.application.PeopleService;
+import com.dess.people.application.UpdateStudentCommand;
 import com.dess.people.domain.Person;
 import com.dess.people.domain.StudentProfile;
 import com.dess.people.exception.DuplicateEmailException;
 import com.dess.people.exception.DuplicateRegistrationNumberException;
 import com.dess.people.exception.PeopleException;
+import com.dess.people.exception.StudentValidationException;
 import com.dess.platform.web.view.PeopleView;
 import com.dess.platform.web.view.PersonRow;
 import com.dess.platform.web.view.Views;
@@ -71,6 +73,18 @@ public class PeopleServlet extends HttpServlet
 
         Map<String, String> errors = new LinkedHashMap<>();
 
+        String action = Web.param(request, "action");
+        if ("update".equals(action))
+        {
+            updateStudent(request, response, form);
+            return;
+        }
+        if ("deactivate".equals(action))
+        {
+            deactivateStudent(request, response);
+            return;
+        }
+
         try
         {
             CreateStudentCommand command = new CreateStudentCommand(
@@ -118,7 +132,12 @@ public class PeopleServlet extends HttpServlet
         String query = Web.param(request, "q").toLowerCase();
         List<PersonRow> rows = new ArrayList<>();
 
-        for (StudentProfile student : peopleService.listStudents())
+        boolean includeInactive = "true".equalsIgnoreCase(Web.param(request, "includeInactive"));
+        List<StudentProfile> students = includeInactive
+                ? peopleService.listStudentsIncludingInactive()
+                : peopleService.listStudents();
+
+        for (StudentProfile student : students)
         {
             Optional<Person> person = peopleService.findById(student.personId());
 
@@ -137,7 +156,7 @@ public class PeopleServlet extends HttpServlet
                 continue;
             }
 
-            rows.add(new PersonRow(fullName, value.email(),
+            rows.add(new PersonRow(student.personId(), fullName, value.email(),
                     student.registrationNumber(), value.active()));
         }
 
@@ -173,6 +192,73 @@ public class PeopleServlet extends HttpServlet
         if (form.get("registrationNumber").isBlank())
         {
             errors.put("registrationNumber", "Enter the registration number.");
+        }
+    }
+
+    private void updateStudent(HttpServletRequest request, HttpServletResponse response,
+                               Map<String, String> form)
+            throws ServletException, IOException
+    {
+        Map<String, String> errors = new LinkedHashMap<>();
+        long id;
+        try
+        {
+            id = Long.parseLong(Web.param(request, "id"));
+        }
+        catch (NumberFormatException exception)
+        {
+            errors.put("form", "Choose a valid student record.");
+            renderWithErrors(request, response, form, errors);
+            return;
+        }
+
+        try
+        {
+            Person person = peopleService.updateStudent(id,
+                    new UpdateStudentCommand(form.get("email"), form.get("lastName"),
+                            form.get("firstName")));
+            Web.flash(request, "success",
+                    "Student " + person.firstName() + " " + person.lastName() + " was updated.");
+            response.sendRedirect(request.getContextPath() + LIST_PATH);
+        }
+        catch (StudentValidationException exception)
+        {
+            errors.putAll(exception.getFieldErrors());
+            renderWithErrors(request, response, form, errors);
+        }
+        catch (DuplicateEmailException exception)
+        {
+            errors.put("email", "This email address is already used by another person.");
+            renderWithErrors(request, response, form, errors);
+        }
+        catch (PeopleException exception)
+        {
+            errors.put("form", exception.getMessage());
+            renderWithErrors(request, response, form, errors);
+        }
+    }
+
+    private void deactivateStudent(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException
+    {
+        try
+        {
+            long id = Long.parseLong(Web.param(request, "id"));
+            peopleService.deactivateStudent(id);
+            Web.flash(request, "success", "The student record was deactivated.");
+            response.sendRedirect(request.getContextPath() + LIST_PATH);
+        }
+        catch (NumberFormatException exception)
+        {
+            Map<String, String> errors = new LinkedHashMap<>();
+            errors.put("form", "Choose a valid student record.");
+            renderWithErrors(request, response, Web.form(), errors);
+        }
+        catch (PeopleException exception)
+        {
+            Map<String, String> errors = new LinkedHashMap<>();
+            errors.put("form", exception.getMessage());
+            renderWithErrors(request, response, Web.form(), errors);
         }
     }
 }

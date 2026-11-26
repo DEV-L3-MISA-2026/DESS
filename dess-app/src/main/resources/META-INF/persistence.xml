@@ -23,6 +23,7 @@
         <class>com.dess.academic.infrastructure.CourseEntity</class>
         <class>com.dess.assessment.infrastructure.AssessmentEntity</class>
         <class>com.dess.assessment.infrastructure.ResultEntity</class>
+        <class>com.dess.assessment.infrastructure.ResultCorrectionEntity</class>
         <class>com.dess.assessment.infrastructure.persistence.entity.ExamSessionEntity</class>
         <class>com.dess.academic.infrastructure.StudentGroupEntity</class>
         <class>com.dess.academic.infrastructure.GroupEnrollmentEntity</class>

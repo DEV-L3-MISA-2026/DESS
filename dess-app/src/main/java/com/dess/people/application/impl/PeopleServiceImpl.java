@@ -3,6 +3,7 @@ package com.dess.people.application.impl;
 import com.dess.people.application.CreateStudentCommand;
 import com.dess.people.application.CreateTeacherCommand;
 import com.dess.people.application.PeopleService;
+import com.dess.people.application.UpdateStudentCommand;
 import com.dess.people.application.spi.PersonRepository;
 import com.dess.people.application.spi.StudentRepository;
 import com.dess.people.application.spi.TeacherRepository;
@@ -39,6 +40,19 @@ public class PeopleServiceImpl implements PeopleService {
     }
 
     @Override
+    public Person updateStudent(long id, UpdateStudentCommand command) {
+        if (id <= 0) throw new IllegalArgumentException("L’identifiant doit être positif");
+        if (command == null) throw new IllegalArgumentException("La commande est obligatoire");
+        return studentRepository.update(id, command);
+    }
+
+    @Override
+    public void deactivateStudent(long id) {
+        if (id <= 0) throw new IllegalArgumentException("L’identifiant doit être positif");
+        studentRepository.deactivate(id);
+    }
+
+    @Override
     public TeacherProfile createTeacher(CreateTeacherCommand command) {
         if (command == null) throw new IllegalArgumentException("La commande est obligatoire");
         return teacherRepository.create(command);
@@ -58,6 +72,11 @@ public class PeopleServiceImpl implements PeopleService {
     @Override
     public List<StudentProfile> listStudents() {
         return studentRepository.findAll();
+    }
+
+    @Override
+    public List<StudentProfile> listStudentsIncludingInactive() {
+        return studentRepository.findAllIncludingInactive();
     }
 
     @Override

@@ -53,7 +53,7 @@ public class AssessmentServiceImpl implements AssessmentService
             throw new InvalidAssessmentException("course not found: " + command.courseId(), e);
         }
         return repository.save(Assessment.create(command.courseId(), command.title(),
-                command.type(), command.maximumScore()));
+                command.type(), command.maximumScore(), command.durationMinutes()));
     }
 
     @Override
