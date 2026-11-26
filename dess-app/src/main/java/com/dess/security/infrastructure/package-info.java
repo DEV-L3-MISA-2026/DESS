@@ -1,8 +1,6 @@
 /**
- * @brief Security infrastructure adapters.
+ * Security adapters: storage, password hashing and sessions.
  *
- * <p>Implements the ports declared by the application layer. The subpackages isolate
- * persistence, password hashing and session storage so the application layer stays independent
- * of the runtime.</p>
+ * <p>These classes implement the interfaces used by the application layer.</p>
  */
 package com.dess.security.infrastructure;

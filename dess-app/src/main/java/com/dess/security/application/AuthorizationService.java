@@ -3,40 +3,45 @@ package com.dess.security.application;
 import com.dess.security.domain.Permission;
 import com.dess.security.domain.UserAccount;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
- * @brief Answers authorization questions for an authenticated account.
+ * Answers what an account may do.
  *
- * <p>Scaffold only: the interface declares the authorization use cases. An implementation will
- * resolve the roles and permissions carried by the account and apply the module's authorization
- * rules.</p>
+ * <p>The implementation reads the account's roles and permissions. The permission
+ * {@code ALL} grants every action.</p>
  */
 public interface AuthorizationService
 {
     /**
-     * Tests whether an account holds a permission.
+     * Checks whether an account has a permission.
      *
-     * @param account        authenticated account
-     * @param permissionCode permission code to check
-     * @return {@code true} when the account has the permission through one of its roles
+     * @param account account to check
+     * @param permissionCode permission code to look for
+     * @return true when one of the account's roles has the permission
      */
     boolean isPermitted(UserAccount account, String permissionCode);
 
     /**
-     * Tests whether an account holds a role.
+     * Checks whether an account has a role.
      *
-     * @param account  authenticated account
-     * @param roleCode role code to check
-     * @return {@code true} when the account has the role
+     * @param account account to check
+     * @param roleCode role code to look for
+     * @return true when the account has the role
      */
     boolean hasRole(UserAccount account, String roleCode);
 
     /**
-     * Returns the effective permissions of an account.
+     * Returns all permissions granted to an account.
      *
-     * @param account authenticated account
-     * @return the permissions granted by all of the account's roles
+     * @param account account to check
+     * @return the permissions from all of the account's roles
      */
     Set<Permission> permissionsOf(UserAccount account);
+
+    // Check if the given permission exists in
+    // account.roles().stream().flatMap(roles -> roles.permissions().stream())
+    // Will be used with dynamic role management.
+    boolean hasPermissions(UserAccount account, String permissionCode);
 }

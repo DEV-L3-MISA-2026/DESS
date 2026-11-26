@@ -1,0 +1,29 @@
+flowchart TB
+    subgraph MVP["MVP horizon"]
+        direction TB
+        M1["M1 Teaching path<br/>2 of 11 done"]
+        M2["M2 Platform and DevOps<br/>1 of 21 done"]
+        M3["M3 Scheduling hardening<br/>2 of 10 done"]
+        M4["M4 Assessment UI<br/>3 of 18 done"]
+        M5["M5 Academic UI and security<br/>2 of 14 done"]
+        M6["M6 Institution and configuration<br/>7 of 9 done"]
+        M7["M7 Frontend and UX<br/>1 of 13 done"]
+        M8["M8 Testing and quality<br/>5 of 19 done"]
+    end
+
+    subgraph POST["Post-MVP horizon"]
+        direction TB
+        M9["M9 Timetables and curricula<br/>0 of 9 done"]
+        M10["M10 Grading and assessment<br/>0 of 3 done"]
+        M11["M11 Platform and operations<br/>0 of 7 done"]
+        M12["M12 Portals and communication<br/>0 of 1 done"]
+    end
+
+    M1 --> M3
+    M1 --> M4
+    M2 --> M8
+    M3 --> M9
+    M4 --> M10
+    M5 --> M7
+    M6 --> M7
+    M8 --> M11

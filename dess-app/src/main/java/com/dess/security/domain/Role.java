@@ -1,17 +1,29 @@
 package com.dess.security.domain;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
- * @brief Named set of permissions granted to a user account.
+ * A role is a named group of permissions.
  *
- * <p>Scaffold only: the record declares the role data. Uniqueness and defensive copying will be
- * added with the implementation.</p>
- *
- * @param code        unique role code
- * @param name        human-readable name
+ * @param code unique role code
+ * @param name name shown in the interface
  * @param permissions permissions granted by the role
  */
 public record Role(String code, String name, Set<Permission> permissions)
 {
+    public Role
+    {
+        Objects.requireNonNull(code, "code");
+        Objects.requireNonNull(name, "name");
+        if (code.isBlank())
+        {
+            throw new IllegalArgumentException("A role code is required");
+        }
+        if (name.isBlank())
+        {
+            throw new IllegalArgumentException("A role name is required");
+        }
+        permissions = permissions == null ? Set.of() : Set.copyOf(permissions);
+    }
 }

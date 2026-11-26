@@ -1,0 +1,1113 @@
+/*
+ * DESS shared components.
+ *
+ * These styles cover page headers, panels, buttons, forms, tables, alerts,
+ * badges, dialogs, empty states and the detail sections used across pages.
+ */
+
+/* Page header and context */
+
+.dess-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--dess-space-4);
+    margin-bottom: var(--dess-space-5);
+}
+
+.dess-page-heading {
+    min-width: 0;
+}
+
+.dess-breadcrumb {
+    margin: 0 0 var(--dess-space-2);
+}
+
+.dess-breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--dess-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+.dess-breadcrumb li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dess-space-1);
+}
+
+.dess-breadcrumb li + li::before {
+    content: "/";
+    color: var(--dess-text-muted);
+}
+
+.dess-breadcrumb [aria-current="page"] {
+    color: var(--dess-text);
+    font-weight: 600;
+}
+
+.dess-page-title {
+    margin: 0;
+    color: var(--dess-primary);
+    font-size: var(--dess-font-size-page-title);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+}
+
+.dess-page-description {
+    max-width: 72ch;
+    margin: var(--dess-space-2) 0 0;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-body);
+}
+
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dess-space-2);
+}
+
+.dess-context-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--dess-space-2) var(--dess-space-5);
+    margin-bottom: var(--dess-space-4);
+    padding: var(--dess-space-3) var(--dess-space-4);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-md);
+    background: var(--dess-surface);
+}
+
+.dess-context-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--dess-space-2);
+    min-width: 0;
+}
+
+.dess-context-label {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.dess-context-value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Panels and sections.
+
+   .panel is the shared surface for grouping page content. .card is the older
+   name kept by the institution editor; both render the same surface so the
+   two pages sets cannot drift apart. Only their stacking margin differs. */
+
+.panel,
+.card {
+    padding: var(--dess-space-5);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-md);
+    background: var(--dess-surface);
+    box-shadow: var(--dess-shadow-panel);
+}
+
+.panel {
+    margin-top: var(--dess-space-5);
+}
+
+.card {
+    margin-bottom: var(--dess-space-4);
+}
+
+.section-title,
+.card h2 {
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-section-title);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.section-title {
+    margin: 0;
+}
+
+.card h2 {
+    margin: 0 0 var(--dess-space-3);
+}
+
+.card h3 {
+    margin: var(--dess-space-4) 0 var(--dess-space-2);
+    color: var(--dess-primary);
+    font-size: var(--dess-font-size-component-title);
+    line-height: 1.35;
+}
+
+.card ol,
+.card ul {
+    margin: var(--dess-space-2) 0 0;
+    padding-left: var(--dess-space-5);
+}
+
+.card ol li + li,
+.card ul li + li {
+    margin-top: var(--dess-space-1);
+}
+
+.panel-head,
+.card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--dess-space-3);
+    margin-bottom: var(--dess-space-4);
+}
+
+/* The institution editor head sits tighter than a full panel head. */
+.card-head {
+    align-items: baseline;
+    gap: var(--dess-space-2);
+    margin-bottom: var(--dess-space-3);
+}
+
+.card-head h2 {
+    margin: 0;
+}
+
+.panel-note {
+    margin: var(--dess-space-1) 0 0;
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+.panel .table-wrap {
+    margin-top: var(--dess-space-2);
+}
+
+.form-section-title {
+    margin: var(--dess-space-5) 0 var(--dess-space-3);
+    padding-top: var(--dess-space-4);
+    border-top: var(--dess-border-width) solid var(--dess-border);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-component-title);
+    font-weight: 600;
+}
+
+hr {
+    margin: var(--dess-space-5) 0;
+    border: 0;
+    border-top: var(--dess-border-width) solid var(--dess-border);
+}
+
+.muted {
+    color: var(--dess-text-muted);
+}
+
+/* Content links must not fall back to the browser default blue. :where()
+   keeps zero specificity so button-styled links keep their own colors. */
+.dess-content :where(a) {
+    color: var(--dess-accent-strong);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.dess-content :where(a:hover) {
+    color: var(--dess-primary);
+    text-decoration-thickness: 2px;
+}
+
+.dess-content :where(a:visited) {
+    color: var(--dess-primary);
+}
+
+.dess-content :where(a:focus-visible) {
+    outline: none;
+    border-radius: var(--dess-radius-sm);
+    box-shadow: var(--dess-focus-ring);
+}
+
+.dess-breadcrumb a {
+    color: var(--dess-text-muted);
+    text-decoration: none;
+}
+
+.dess-breadcrumb a:hover {
+    color: var(--dess-text);
+    text-decoration: underline;
+}
+
+.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+}
+
+.code {
+    padding: 1px 6px;
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-background);
+    color: var(--dess-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--dess-font-size-label);
+}
+
+.kv {
+    display: inline-block;
+    margin: 1px 0;
+    padding: 1px 6px;
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-background);
+    font-size: var(--dess-font-size-label);
+}
+
+.type {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+}
+
+/* Buttons */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--dess-space-1);
+    min-height: var(--dess-control-height);
+    padding: 8px 14px;
+    border: var(--dess-border-width) solid var(--dess-accent);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-accent);
+    color: var(--dess-surface);
+    font-size: var(--dess-font-size-body);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color var(--dess-transition-fast),
+        border-color var(--dess-transition-fast),
+        color var(--dess-transition-fast);
+}
+
+.btn:hover {
+    border-color: var(--dess-accent-strong);
+    background: var(--dess-accent-strong);
+    color: var(--dess-surface);
+    text-decoration: none;
+}
+
+.btn:active {
+    background: var(--dess-primary);
+    border-color: var(--dess-primary);
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.btn-sm {
+    min-height: var(--dess-control-height-sm);
+    padding: 4px 10px;
+    font-size: var(--dess-font-size-label);
+}
+
+.btn-ghost {
+    border-color: var(--dess-border-control);
+    background: var(--dess-surface);
+    color: var(--dess-text);
+}
+
+.btn-ghost:hover {
+    border-color: var(--dess-text-muted);
+    background: var(--dess-background);
+    color: var(--dess-text);
+}
+
+.btn-ghost:active {
+    border-color: var(--dess-accent);
+    background: var(--dess-accent-soft);
+    color: var(--dess-text);
+}
+
+.btn-danger {
+    border-color: var(--dess-danger);
+    background: var(--dess-danger);
+    color: var(--dess-surface);
+}
+
+.btn-danger:hover {
+    border-color: var(--dess-danger-strong);
+    background: var(--dess-danger-strong);
+}
+
+.btn-danger:active {
+    border-color: var(--dess-danger-strong);
+    background: var(--dess-danger-strong);
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: var(--dess-border-width) solid transparent;
+    border-radius: var(--dess-radius-sm);
+    background: transparent;
+    color: var(--dess-text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color var(--dess-transition-fast),
+        color var(--dess-transition-fast);
+}
+
+.icon-btn:hover {
+    background: var(--dess-background);
+    color: var(--dess-text);
+}
+
+.icon-btn:active {
+    background: var(--dess-accent-soft);
+}
+
+/* Badges */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-surface);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--dess-text-muted);
+}
+
+.badge.ok {
+    border-left-color: var(--dess-success);
+    background: var(--dess-success-soft);
+    color: var(--dess-success);
+}
+
+.badge.ok::before {
+    background: var(--dess-success);
+}
+
+.badge.off {
+    border-color: var(--dess-border-strong);
+    background: var(--dess-background);
+    color: var(--dess-text-muted);
+}
+
+/* A hollow dot marks the inactive state by shape as well as by color. */
+.badge.off::before {
+    border: var(--dess-border-width) solid var(--dess-text-muted);
+    background: transparent;
+}
+
+.badge.warn {
+    border-left-color: var(--dess-warning);
+    background: var(--dess-warning-soft);
+    color: var(--dess-text);
+}
+
+.badge.warn::before {
+    background: var(--dess-warning-strong);
+}
+
+.badge.info {
+    border-left-color: var(--dess-info);
+    background: var(--dess-info-soft);
+    color: var(--dess-info-strong);
+}
+
+.badge.info::before {
+    background: var(--dess-info);
+}
+
+.badge.danger {
+    border-left-color: var(--dess-danger);
+    background: var(--dess-danger-soft);
+    color: var(--dess-danger-strong);
+}
+
+.badge.danger::before {
+    background: var(--dess-danger);
+}
+
+/* Alerts */
+
+.flash {
+    margin-bottom: var(--dess-space-4);
+    padding: var(--dess-space-3) var(--dess-space-4);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-left-width: 4px;
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-surface);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-body);
+    line-height: 1.5;
+}
+
+.flash.ok {
+    border-left-color: var(--dess-success);
+    background: var(--dess-success-soft);
+}
+
+.flash.ok strong {
+    color: var(--dess-success);
+}
+
+.flash.error {
+    border-left-color: var(--dess-danger);
+    background: var(--dess-danger-soft);
+}
+
+.flash.error strong {
+    color: var(--dess-danger-strong);
+}
+
+.flash.warn {
+    border-left-color: var(--dess-warning);
+    background: var(--dess-warning-soft);
+}
+
+.flash.warn strong {
+    color: var(--dess-warning-strong);
+}
+
+.flash.info {
+    border-left-color: var(--dess-info);
+    background: var(--dess-info-soft);
+}
+
+.flash.info strong {
+    color: var(--dess-info-strong);
+}
+
+.flash ul {
+    margin: var(--dess-space-2) 0 0;
+    padding-left: var(--dess-space-5);
+}
+
+/* Tables */
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+}
+
+.table-wrap:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+.dess-content table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--dess-surface);
+    font-size: var(--dess-font-size-table);
+}
+
+.dess-content th {
+    padding: var(--dess-space-2) var(--dess-space-3);
+    border-bottom: var(--dess-border-width) solid var(--dess-border);
+    background: var(--dess-background);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.dess-content td {
+    padding: var(--dess-space-2) var(--dess-space-3);
+    border-bottom: var(--dess-border-width) solid var(--dess-border);
+    vertical-align: top;
+}
+
+.dess-content tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.dess-content tbody tr:hover {
+    background: var(--dess-background);
+}
+
+.actions {
+    white-space: nowrap;
+}
+
+.inline {
+    display: inline;
+}
+
+/* Forms */
+
+.dess-content label {
+    display: block;
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+}
+
+/* Text-like controls share one visual definition. `.field` and `.toolbar`
+   place the control beside its label, so match them explicitly instead of
+   relying on the control being nested inside a label. */
+.dess-content label input,
+.dess-content label select,
+.dess-content label textarea,
+.dess-content .field > input,
+.dess-content .field > select,
+.dess-content .field > textarea,
+.dess-content .toolbar > input,
+.dess-content .row select {
+    display: block;
+    width: 100%;
+    min-height: var(--dess-control-height);
+    margin-top: var(--dess-space-1);
+    padding: 8px 10px;
+    border: var(--dess-border-width) solid var(--dess-border-control);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-surface);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-body);
+    font-weight: 400;
+}
+
+/* `.field` already spaces its children, so its control adds no margin. */
+.dess-content .field > input,
+.dess-content .field > select,
+.dess-content .field > textarea,
+.dess-content .toolbar > input {
+    margin-top: 0;
+}
+
+.dess-content label textarea,
+.dess-content .field > textarea {
+    min-height: 84px;
+    resize: vertical;
+}
+
+.dess-content input:hover,
+.dess-content select:hover,
+.dess-content textarea:hover {
+    border-color: var(--dess-text-muted);
+}
+
+.dess-content input:focus-visible,
+.dess-content select:focus-visible,
+.dess-content textarea:focus-visible {
+    border-color: var(--dess-accent);
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+/* Native validation may fire before a submit; use it only as a hint and keep
+   the visible message next to the field for screen readers and sighted users. */
+.dess-content input:user-invalid,
+.dess-content select:user-invalid,
+.dess-content textarea:user-invalid,
+.dess-content [aria-invalid="true"] {
+    border-color: var(--dess-danger);
+}
+
+.dess-content input:user-invalid:focus-visible,
+.dess-content select:user-invalid:focus-visible,
+.dess-content textarea:user-invalid:focus-visible,
+.dess-content [aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 2px var(--dess-surface), 0 0 0 4px var(--dess-danger);
+}
+
+.field-error {
+    display: block;
+    margin-top: var(--dess-space-1);
+    color: var(--dess-danger-strong);
+    font-size: var(--dess-font-size-label);
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+.dess-content label.checkbox {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--dess-space-2);
+    font-weight: 400;
+}
+
+.dess-content label.checkbox input[type="checkbox"] {
+    grid-row: 1 / span 2;
+    width: 16px;
+    height: 16px;
+    min-height: 0;
+    margin: 3px 0 0;
+    accent-color: var(--dess-accent);
+}
+
+.dess-content label.checkbox .hint {
+    grid-column: 2;
+}
+
+.dess-content input[type="checkbox"] {
+    accent-color: var(--dess-accent);
+}
+
+form.grid,
+.dialog-body .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--dess-space-3) var(--dess-space-4);
+    align-items: start;
+}
+
+form.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--dess-space-3);
+}
+
+form.row > label {
+    flex: 1 1 220px;
+}
+
+.span-2 {
+    grid-column: 1 / -1;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dess-space-2);
+}
+
+.stack {
+    display: grid;
+    gap: var(--dess-space-3);
+}
+
+.stack > div {
+    min-width: 0;
+}
+
+.hint {
+    display: block;
+    margin-top: var(--dess-space-1);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+/* Visible marker for required fields. The input also carries the native
+   "required" attribute, so this is a visual cue, not the only signal. */
+.req {
+    color: var(--dess-danger);
+    font-weight: 700;
+}
+
+fieldset {
+    margin: 0;
+    padding: var(--dess-space-3);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+}
+
+fieldset legend {
+    padding: 0 var(--dess-space-1);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+}
+
+/* Detail sections */
+
+details.card {
+    padding: 0;
+}
+
+details.card > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--dess-space-2);
+    padding: var(--dess-space-4) var(--dess-space-5);
+    list-style: none;
+    cursor: pointer;
+}
+
+details.card > summary::-webkit-details-marker {
+    display: none;
+}
+
+details.card > summary::before {
+    content: "\25B8";
+    color: var(--dess-text-muted);
+    font-size: 0.75rem;
+}
+
+details.card[open] > summary::before {
+    content: "\25BE";
+}
+
+details.card[open] > summary {
+    border-bottom: var(--dess-border-width) solid var(--dess-border);
+}
+
+details.card > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+.summary-title {
+    margin: 0;
+    color: var(--dess-primary);
+    font-size: var(--dess-font-size-section-title);
+    line-height: 1.3;
+}
+
+.summary-note {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    font-weight: 400;
+}
+
+.details-body {
+    padding: var(--dess-space-5);
+}
+
+details.subdetails {
+    margin: 0;
+    padding: var(--dess-space-2) var(--dess-space-3);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+}
+
+details.subdetails > summary {
+    list-style: none;
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+details.subdetails > summary::before {
+    content: "\25B8";
+    margin-right: var(--dess-space-2);
+    color: var(--dess-text-muted);
+    font-size: 0.75rem;
+}
+
+details.subdetails[open] > summary::before {
+    content: "\25BE";
+}
+
+details.subdetails > summary::-webkit-details-marker {
+    display: none;
+}
+
+details.subdetails[open] > summary {
+    margin-bottom: var(--dess-space-3);
+}
+
+details.subdetails > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--dess-focus-ring);
+}
+
+/* Dialogs */
+
+dialog {
+    width: min(var(--dess-dialog-width), 94vw);
+    max-height: 88vh;
+    margin: auto;
+    padding: 0;
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-lg);
+    background: var(--dess-surface);
+    color: var(--dess-text);
+    box-shadow: var(--dess-shadow-dialog);
+}
+
+/* The dialog receives focus when it opens; the panel edge already shows where
+   focus went, so a ring around the whole surface would only add noise. */
+dialog:focus-visible {
+    outline: none;
+}
+
+dialog::backdrop {
+    background: var(--dess-overlay);
+}
+
+.dialog-form {
+    display: flex;
+    flex-direction: column;
+    max-height: 88vh;
+}
+
+.dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--dess-space-3);
+    padding: var(--dess-space-4) var(--dess-space-5);
+    border-bottom: var(--dess-border-width) solid var(--dess-border);
+}
+
+.dialog-head h2 {
+    margin: 0;
+    color: var(--dess-primary);
+    font-size: var(--dess-font-size-section-title);
+    line-height: 1.3;
+}
+
+.dialog-head p {
+    margin: var(--dess-space-1) 0 0;
+    font-size: var(--dess-font-size-label);
+}
+
+.dialog-body {
+    padding: var(--dess-space-5);
+    overflow: auto;
+}
+
+.dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--dess-space-2);
+    padding: var(--dess-space-3) var(--dess-space-5);
+    border-top: var(--dess-border-width) solid var(--dess-border);
+    background: var(--dess-background);
+}
+
+/* States and supporting patterns */
+
+.empty {
+    padding: var(--dess-space-8) var(--dess-space-4);
+    border: var(--dess-border-width) dashed var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-background);
+    color: var(--dess-text-muted);
+    text-align: center;
+}
+
+.empty p {
+    margin: 0 0 var(--dess-space-2);
+}
+
+.empty strong {
+    color: var(--dess-text);
+}
+
+.empty .btn {
+    margin-top: var(--dess-space-2);
+}
+
+.danger-zone {
+    margin-top: var(--dess-space-4);
+    padding-top: var(--dess-space-3);
+    border-top: var(--dess-border-width) solid var(--dess-border);
+}
+
+.path {
+    margin: 0 0 var(--dess-space-3);
+    padding: var(--dess-space-2) var(--dess-space-3);
+    border: var(--dess-border-width) solid var(--dess-border);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-background);
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    overflow-wrap: anywhere;
+}
+
+.path-trail {
+    margin: 0 0 var(--dess-space-3);
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-label);
+    overflow-wrap: anywhere;
+}
+
+.preview {
+    max-height: 520px;
+    margin: 0;
+    padding: var(--dess-space-4);
+    border-radius: var(--dess-radius-sm);
+    background: var(--dess-primary);
+    color: var(--dess-surface);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--dess-font-size-table);
+    line-height: 1.55;
+    overflow: auto;
+}
+
+.flush {
+    margin: 0;
+}
+
+.flush-top {
+    margin-top: 0;
+}
+
+.details-actions {
+    margin-top: var(--dess-space-3);
+}
+
+.details-note {
+    margin-top: var(--dess-space-3);
+    overflow-wrap: anywhere;
+}
+
+.form-row-spaced {
+    margin-top: var(--dess-space-3);
+}
+
+.dialog-fieldset {
+    margin-top: var(--dess-space-3);
+}
+
+@media (max-width: 720px) {
+    form.grid,
+    .dialog-body .grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .span-2 {
+        grid-column: auto;
+    }
+
+    .dess-page-header {
+        display: block;
+    }
+
+    .header-actions {
+        margin-top: var(--dess-space-3);
+    }
+
+    .details-body,
+    details.card > summary,
+    .dialog-body,
+    .dialog-head,
+    .dialog-foot {
+        padding-left: var(--dess-space-4);
+        padding-right: var(--dess-space-4);
+    }
+
+    .card,
+    .panel {
+        padding: var(--dess-space-4);
+    }
+}
+
+/* Touch targets: aim for at least 44px on coarse pointers. */
+@media (pointer: coarse) {
+    .btn,
+    .btn-sm,
+    .icon-btn,
+    .dess-nav-link {
+        min-height: var(--dess-touch-target);
+    }
+
+    .icon-btn {
+        width: var(--dess-touch-target);
+        height: var(--dess-touch-target);
+    }
+
+    .dess-content input:not([type="checkbox"]):not([type="radio"]),
+    .dess-content select,
+    .dess-content textarea {
+        min-height: var(--dess-touch-target);
+    }
+
+    .dess-content label.checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* ---------- Account chip (shared top bar) ---------- */
+
+.dess-user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dess-space-2);
+    min-width: 0;
+}
+
+.dess-user-avatar {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--dess-accent-soft);
+    color: var(--dess-accent-strong);
+    font-size: var(--dess-font-size-label);
+    font-weight: 700;
+}
+
+.dess-user-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.dess-user-name {
+    overflow: hidden;
+    max-width: 180px;
+    color: var(--dess-text);
+    font-size: var(--dess-font-size-label);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dess-user-role {
+    color: var(--dess-text-muted);
+    font-size: var(--dess-font-size-meta);
+}
+
+@media (max-width: 560px) {
+    .dess-user-copy {
+        display: none;
+    }
+}

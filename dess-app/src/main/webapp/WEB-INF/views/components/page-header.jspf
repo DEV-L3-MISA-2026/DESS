@@ -1,0 +1,17 @@
+<%-- Page header: breadcrumb, title, optional description and one optional
+     primary action. Set pageTitle (already required by head.jspf),
+     pageDescription, breadcrumbParentLabel/Href and headerActionLabel/Href. --%>
+<div class="dess-page-header">
+    <div class="dess-page-heading">
+        <%@ include file="/WEB-INF/views/components/breadcrumb.jspf" %>
+        <h1 class="dess-page-title"><c:out value="${pageTitle}"/></h1>
+        <c:if test="${not empty pageDescription}">
+            <p class="dess-page-description"><c:out value="${pageDescription}"/></p>
+        </c:if>
+    </div>
+    <c:if test="${not empty headerActionLabel}">
+        <div class="header-actions">
+            <a class="btn" href="${headerActionHref}"><c:out value="${headerActionLabel}"/></a>
+        </div>
+    </c:if>
+</div>
