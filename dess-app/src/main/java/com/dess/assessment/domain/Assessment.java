@@ -24,6 +24,9 @@ import java.util.UUID;
  *   <li>The maximum score is greater than zero and has at most two
  *       decimal places. It is stored as a decimal, never as a float,
  *       so that scores stay exact.</li>
+ *   <li>The duration is a positive number of minutes. A missing,
+ *       zero or negative duration is rejected. The unit is minutes,
+ *       and nothing else: there is no second unit.</li>
  *   <li>Instants are stored in UTC. Any offset given by a caller is
  *       converted to UTC on construction.</li>
  *   <li>An assessment is never deleted. It is deactivated when it
@@ -31,7 +34,8 @@ import java.util.UUID;
  * </ul>
  */
 public record Assessment(UUID id, UUID courseId, String title, AssessmentType type,
-                         BigDecimal maximumScore, boolean active, OffsetDateTime createdAt)
+                         BigDecimal maximumScore, int durationMinutes, boolean active,
+                         OffsetDateTime createdAt)
 {
     public Assessment
     {
@@ -59,6 +63,10 @@ public record Assessment(UUID id, UUID courseId, String title, AssessmentType ty
         {
             throw new IllegalArgumentException("maximumScore must be at most 9999.99");
         }
+        if (durationMinutes <= 0)
+        {
+            throw new IllegalArgumentException("durationMinutes must be greater than zero");
+        }
         Objects.requireNonNull(createdAt, "createdAt is required");
         title = title.trim();
         createdAt = createdAt.withOffsetSameInstant(ZoneOffset.UTC);
@@ -71,13 +79,14 @@ public record Assessment(UUID id, UUID courseId, String title, AssessmentType ty
      * @param title the title shown to teachers and students
      * @param type the kind of evaluation
      * @param maximumScore the highest score a result can carry
+     * @param durationMinutes the duration of the assessment, in minutes, greater than zero
      * @return the new assessment
      */
     public static Assessment create(UUID courseId, String title, AssessmentType type,
-                                    BigDecimal maximumScore)
+                                    BigDecimal maximumScore, int durationMinutes)
     {
         return new Assessment(UUID.randomUUID(), courseId, title, type, maximumScore,
-                true, OffsetDateTime.now(ZoneOffset.UTC));
+                durationMinutes, true, OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     /**
@@ -89,6 +98,7 @@ public record Assessment(UUID id, UUID courseId, String title, AssessmentType ty
      */
     public Assessment deactivated()
     {
-        return new Assessment(id, courseId, title, type, maximumScore, false, createdAt);
+        return new Assessment(id, courseId, title, type, maximumScore, durationMinutes,
+                false, createdAt);
     }
 }

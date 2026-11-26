@@ -21,13 +21,14 @@ class AssessmentTest
     void createsAnActiveAssessment()
     {
         Assessment assessment = Assessment.create(COURSE_ID, "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20"));
+                AssessmentType.EXAM, new BigDecimal("20"), 90);
 
         assertNotNull(assessment.id());
         assertEquals(COURSE_ID, assessment.courseId());
         assertEquals("Final exam", assessment.title());
         assertEquals(AssessmentType.EXAM, assessment.type());
         assertEquals(new BigDecimal("20"), assessment.maximumScore());
+        assertEquals(90, assessment.durationMinutes());
         assertTrue(assessment.active());
         assertNotNull(assessment.createdAt());
     }
@@ -36,7 +37,7 @@ class AssessmentTest
     void convertsCreationTimeToUtc()
     {
         Assessment assessment = new Assessment(UUID.randomUUID(), COURSE_ID, "Test",
-                AssessmentType.TEST, new BigDecimal("10"), true,
+                AssessmentType.TEST, new BigDecimal("10"), 90, true,
                 OffsetDateTime.parse("2026-11-21T12:00:00+03:00"));
 
         assertEquals(ZoneOffset.UTC, assessment.createdAt().getOffset());
@@ -47,7 +48,7 @@ class AssessmentTest
     void deactivationKeepsTheIdentity()
     {
         Assessment assessment = Assessment.create(COURSE_ID, "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20"));
+                AssessmentType.EXAM, new BigDecimal("20"), 90);
 
         Assessment deactivated = assessment.deactivated();
 
@@ -55,54 +56,69 @@ class AssessmentTest
         assertFalse(deactivated.active());
         assertEquals(assessment.title(), deactivated.title());
         assertEquals(assessment.maximumScore(), deactivated.maximumScore());
+        assertEquals(assessment.durationMinutes(), deactivated.durationMinutes());
+    }
+
+    @Test
+    void rejectsAZeroDuration()
+    {
+        assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID,
+                "Final exam", AssessmentType.EXAM, new BigDecimal("20"), 0));
+    }
+
+    @Test
+    void rejectsANegativeDuration()
+    {
+        assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID,
+                "Final exam", AssessmentType.EXAM, new BigDecimal("20"), -30));
     }
 
     @Test
     void rejectsABlankTitle()
     {
         assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID, "  ",
-                AssessmentType.EXAM, new BigDecimal("20")));
+                AssessmentType.EXAM, new BigDecimal("20"), 90));
     }
 
     @Test
     void rejectsATitleThatIsTooLong()
     {
         assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID,
-                "x".repeat(201), AssessmentType.EXAM, new BigDecimal("20")));
+                "x".repeat(201), AssessmentType.EXAM, new BigDecimal("20"), 90));
     }
 
     @Test
     void rejectsAMissingType()
     {
         assertThrows(NullPointerException.class, () -> Assessment.create(COURSE_ID,
-                "Final exam", null, new BigDecimal("20")));
+                "Final exam", null, new BigDecimal("20"), 90));
     }
 
     @Test
     void rejectsAZeroMaximumScore()
     {
         assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID,
-                "Final exam", AssessmentType.EXAM, BigDecimal.ZERO));
+                "Final exam", AssessmentType.EXAM, BigDecimal.ZERO, 90));
     }
 
     @Test
     void rejectsANegativeMaximumScore()
     {
         assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID,
-                "Final exam", AssessmentType.EXAM, new BigDecimal("-5")));
+                "Final exam", AssessmentType.EXAM, new BigDecimal("-5"), 90));
     }
 
     @Test
     void rejectsAMaximumScoreWithMoreThanTwoDecimals()
     {
         assertThrows(IllegalArgumentException.class, () -> Assessment.create(COURSE_ID,
-                "Final exam", AssessmentType.EXAM, new BigDecimal("20.001")));
+                "Final exam", AssessmentType.EXAM, new BigDecimal("20.001"), 90));
     }
 
     @Test
     void rejectsAMissingCourse()
     {
         assertThrows(NullPointerException.class, () -> Assessment.create(null, "Final exam",
-                AssessmentType.EXAM, new BigDecimal("20")));
+                AssessmentType.EXAM, new BigDecimal("20"), 90));
     }
 }
