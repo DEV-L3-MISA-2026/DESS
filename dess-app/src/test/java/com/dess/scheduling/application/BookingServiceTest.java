@@ -212,6 +212,90 @@ class BookingServiceTest
     }
 
     @Test
+    void teachingSessionBookingOfStudentGroupBlocksOverlappingExamSession()
+    {
+        OffsetDateTime start = date("2026-11-25T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-25T11:00:00+03:00");
+        UUID groupId = UUID.randomUUID();
+
+        Booking created = service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                UUID.randomUUID(), start, end, List.of(ResourceRef.studentGroup(groupId))));
+
+        assertEquals(1, service.findSlotsByBookingId(created.id()).size());
+        assertFalse(service.isAvailable(ResourceRef.studentGroup(groupId),
+                start.plusMinutes(30), end.plusMinutes(30)));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> service.create(new BookingRequest(BookingService.EXAM_SESSION_OWNER,
+                        UUID.randomUUID(), start.plusMinutes(30), end.plusMinutes(30),
+                        List.of(ResourceRef.studentGroup(groupId)))));
+
+        assertEquals("resource is already booked for this time range", exception.getMessage());
+    }
+
+    @Test
+    void examSessionBookingOfStudentGroupBlocksOverlappingTeachingSession()
+    {
+        OffsetDateTime start = date("2026-11-25T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-25T11:00:00+03:00");
+        UUID groupId = UUID.randomUUID();
+
+        service.create(new BookingRequest(BookingService.EXAM_SESSION_OWNER,
+                UUID.randomUUID(), start, end, List.of(ResourceRef.studentGroup(groupId))));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                        UUID.randomUUID(), start.plusMinutes(30), end.plusMinutes(30),
+                        List.of(ResourceRef.studentGroup(groupId)))));
+
+        assertEquals("resource is already booked for this time range", exception.getMessage());
+
+        Booking adjacent = service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                UUID.randomUUID(), end, end.plusHours(1), List.of(ResourceRef.studentGroup(groupId))));
+
+        assertEquals(1, service.findSlotsByBookingId(adjacent.id()).size());
+    }
+
+    @Test
+    void studentGroupAvailabilityFollowsItsBookings()
+    {
+        OffsetDateTime start = date("2026-11-25T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-25T11:00:00+03:00");
+        UUID groupId = UUID.randomUUID();
+
+        assertTrue(service.isAvailable(ResourceRef.studentGroup(groupId), start, end));
+
+        Booking created = service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                UUID.randomUUID(), start, end, List.of(ResourceRef.studentGroup(groupId))));
+
+        assertFalse(service.isAvailable(ResourceRef.studentGroup(groupId), start, end));
+        assertTrue(service.isAvailable(ResourceRef.studentGroup(UUID.randomUUID()), start, end));
+        assertTrue(service.isAvailable(ResourceRef.studentGroup(groupId), end, end.plusHours(1)));
+
+        service.cancel(created.id());
+
+        assertTrue(service.isAvailable(ResourceRef.studentGroup(groupId), start, end));
+    }
+
+    @Test
+    void studentGroupBookingIsVisibleAsASlot()
+    {
+        OffsetDateTime start = date("2026-11-25T09:00:00+03:00");
+        OffsetDateTime end = date("2026-11-25T11:00:00+03:00");
+        UUID groupId = UUID.randomUUID();
+
+        Booking created = service.create(new BookingRequest(BookingService.TEACHING_SESSION_OWNER,
+                UUID.randomUUID(), start, end,
+                List.of(ResourceRef.studentGroup(groupId))));
+
+        List<BookingSlot> slots = service.findSlotsByBookingId(created.id());
+        assertEquals(1, slots.size());
+        assertEquals("STUDENT_GROUP", slots.get(0).resourceType());
+        assertEquals(groupId, slots.get(0).resourceId());
+        assertEquals(BookingStatus.ACTIVE, slots.get(0).status());
+    }
+
+    @Test
     void acceptsBookingWhenRequiredCapacityEqualsRoomCapacity()
     {
         OffsetDateTime start = date("2026-11-20T09:00:00+03:00");
