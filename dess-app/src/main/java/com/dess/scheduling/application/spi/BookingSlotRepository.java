@@ -17,4 +17,6 @@ public interface BookingSlotRepository
 
     boolean hasOverlap(String resourceType, UUID resourceId,
                        OffsetDateTime startsAt, OffsetDateTime endsAt);
+    List<BookingSlot> findByResource(String resourceType, UUID resourceId,
+                                     OffsetDateTime from, OffsetDateTime to);
 }

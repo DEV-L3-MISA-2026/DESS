@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 import com.dess.scheduling.domain.ResourceRef;
+import java.time.LocalDate;
 
 /**
  * Booking of shared resources for teaching sessions and exam sessions.
@@ -87,4 +88,10 @@ public interface BookingService {
             this(resourceType, resourceId, 0);
         }
     }
+     /**
+     * Taken and free intervals of one room for one day (UTC). A booking
+     * ending at 10:00 frees the room from 10:00: intervals are half-open.
+     */
+    RoomAvailability findRoomAvailability(UUID roomId, LocalDate day);
+
 }

@@ -18,6 +18,12 @@ import com.dess.scheduling.domain.Booking;
 import com.dess.scheduling.domain.BookingSlot;
 import com.dess.scheduling.domain.Room;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.ArrayList; 
+import com.dess.scheduling.application.RoomAvailability;
+import com.dess.scheduling.domain.ResourceType;
+
 @ApplicationScoped
 @Transactional
 public class BookingServiceImpl implements BookingService
@@ -160,5 +166,49 @@ public class BookingServiceImpl implements BookingService
                                OffsetDateTime startsAt, OffsetDateTime endsAt)
     {
         return !slots.hasOverlap(resourceType, resourceId, startsAt, endsAt);
+    }
+        @Override
+    public RoomAvailability findRoomAvailability(UUID roomId, LocalDate day)
+    {
+        OffsetDateTime dayStart = day.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime dayEnd = dayStart.plusDays(1);
+
+        // Taken: the room's active slots clipped to the day, merged when
+        // they touch (a booking ending at 10:00 and one starting at 10:00
+        // form a single taken interval, with no zero-length free gap).
+        List<RoomAvailability.Interval> taken = new ArrayList<>();
+        for (BookingSlot slot : slots.findByResource(
+                ResourceType.ROOM.name(), roomId, dayStart, dayEnd))
+        {
+            OffsetDateTime start = slot.startsAt().isBefore(dayStart) ? dayStart : slot.startsAt();
+            OffsetDateTime end = slot.endsAt().isAfter(dayEnd) ? dayEnd : slot.endsAt();
+            if (!taken.isEmpty() && !start.isAfter(taken.get(taken.size() - 1).endsAt()))
+            {
+                RoomAvailability.Interval last = taken.remove(taken.size() - 1);
+                taken.add(new RoomAvailability.Interval(last.startsAt(),
+                        end.isAfter(last.endsAt()) ? end : last.endsAt()));
+            }
+            else
+            {
+                taken.add(new RoomAvailability.Interval(start, end));
+            }
+        }
+
+        // Free: the complement of taken inside the day.
+        List<RoomAvailability.Interval> free = new ArrayList<>();
+        OffsetDateTime cursor = dayStart;
+        for (RoomAvailability.Interval interval : taken)
+        {
+            if (cursor.isBefore(interval.startsAt()))
+            {
+                free.add(new RoomAvailability.Interval(cursor, interval.startsAt()));
+            }
+            cursor = interval.endsAt();
+        }
+        if (cursor.isBefore(dayEnd))
+        {
+            free.add(new RoomAvailability.Interval(cursor, dayEnd));
+        }
+        return new RoomAvailability(List.copyOf(taken), List.copyOf(free));
     }
 }

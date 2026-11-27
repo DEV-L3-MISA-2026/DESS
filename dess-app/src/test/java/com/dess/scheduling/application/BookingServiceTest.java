@@ -1,7 +1,9 @@
 package com.dess.scheduling.application;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -352,6 +354,49 @@ class BookingServiceTest
         assertEquals("room not found: " + roomId, exception.getMessage());
     }
 
+@Test
+void roomAvailabilityFreesTheSlotAtTheExactEndTime()
+{
+    UUID roomId = UUID.randomUUID();
+    rooms.save(new Room(roomId, "A101", "Salle A101", 30));
+    service.create("EXAM", UUID.randomUUID(),
+            date("2026-11-27T08:00:00Z"), date("2026-11-27T10:00:00Z"),
+            List.of(new BookingService.ResourceRequest("ROOM", roomId, 20)));
+
+    RoomAvailability availability =
+            service.findRoomAvailability(roomId, LocalDate.of(2026, 11, 27));
+
+    // The booking ending at 10:00 frees the room from 10:00, not 10:01.
+    assertEquals(
+            List.of(new RoomAvailability.Interval(
+                    date("2026-11-27T08:00:00Z"), date("2026-11-27T10:00:00Z"))),
+            availability.taken());
+    assertEquals(
+            List.of(
+                    new RoomAvailability.Interval(
+                            date("2026-11-27T00:00:00Z"), date("2026-11-27T08:00:00Z")),
+                    new RoomAvailability.Interval(
+                            date("2026-11-27T10:00:00Z"), date("2026-11-28T00:00:00Z"))),
+            availability.free());
+}
+
+@Test
+void roomAvailabilityOnAnEmptyDayIsFullyFree()
+{
+    UUID roomId = UUID.randomUUID();
+    rooms.save(new Room(roomId, "A102", "Salle A102", 30));
+
+    RoomAvailability availability =
+            service.findRoomAvailability(roomId, LocalDate.of(2026, 11, 27));
+
+    assertTrue(availability.taken().isEmpty());
+    assertEquals(
+            List.of(new RoomAvailability.Interval(
+                    date("2026-11-27T00:00:00Z"), date("2026-11-28T00:00:00Z"))),
+            availability.free());
+}
+
+    
     @Test
     void rejectsNegativeRequiredCapacity()
     {
@@ -406,6 +451,20 @@ class BookingServiceTest
     private static final class InMemoryBookingSlotRepository implements BookingSlotRepository
     {
         private final List<BookingSlot> values = new ArrayList<>();
+
+        @Override
+        public List<BookingSlot> findByResource(String resourceType, UUID resourceId,
+                                                OffsetDateTime from, OffsetDateTime to)
+        {
+return values.stream()
+            .filter(slot -> slot.resourceType().equals(resourceType)
+                            && slot.resourceId().equals(resourceId)
+                            && slot.status() == BookingStatus.ACTIVE
+                            && slot.startsAt().isBefore(to)
+                            && slot.endsAt().isAfter(from))
+                    .sorted(Comparator.comparing(BookingSlot::startsAt))
+                    .toList();
+        }
 
         @Override
         public BookingSlot save(BookingSlot slot)

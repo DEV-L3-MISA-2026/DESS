@@ -84,4 +84,23 @@ public class JpaBookingSlotRepository implements BookingSlotRepository
                 entity.getResourceId(), entity.getStartsAt(), entity.getEndsAt(),
                 BookingStatus.valueOf(entity.getStatus()));
     }
+
+    @Override
+    public List<BookingSlot> findByResource(String resourceType, UUID resourceId,
+                                            OffsetDateTime from, OffsetDateTime to)
+    {
+        return entityManager.createQuery(
+                        "select s from BookingSlotEntity s "
+                                + "where s.resourceType = :resourceType "
+                                + "and s.resourceId = :resourceId "
+                                + "and s.status = 'ACTIVE' "
+                                + "and s.startsAt < :to and s.endsAt > :from "
+                                + "order by s.startsAt",
+                        BookingSlotEntity.class)
+                .setParameter("resourceType", resourceType)
+                .setParameter("resourceId", resourceId)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getResultList().stream().map(this::toDomain).toList();
+    }
 }
