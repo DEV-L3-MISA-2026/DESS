@@ -1,6 +1,5 @@
 package com.dess.shared;
 
-// Ity zany ny format d'erreur en generale ( Ho fafaina ity coms ity rehefa avy eo fa mba ho hitanlisany oe miasa tsara za)
 /**
  * A simple error response returned by the REST API.
  *

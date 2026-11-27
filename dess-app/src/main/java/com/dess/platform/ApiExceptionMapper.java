@@ -30,21 +30,20 @@ public class ApiExceptionMapper implements ExceptionMapper<Throwable> {
      * Convertit une exception en objet ApiError standardisé (code + message).
      * Méthode purement Java, facile à tester sans conteneur d'injection ou JAX-RS.
      */
-    public ApiError toApiError(Throwable exception) {
-        if (exception == null) {
-            return new ApiError("INTERNAL_ERROR", "Une erreur inattendue est survenue");
+    
+    public ApiError toApiError(Throwable e){
+        if(e == null)
+        {
+            return new ApiError("INTERNAL_ERROR","Une erreur inattendue est survenue");
         }
-
-        // Erreur d'argument invalide (ex: validation métier qui échoue)
-        if (exception instanceof IllegalArgumentException) {
-            String message = exception.getMessage() != null ? exception.getMessage() : "Paramètre invalide";
-            return new ApiError("INVALID_INPUT", message);
+        if(e instanceof IllegalArgumentException){
+            String message = e.getMessage() == null ? "Parmetre invalide" : e.getMessage();
+            return new ApiError("INVALID_INPUT",message);            
         }
+        if (e instanceof WebApplicationException wae) {
+            int status = wae.getResponse() == null ? 500 : wae.getResponse().getStatus();
+            String message = wae.getMessage() == null ? "Erreur HTTP" : wae.getMessage();
 
-        // Exception HTTP standard JAX-RS (ex: 404 Not Found, 403 Forbidden)
-        if (exception instanceof WebApplicationException wae) {
-            int status = wae.getResponse() != null ? wae.getResponse().getStatus() : 500;
-            String message = wae.getMessage() != null ? wae.getMessage() : "Erreur HTTP " + status;
             String code = switch (status) {
                 case 400 -> "BAD_REQUEST";
                 case 401 -> "UNAUTHORIZED";
@@ -56,12 +55,7 @@ public class ApiExceptionMapper implements ExceptionMapper<Throwable> {
             return new ApiError(code, message);
         }
 
-        // Toute autre exception inattendue
-        String message = (exception.getMessage() != null && !exception.getMessage().isBlank())
-                ? exception.getMessage()
-                : "Une erreur inattendue est survenue";
-
-        return new ApiError("INTERNAL_ERROR", message);
+        return new ApiError("INTERNAL_ERROR",e.getMessage() == null ? "Une erreur inattendue est survenue" : e.getMessage());
     }
 
     /**

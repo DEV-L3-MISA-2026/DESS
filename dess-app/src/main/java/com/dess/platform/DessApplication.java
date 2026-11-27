@@ -24,7 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
         description = "API de gestion académique pour un établissement (DESS)."
     ),
     servers = {
-        @Server(url = "/dess-app/api", description = "Serveur local WildFly")
+        @Server(url = "/dess-app/api", description = "Serveur WildFly")
     },
     tags = {
         @Tag(name = "Health", description = "Vérification de l'état de fonctionnement du serveur"),
