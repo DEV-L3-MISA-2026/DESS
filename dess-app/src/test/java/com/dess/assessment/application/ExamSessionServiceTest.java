@@ -27,6 +27,9 @@ import com.dess.scheduling.domain.BookingSlot;
 import com.dess.scheduling.domain.BookingStatus;
 import com.dess.scheduling.domain.ResourceRef;
 
+import java.time.LocalDate;
+import com.dess.scheduling.application.RoomAvailability;
+
 class ExamSessionServiceTest
 {
     private FakeExamSessionRepository repository;
@@ -332,5 +335,10 @@ class ExamSessionServiceTest
                     .filter(s -> s.resourceId().equals(resourceId))
                     .noneMatch(s -> s.startsAt().isBefore(endsAt) && s.endsAt().isAfter(startsAt));
         }
+        @Override
+public RoomAvailability findRoomAvailability(UUID roomId, LocalDate day)
+{
+    throw new UnsupportedOperationException("not used by the exam session tests");
+}
     }
 }
